@@ -1,0 +1,965 @@
+---
+import { Icon } from "astro-icon/components";
+import { blogChangelogEntries } from "@/data/blog-changelog";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+const blogChangelogNoteCount = blogChangelogEntries.reduce(
+	(total, entry) => total + entry.details.length,
+	0,
+);
+
+const blogChangelogMilestoneVersions = [
+	"V1.0.0",
+	"V1.5.0",
+	"V2.0.0",
+	"V2.3.0",
+	"V3.0.0",
+	blogChangelogEntries[0].version,
+];
+
+const blogChangelogMilestones = blogChangelogMilestoneVersions.map((version) => {
+	const entry = blogChangelogEntries.find((item) => item.version === version) ?? blogChangelogEntries[0];
+	return {
+		version: entry.version,
+		label: entry.kind,
+		date: entry.date.replaceAll("-", "."),
+		current: version === blogChangelogEntries[0].version,
+	};
+});
+
+---
+
+<MainGridLayout title="博客更新日志" description="朝朝听雨博客建站以来的每日更新记录">
+	<section class="blog-changelog-page" aria-labelledby="blog-changelog-title">
+		<header class="blog-changelog-hero card-base">
+			<div class="blog-changelog-hero__topline">
+				<div class="blog-changelog-kicker"><span></span><span>BLOG CHANGELOG</span><span>/</span><span>PUBLIC RECORD</span></div>
+			</div>
+			<div class="blog-changelog-hero__main">
+				<div class="blog-changelog-hero__copy">
+					<h1 id="blog-changelog-title">博客更新日志</h1>
+					<p class="blog-changelog-hero__lead">这里记录朝朝听雨从上线、写作到页面迭代的每一个重要节点。每一天都按真实建设过程整理，展开即可查看完整变更说明。</p>
+					<p class="blog-changelog-hero__rule">版本规则：Major 代表结构级升级 · Minor 代表新功能 · Patch 代表修复、内容与维护</p>
+				</div>
+			</div>
+		</header>
+
+		<section class="blog-changelog-stats" aria-label="博客更新日志统计">
+			<span><Icon is:inline name="material-symbols:workspace-premium-rounded" aria-hidden="true" /><strong>{blogChangelogEntries[0].version}</strong><small>当前版本</small></span>
+			<span><Icon is:inline name="material-symbols:calendar-month-rounded" aria-hidden="true" /><strong>{blogChangelogEntries.length}</strong><small>个更新日</small></span>
+			<span><Icon is:inline name="material-symbols:description-rounded" aria-hidden="true" /><strong>{blogChangelogNoteCount}</strong><small>条详细记录</small></span>
+			<span><Icon is:inline name="material-symbols:date-range-rounded" aria-hidden="true" /><strong>2026.07—09</strong><small>时间跨度</small></span>
+		</section>
+
+		<nav class="blog-changelog-nav card-base" aria-label="日志页面导航">
+			<a href="/about/" class="blog-changelog-nav__back"><Icon is:inline name="material-symbols:arrow-back-rounded" aria-hidden="true" />关于我</a>
+			<span>按日倒序 · 建站以来</span>
+		</nav>
+
+		<section class="blog-changelog-growth card-base" aria-labelledby="blog-changelog-growth-title">
+			<div class="blog-changelog-section-heading">
+				<div>
+					<span class="blog-changelog-section-heading__mark" aria-hidden="true"></span>
+					<h2 id="blog-changelog-growth-title">博客成长轨迹</h2>
+				</div>
+				<span>从第一次上线到现在</span>
+			</div>
+			<ol class="blog-changelog-milestones">
+				{blogChangelogMilestones.map((milestone) => (
+					<li class:list={{ "is-current": milestone.current }}>
+						<div class="blog-changelog-milestone__topline">
+							<strong>{milestone.version}</strong>
+							{milestone.current && <Icon is:inline name="material-symbols:workspace-premium-rounded" aria-label="当前版本" />}
+						</div>
+						<span class="blog-changelog-milestone__date">{milestone.date}</span>
+						<span class="blog-changelog-milestone__label">{milestone.label}</span>
+					</li>
+					))}
+			</ol>
+			<p class="blog-changelog-growth__note">一步一个脚印，让热爱继续发光 <span aria-hidden="true">✦</span></p>
+		</section>
+
+		<div class="blog-changelog-list-heading">
+			<h2>按日更新记录</h2>
+			<span>最新在上 · 点击任意条目可收起细节</span>
+		</div>
+
+		<ol class="blog-changelog-list">
+			{blogChangelogEntries.map((entry, index) => (
+				<li class="blog-changelog-entry" id={`blog-changelog-${entry.date}`}>
+					<div class="blog-changelog-date">
+						<time datetime={entry.date}>{entry.displayDate}</time>
+						<span>第 {blogChangelogEntries.length - index} 次记录</span>
+					</div>
+					<div class="blog-changelog-rail" aria-hidden="true"><span></span></div>
+					<article class={`blog-changelog-card blog-changelog-card--${entry.tone}`}>
+						<header class="blog-changelog-card__header">
+							<div class="blog-changelog-card__meta">
+								<div class="blog-changelog-card__labels">
+									<span class="blog-changelog-version">{entry.version}</span>
+									<span class={`blog-changelog-kind blog-changelog-kind--${entry.tone}`}>{entry.kind}</span>
+								</div>
+								<span>{entry.details.length} 条记录</span>
+							</div>
+							<h2>{entry.title}</h2>
+							<p>{entry.summary}</p>
+						</header>
+							<details class="blog-changelog-details" open>
+								<summary>
+									<span>查看当天详细记录</span>
+									<Icon is:inline name="material-symbols:keyboard-arrow-down-rounded" aria-hidden="true" />
+								</summary>
+								<div class="blog-change-points">
+									<div class="blog-change-points__inner">
+										{entry.details.map((detail, detailIndex) => (
+											<details class="blog-change-point" open>
+												<summary>
+													<span class="blog-change-point__number">{String(detailIndex + 1).padStart(2, "0")}</span>
+													<strong>{entry.tags[detailIndex % entry.tags.length]} · 具体变更</strong>
+													<Icon is:inline name="material-symbols:keyboard-arrow-down-rounded" aria-hidden="true" />
+												</summary>
+												<div class="blog-change-point__body">
+													<div class="blog-change-point__body-inner">
+														<div class="blog-change-point__body-copy"><p>{detail}</p></div>
+													</div>
+												</div>
+											</details>
+										))}
+									</div>
+								</div>
+							</details>
+						<div class="blog-changelog-tags" aria-label="更新标签">
+							{entry.tags.map((tag) => <span>{tag}</span>)}
+						</div>
+					</article>
+				</li>
+			))}
+		</ol>
+	</section>
+</MainGridLayout>
+
+<script is:inline>
+	(() => {
+		const runtimeKey = "__rainztBlogChangelogMotionV3";
+		const runtime = window[runtimeKey] || {
+			activeRoot: null,
+			observer: null,
+			eventsBound: false,
+		};
+
+		const clearMotion = () => {
+			runtime.observer?.disconnect();
+			runtime.observer = null;
+			runtime.activeRoot = null;
+		};
+
+		const getDetailsContent = (details) => {
+			if (details.classList.contains("blog-changelog-details")) {
+				return details.querySelector(":scope > .blog-change-points");
+			}
+			return details.querySelector(":scope > .blog-change-point__body");
+		};
+
+		const resetDetailsContent = (content) => {
+			["height", "grid-template-rows", "opacity", "overflow", "transition", "margin-top"].forEach((property) => {
+				content.style.removeProperty(property);
+			});
+		};
+
+		const animateDetails = (details) => {
+			const content = getDetailsContent(details);
+			if (!content || details.dataset.changelogAnimating === "true") return;
+
+			details.dataset.changelogAnimating = "true";
+			const duration = 420;
+			const finish = () => {
+				if (!details.open) details.removeAttribute("open");
+				resetDetailsContent(content);
+				delete details.dataset.changelogAnimating;
+			};
+
+			if (details.open) {
+				content.style.gridTemplateRows = "1fr";
+				content.style.opacity = "1";
+				content.style.overflow = "hidden";
+				content.style.transition = `grid-template-rows ${duration}ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms ease`;
+				void content.offsetHeight;
+				requestAnimationFrame(() => {
+					content.style.gridTemplateRows = "0fr";
+					content.style.opacity = "0";
+				});
+				window.setTimeout(() => {
+					details.open = false;
+					finish();
+				}, duration + 30);
+				return;
+			}
+
+			details.open = true;
+			content.style.gridTemplateRows = "0fr";
+			content.style.opacity = "0";
+			content.style.overflow = "hidden";
+			content.style.transition = `grid-template-rows ${duration}ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms ease`;
+			void content.offsetHeight;
+			requestAnimationFrame(() => {
+				content.style.gridTemplateRows = "1fr";
+				content.style.opacity = "1";
+			});
+			window.setTimeout(finish, duration + 30);
+		};
+
+		const bindDetailsMotion = (root) => {
+			root.querySelectorAll(".blog-changelog-details, .blog-change-point").forEach((details) => {
+				const content = getDetailsContent(details);
+				if (content) resetDetailsContent(content);
+				details.querySelector(":scope > summary")?.addEventListener("click", (event) => {
+					event.preventDefault();
+					animateDetails(details);
+				});
+			});
+		};
+
+		const initMotion = () => {
+			const root = document.querySelector(".blog-changelog-page");
+			if (!root) {
+				clearMotion();
+				return;
+			}
+			if (runtime.activeRoot === root) return;
+
+			clearMotion();
+			runtime.activeRoot = root;
+			root.classList.add("blog-changelog-motion-ready");
+			bindDetailsMotion(root);
+
+			const hero = root.querySelector(".blog-changelog-hero");
+			const nav = root.querySelector(".blog-changelog-nav");
+			requestAnimationFrame(() => requestAnimationFrame(() => {
+				hero?.classList.add("is-visible");
+				nav?.classList.add("is-visible");
+			}));
+
+			const entries = [...root.querySelectorAll(".blog-changelog-entry")];
+			const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+			if (reducedMotion || !("IntersectionObserver" in window)) {
+				entries.forEach((entry) => entry.classList.add("is-visible"));
+				return;
+			}
+
+			const observer = new IntersectionObserver((records) => {
+				records.forEach((record) => {
+					if (!record.isIntersecting) return;
+					record.target.classList.add("is-visible");
+					observer.unobserve(record.target);
+				});
+			}, { rootMargin: "0px 0px -10% 0px", threshold: 0.08 });
+
+			entries.forEach((entry, index) => {
+				entry.style.setProperty("--changelog-delay", `${Math.min(index, 7) * 45}ms`);
+				observer.observe(entry);
+			});
+			runtime.observer = observer;
+		};
+
+		if (!runtime.eventsBound) {
+			for (const eventName of ["astro:page-load", "astro:after-swap", "swup:contentReplaced", "swup:content:replace", "swup:page:view"]) {
+				document.addEventListener(eventName, initMotion);
+			}
+			document.addEventListener("astro:before-swap", clearMotion);
+			runtime.eventsBound = true;
+		}
+
+		window[runtimeKey] = runtime;
+		initMotion();
+	})();
+</script>
+
+<style>
+	.blog-changelog-motion-ready > .blog-changelog-hero,
+	.blog-changelog-motion-ready > .blog-changelog-nav {
+		opacity: 0;
+		transform: translateY(0.85rem);
+		transition: opacity 560ms cubic-bezier(0.22, 1, 0.36, 1), transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.blog-changelog-motion-ready > .blog-changelog-nav {
+		transition-delay: 70ms;
+	}
+
+	.blog-changelog-motion-ready > .blog-changelog-hero.is-visible,
+	.blog-changelog-motion-ready > .blog-changelog-nav.is-visible {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	.blog-changelog-motion-ready .blog-changelog-entry {
+		opacity: 0;
+		transform: translateY(1rem);
+		transition: opacity 560ms cubic-bezier(0.22, 1, 0.36, 1), transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+		transition-delay: var(--changelog-delay, 0ms);
+		will-change: opacity, transform;
+	}
+
+	.blog-changelog-motion-ready .blog-changelog-entry.is-visible {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	.blog-changelog-page {
+		width: 100%;
+		max-width: 74rem;
+		margin: 0 auto;
+		padding-bottom: 1.5rem;
+	}
+
+	.blog-changelog-hero {
+		position: relative;
+		overflow: hidden;
+		min-height: clamp(13rem, 20vw, 17rem);
+		padding: clamp(1.45rem, 3vw, 2.45rem);
+		border: 1px solid var(--line-divider);
+		background:
+			linear-gradient(90deg, rgb(255 255 255 / 96%) 0%, rgb(255 255 255 / 90%) 29%, rgb(255 255 255 / 47%) 61%, rgb(255 255 255 / 12%) 100%),
+			url("/assets/images/blog-changelog/blog-changelog-hero.png") center right / cover no-repeat !important;
+	}
+
+	:root.dark .blog-changelog-hero {
+		background:
+			linear-gradient(90deg, rgb(17 25 42 / 94%) 0%, rgb(17 25 42 / 86%) 30%, rgb(17 25 42 / 46%) 64%, rgb(17 25 42 / 16%) 100%),
+			url("/assets/images/blog-changelog/blog-changelog-hero.png") center right / cover no-repeat !important;
+	}
+
+	.blog-changelog-hero::after {
+		content: "";
+		position: absolute;
+		right: -8rem;
+		bottom: -10rem;
+		width: 22rem;
+		height: 22rem;
+		border-radius: 50%;
+		background: radial-gradient(circle, color-mix(in srgb, var(--primary) 15%, transparent), transparent 68%);
+		pointer-events: none;
+	}
+
+	.blog-changelog-hero__topline,
+	.blog-changelog-kicker,
+	.blog-changelog-nav,
+	.blog-changelog-stats,
+	.blog-changelog-card__meta,
+	.blog-changelog-details summary {
+		display: flex;
+		align-items: center;
+	}
+
+	.blog-changelog-hero__topline {
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.blog-changelog-hero__main {
+		position: relative;
+		z-index: 1;
+		margin-top: 1.05rem;
+	}
+
+	.blog-changelog-hero__copy {
+		min-width: 0;
+	}
+
+	.blog-changelog-kicker {
+		gap: 0.45rem;
+		color: var(--content-meta);
+		font-size: 0.65rem;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+	}
+
+	.blog-changelog-kicker > span:first-child {
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 50%;
+		background: var(--primary);
+		box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--primary) 15%, transparent);
+	}
+
+	.blog-changelog-nav a {
+		gap: 0.25rem;
+		color: var(--primary);
+		font-size: 0.72rem;
+		font-weight: 760;
+		text-decoration: none;
+	}
+
+	.blog-changelog-nav a:hover,
+	.blog-changelog-nav a:focus-visible {
+		color: var(--text-color);
+		outline: none;
+	}
+
+	.blog-changelog-hero h1 {
+		max-width: 12ch;
+		margin: 0 0 0.65rem;
+		color: var(--text-color);
+		font-size: clamp(2rem, 4vw, 3.2rem);
+		font-weight: 850;
+		letter-spacing: -0.035em;
+		line-height: 1.05;
+	}
+
+	.blog-changelog-hero__lead {
+		max-width: 68ch;
+		margin: 0;
+		color: var(--content-meta);
+		font-size: 0.92rem;
+		line-height: 1.85;
+	}
+
+	.blog-changelog-hero__rule {
+		margin: 0.72rem 0 0;
+		color: var(--primary);
+		font-size: 0.68rem;
+		font-weight: 720;
+		line-height: 1.6;
+	}
+
+	.blog-changelog-stats {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 0.7rem;
+		margin-top: 1rem;
+	}
+
+	.blog-changelog-stats span {
+		display: grid;
+		min-height: 4.7rem;
+		grid-template-columns: auto minmax(0, 1fr);
+		grid-template-rows: auto auto;
+		column-gap: 0.65rem;
+		align-content: center;
+		align-items: center;
+		padding: 0.7rem 0.85rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 15%, var(--line-divider));
+		border-radius: 0.8rem;
+		background: color-mix(in srgb, var(--card-bg) 92%, var(--primary));
+		color: var(--content-meta);
+		font-size: 0.64rem;
+	}
+
+	.blog-changelog-stats svg {
+		grid-row: 1 / span 2;
+		color: var(--primary);
+		font-size: 1.45rem;
+	}
+
+	.blog-changelog-stats strong {
+		color: var(--primary);
+		font-size: clamp(1rem, 2vw, 1.35rem);
+		font-weight: 850;
+		line-height: 1;
+		white-space: nowrap;
+	}
+
+	.blog-changelog-stats small {
+		font-size: 0.67rem;
+		line-height: 1.3;
+	}
+
+	.blog-changelog-nav {
+		justify-content: space-between;
+		gap: 0.8rem;
+		margin: 1rem 0 0;
+		padding: 0.78rem 1rem;
+		border: 1px solid var(--line-divider);
+		background-color: var(--card-bg) !important;
+		color: var(--content-meta);
+		font-size: 0.68rem;
+	}
+
+	.blog-changelog-nav__back {
+		display: inline-flex;
+	}
+
+	.blog-changelog-growth {
+		margin-top: 1rem;
+		padding: clamp(1.05rem, 2vw, 1.45rem);
+		border: 1px solid var(--line-divider);
+		background-color: var(--card-bg) !important;
+	}
+
+	.blog-changelog-section-heading,
+	.blog-changelog-section-heading > div {
+		display: flex;
+		align-items: center;
+	}
+
+	.blog-changelog-section-heading {
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.blog-changelog-section-heading > div {
+		gap: 0.58rem;
+	}
+
+	.blog-changelog-section-heading__mark {
+		width: 0.56rem;
+		height: 1rem;
+		border-radius: 0.2rem;
+		background: linear-gradient(90deg, var(--primary) 0 34%, transparent 34% 66%, var(--primary) 66% 100%);
+		box-shadow: 0 0.35rem 0.7rem color-mix(in srgb, var(--primary) 28%, transparent);
+	}
+
+	.blog-changelog-section-heading h2,
+	.blog-changelog-list-heading h2 {
+		margin: 0;
+		color: var(--text-color);
+		font-size: 1rem;
+		font-weight: 820;
+		letter-spacing: -0.02em;
+	}
+
+	.blog-changelog-section-heading > span,
+	.blog-changelog-list-heading > span {
+		color: var(--content-meta);
+		font-size: 0.66rem;
+	}
+
+	.blog-changelog-milestones {
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+		gap: 0.6rem;
+		margin: 1.25rem 0 0;
+		padding: 0 0.1rem;
+		list-style: none;
+	}
+
+	.blog-changelog-milestones::before {
+		content: "";
+		position: absolute;
+		left: 6%;
+		right: 6%;
+		top: 0.36rem;
+		height: 2px;
+		background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 22%, var(--line-divider)), var(--primary), color-mix(in srgb, var(--primary) 22%, var(--line-divider)));
+	}
+
+	.blog-changelog-milestones li {
+		position: relative;
+		display: grid;
+		justify-items: center;
+		gap: 0.22rem;
+		min-width: 0;
+		text-align: center;
+	}
+
+	.blog-changelog-milestones li::before {
+		content: "";
+		position: relative;
+		z-index: 1;
+		width: 0.72rem;
+		height: 0.72rem;
+		margin-bottom: -0.05rem;
+		border: 2px solid var(--card-bg);
+		border-radius: 50%;
+		background: color-mix(in srgb, var(--primary) 68%, white);
+		box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary) 14%, transparent);
+	}
+
+	.blog-changelog-milestones li.is-current::before {
+		background: var(--primary);
+		box-shadow: 0 0 0 0.22rem color-mix(in srgb, var(--primary) 17%, transparent), 0 0.35rem 0.7rem color-mix(in srgb, var(--primary) 24%, transparent);
+	}
+
+	.blog-changelog-milestone__topline {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.blog-changelog-milestone__topline strong {
+		color: var(--text-color);
+		font-size: 0.72rem;
+		font-weight: 820;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.blog-changelog-milestones li.is-current .blog-changelog-milestone__topline strong,
+	.blog-changelog-milestones li.is-current .blog-changelog-milestone__topline svg {
+		color: var(--primary);
+	}
+
+	.blog-changelog-milestones li.is-current .blog-changelog-milestone__topline svg {
+		position: absolute;
+		top: -1.18rem;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: 1rem;
+		filter: drop-shadow(0 0.2rem 0.25rem color-mix(in srgb, var(--primary) 22%, transparent));
+	}
+
+	.blog-changelog-milestone__topline svg {
+		font-size: 0.9rem;
+	}
+
+	.blog-changelog-milestone__date,
+	.blog-changelog-milestone__label {
+		color: var(--content-meta);
+		font-size: 0.62rem;
+		line-height: 1.35;
+	}
+
+	.blog-changelog-milestone__label {
+		color: var(--text-color);
+		font-size: 0.67rem;
+	}
+
+	.blog-changelog-growth__note {
+		margin: 0.9rem 0 0 auto;
+		width: fit-content;
+		max-width: 15rem;
+		color: color-mix(in srgb, var(--primary) 78%, var(--text-color));
+		font-family: "STKaiti", "KaiTi", cursive;
+		font-size: 0.76rem;
+		line-height: 1.5;
+		transform: rotate(-2deg);
+	}
+
+	.blog-changelog-growth__note span {
+		color: #f3a64b;
+	}
+
+	.blog-changelog-list-heading {
+		display: flex;
+		align-items: baseline;
+		gap: 0.7rem;
+		margin: 1.35rem 0 0.72rem;
+	}
+
+	.blog-changelog-list {
+		position: relative;
+		display: grid;
+		gap: 1.15rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.blog-changelog-list::before {
+		content: "";
+		position: absolute;
+		left: 8.15rem;
+		top: 0.7rem;
+		bottom: 0.7rem;
+		width: 1px;
+		background: linear-gradient(to bottom, color-mix(in srgb, var(--primary) 38%, var(--line-divider)), var(--line-divider));
+	}
+
+	.blog-changelog-entry {
+		display: grid;
+		grid-template-columns: 7.25rem 1.8rem minmax(0, 1fr);
+		gap: 0.9rem;
+		min-width: 0;
+	}
+
+	.blog-changelog-date {
+		display: grid;
+		align-content: start;
+		justify-items: end;
+		gap: 0.28rem;
+		padding-top: 0.8rem;
+		text-align: right;
+	}
+
+	.blog-changelog-date time {
+		color: var(--text-color);
+		font-size: 0.72rem;
+		font-weight: 780;
+		line-height: 1.35;
+		white-space: nowrap;
+	}
+
+	.blog-changelog-date span {
+		color: var(--content-meta);
+		font-size: 0.62rem;
+		line-height: 1.35;
+	}
+
+	.blog-changelog-rail {
+		position: relative;
+		display: flex;
+		justify-content: center;
+		min-height: 100%;
+	}
+
+	.blog-changelog-rail span {
+		position: relative;
+		z-index: 1;
+		width: 0.7rem;
+		height: 0.7rem;
+		margin-top: 0.88rem;
+		border: 2px solid var(--card-bg);
+		border-radius: 999px;
+		background: var(--primary);
+		box-shadow: 0 0 0 0.22rem color-mix(in srgb, var(--primary) 13%, transparent);
+	}
+
+	.blog-changelog-card {
+		min-width: 0;
+		padding: 1rem 1.1rem;
+		border: 1px solid var(--line-divider);
+		border-radius: 0.9rem;
+		background-color: var(--card-bg) !important;
+		box-shadow: 0 0.5rem 1.2rem rgb(58 91 137 / 4%);
+	}
+
+	.blog-changelog-card__header {
+		display: grid;
+		gap: 0.42rem;
+	}
+
+	.blog-changelog-card__meta {
+		justify-content: space-between;
+		gap: 0.6rem;
+		color: var(--content-meta);
+		font-size: 0.64rem;
+	}
+
+	.blog-changelog-card__labels {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		min-width: 0;
+	}
+
+	.blog-changelog-version {
+		color: var(--primary);
+		font-size: 0.68rem;
+		font-weight: 850;
+		letter-spacing: 0.02em;
+		white-space: nowrap;
+	}
+
+	.blog-changelog-kind {
+		display: inline-flex;
+		align-items: center;
+		min-height: 1.45rem;
+		padding: 0.2rem 0.45rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line-divider));
+		border-radius: 0.4rem;
+		background-color: var(--card-bg);
+		color: var(--primary);
+		font-size: 0.62rem;
+		font-weight: 780;
+		line-height: 1.2;
+	}
+
+	.blog-changelog-kind--mint { border-color: color-mix(in srgb, #42c7b0 22%, var(--line-divider)); background: color-mix(in srgb, #42c7b0 8%, var(--card-bg)); color: #159b8b; }
+	.blog-changelog-kind--gold { border-color: color-mix(in srgb, #f0b933 24%, var(--line-divider)); background: color-mix(in srgb, #f0b933 9%, var(--card-bg)); color: #b37a05; }
+	.blog-changelog-kind--violet { border-color: color-mix(in srgb, #8b78db 22%, var(--line-divider)); background: color-mix(in srgb, #8b78db 8%, var(--card-bg)); color: #7361c8; }
+
+	.blog-changelog-card h2 {
+		margin: 0;
+		color: var(--text-color);
+		font-size: 0.97rem;
+		font-weight: 780;
+		letter-spacing: -0.015em;
+		line-height: 1.45;
+	}
+
+	.blog-changelog-card__header > p {
+		margin: 0;
+		color: var(--content-meta);
+		font-size: 0.76rem;
+		line-height: 1.72;
+	}
+
+	.blog-changelog-details {
+		margin-top: 0.8rem;
+		border-top: 1px solid var(--line-divider);
+	}
+
+	.blog-changelog-details summary {
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding-top: 0.68rem;
+		color: var(--primary);
+		font-size: 0.7rem;
+		font-weight: 760;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.blog-changelog-details summary::-webkit-details-marker { display: none; }
+	.blog-changelog-details > summary svg { font-size: 1rem; transition: transform 180ms ease; }
+	.blog-changelog-details[open] > summary svg { transform: rotate(180deg); }
+	.blog-changelog-details:not([open]) > summary svg { transform: rotate(0deg); }
+	.blog-changelog-details summary:focus-visible { outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent); outline-offset: 0.2rem; border-radius: 0.25rem; }
+	.blog-changelog-details > .blog-change-points {
+		display: grid;
+		grid-template-rows: minmax(0, 1fr);
+		overflow: hidden;
+		margin-top: 0.7rem;
+		opacity: 1;
+		transition: grid-template-rows 420ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms ease;
+	}
+	.blog-changelog-details:not([open]) > .blog-change-points {
+		grid-template-rows: 0fr;
+		opacity: 0;
+	}
+
+	.blog-change-points__inner {
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.62rem;
+	}
+
+	.blog-change-point {
+		min-width: 0;
+		padding: 0 0.8rem 0.8rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 17%, var(--line-divider));
+		border-radius: 0.75rem;
+		background-color: var(--card-bg) !important;
+		box-shadow: 0 0.25rem 0.75rem rgb(58 91 137 / 3%);
+		transition: border-color 180ms ease;
+	}
+
+	.blog-change-point > summary {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.58rem;
+		min-height: 2.4rem;
+		padding: 0.58rem 0;
+		color: var(--text-color);
+		font-size: 0.68rem;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.blog-change-point > summary::-webkit-details-marker { display: none; }
+
+	.blog-change-point > summary svg {
+		margin-left: auto;
+		color: var(--content-meta);
+		font-size: 0.95rem;
+		transition: transform 180ms ease;
+	}
+
+	.blog-change-point[open] > summary svg { transform: rotate(180deg); }
+	.blog-change-point:not([open]) > summary svg { transform: rotate(0deg); }
+
+	.blog-change-point__number {
+		display: inline-grid;
+		width: 1.5rem;
+		height: 1.5rem;
+		place-items: center;
+		border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--line-divider));
+		border-radius: 0.35rem;
+		background-color: var(--card-bg);
+		color: var(--primary);
+		font-size: 0.6rem;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.blog-change-point__body {
+		display: grid;
+		grid-template-rows: minmax(0, 1fr);
+		min-height: 0;
+		box-sizing: border-box;
+		overflow: hidden;
+		opacity: 1;
+		transition: grid-template-rows 420ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms ease;
+	}
+
+	.blog-change-point:not([open]) > .blog-change-point__body {
+		grid-template-rows: 0fr;
+		opacity: 0;
+	}
+
+	.blog-change-point__body-inner {
+		min-height: 0;
+		overflow: hidden;
+	}
+
+	.blog-change-point__body-copy {
+		border-top: 1px solid var(--line-divider);
+		padding: 0.58rem 0.05rem 0 2.22rem;
+	}
+
+	.blog-change-point__body p {
+		margin: 0;
+		min-height: 0;
+		overflow: hidden;
+		color: var(--content-meta);
+		font-size: 0.72rem;
+		line-height: 1.72;
+	}
+
+	.blog-changelog-tags {
+		display: flex;
+		gap: 0.28rem;
+		flex-wrap: wrap;
+		margin-top: 0.72rem;
+	}
+
+	.blog-changelog-tags span {
+		border: 1px solid var(--line-divider);
+		padding: 0.2rem 0.38rem;
+		border-radius: 0.35rem;
+		background-color: var(--card-bg);
+		color: var(--btn-content);
+		font-size: 0.6rem;
+		line-height: 1.2;
+	}
+
+	@media (max-width: 700px) {
+		.blog-changelog-hero__topline { align-items: flex-start; flex-direction: column; }
+		.blog-changelog-hero {
+			min-height: 17rem;
+			padding: 1.25rem;
+			background-position: 72% center !important;
+		}
+		.blog-changelog-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+		.blog-changelog-stats span { min-height: 4.35rem; padding-inline: 0.7rem; }
+		.blog-changelog-nav { align-items: flex-start; flex-wrap: wrap; }
+		.blog-changelog-nav > span { order: 3; width: 100%; }
+		.blog-changelog-growth { padding: 1rem; }
+		.blog-changelog-section-heading { align-items: flex-start; flex-direction: column; gap: 0.35rem; }
+		.blog-changelog-milestones { grid-template-columns: 1fr; gap: 0.72rem; margin-top: 1rem; padding-left: 0.05rem; }
+		.blog-changelog-milestones::before { left: 0.32rem; right: auto; top: 0.35rem; bottom: 0.35rem; width: 2px; height: auto; background: linear-gradient(to bottom, color-mix(in srgb, var(--primary) 28%, var(--line-divider)), var(--primary), color-mix(in srgb, var(--primary) 20%, var(--line-divider))); }
+		.blog-changelog-milestones li { grid-template-columns: 1rem minmax(0, 1fr); grid-template-rows: auto auto; justify-items: start; column-gap: 0.72rem; row-gap: 0.08rem; text-align: left; }
+		.blog-changelog-milestones li::before { grid-row: 1 / span 2; grid-column: 1; margin-top: 0.28rem; }
+		.blog-changelog-milestone__topline { grid-column: 2; grid-row: 1; }
+		.blog-changelog-milestone__date { grid-column: 2; grid-row: 2; }
+		.blog-changelog-milestone__label { grid-column: 2; grid-row: 3; margin-top: 0.12rem; }
+		.blog-changelog-list-heading { align-items: flex-start; flex-direction: column; gap: 0.22rem; }
+		.blog-changelog-list::before { left: 6.05rem; }
+		.blog-changelog-entry { grid-template-columns: 5.3rem 1rem minmax(0, 1fr); gap: 0.52rem; }
+		.blog-changelog-date { justify-items: start; text-align: left; }
+		.blog-changelog-card { padding: 0.78rem; }
+		.blog-changelog-date time { font-size: 0.66rem; white-space: normal; }
+		.blog-changelog-date span, .blog-changelog-card__meta, .blog-changelog-kind { font-size: 0.58rem; }
+		.blog-changelog-card h2 { font-size: 0.88rem; }
+		.blog-changelog-card__header > p { font-size: 0.7rem; }
+		.blog-change-points__inner { gap: 0.58rem; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.blog-changelog-motion-ready > .blog-changelog-hero,
+		.blog-changelog-motion-ready > .blog-changelog-nav,
+		.blog-changelog-motion-ready .blog-changelog-entry {
+			opacity: 1;
+			transform: none;
+			transition: none;
+			will-change: auto;
+		}
+		.blog-changelog-details > .blog-change-points,
+		.blog-change-point__body,
+		.blog-changelog-details > summary svg,
+		.blog-change-point > summary svg {
+			transition: none;
+		}
+	}
+</style>

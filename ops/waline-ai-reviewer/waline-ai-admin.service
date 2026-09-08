@@ -1,0 +1,41 @@
+[Unit]
+Description=Rainzt Waline AI Reviewer Admin
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=waline-ai-reviewer
+Group=waline-ai-reviewer
+StateDirectory=waline-ai-reviewer
+StateDirectoryMode=0700
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 /opt/waline-ai-reviewer/admin_server.py --runtime /var/lib/waline-ai-reviewer/runtime.json --key-file /var/lib/waline-ai-reviewer/siliconflow.key --password-file /var/lib/waline-ai-reviewer/admin-password.json --smtp-config /etc/waline-ai-reviewer/smtp.json --sessions-file /var/lib/waline-ai-reviewer/admin-sessions.json --reviewer-config /etc/waline-ai-reviewer/config.json --origin https://rainzt.cn --asset-root /www/wwwroot/firefly
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectProc=invisible
+RestrictRealtime=yes
+LockPersonality=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+MemoryDenyWriteExecute=yes
+ReadOnlyPaths=/opt/waline-ai-reviewer /opt/waline/data /www/wwwroot/firefly
+ReadWritePaths=/var/lib/waline-ai-reviewer
+
+[Install]
+WantedBy=multi-user.target

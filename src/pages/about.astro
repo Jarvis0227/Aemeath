@@ -1,0 +1,1535 @@
+---
+import { getEntry, render } from "astro:content";
+import { Icon } from "astro-icon/components";
+import Markdown from "@components/common/Markdown.astro";
+import ImageWrapper from "@/components/common/ImageWrapper.astro";
+import { getEnabledFriends, profileConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+const aboutPost = await getEntry("spec", "about");
+
+if (!aboutPost) {
+	throw new Error("About page content not found");
+}
+
+const { Content } = await render(aboutPost);
+const friendCount = getEnabledFriends().length;
+
+const changelogEntries = [
+	{
+		title: "博客视觉与友链体验",
+		description: "把友链、朋友圈、开屏动画和评论区的视觉连接重新梳理成一套更完整的体验。",
+		href: "/blog-changelog/",
+		tags: ["Aemeath V3.0.2", "UI"],
+		tone: "blue",
+		icon: "material-symbols:auto-awesome-rounded",
+	},
+	{
+		title: "站点版本整理",
+		description: "统一关于我、导航和站点信息中的博客版本展示，让每个入口都说同一种语言。",
+		href: "/blog-changelog/",
+		tags: ["Aemeath V3.0.2", "维护"],
+		tone: "mint",
+		icon: "material-symbols:history-rounded",
+	},
+	{
+		title: "朋友圈 RSS 聚合",
+		description: "把友链博客最近写下的文章收进一条持续发生的时间线。",
+		href: "/moments/",
+		tags: ["Aemeath V3.0.2", "RSS"],
+		tone: "gold",
+		icon: "material-symbols:rss-feed-rounded",
+	},
+	{
+		title: "正在持续记录",
+		description: "项目复盘、踩坑经验与商业化思考，会继续在这里慢慢留下。",
+		href: "/blog-changelog/",
+		tags: ["Aemeath V3.0.2", "持续更新"],
+		tone: "violet",
+		icon: "material-symbols:edit-note-rounded",
+	},
+];
+
+const personalProjects = [
+	{
+		title: "Ai 全自动上架",
+		description: "面向跨境电商的批量发布中枢，把表格、图库、视频与店铺流程串成可复盘的自动化链路。",
+		tags: ["AI", "自动化", "跨境电商"],
+		tone: "blue",
+		icon: "material-symbols:auto-awesome-rounded",
+	},
+	{
+		title: "Rain（记账）",
+		description: "一款轻量的个人记账工具，把日常收支、分类和复盘整理成自己的节奏。",
+		tags: ["效率工具", "生活记录"],
+		tone: "mint",
+		icon: "material-symbols:history-rounded",
+	},
+	{
+		title: "Ai 画布智能体",
+		description: "把产品图、提示词、参考风格与生成结果组织进可编排、可追溯的无限画布。",
+		tags: ["AI", "工作流", "图片生成"],
+		tone: "gold",
+		icon: "material-symbols:auto-awesome-rounded",
+	},
+	{
+		title: "个人博客",
+		description: "记录技术实践、工具复盘与生活思考，把做过的事情慢慢整理成可以回看的文字。",
+		tags: ["Astro", "写作", "持续更新"],
+		tone: "violet",
+		icon: "material-symbols:edit-note-rounded",
+	},
+	{
+		title: "未完待续",
+		description: "小项目比较多，几十个了；还会继续把新的想法做出来，再把它们慢慢收进这里。",
+		tags: ["个人项目", "进行中"],
+		tone: "gold",
+		icon: "material-symbols:history-rounded",
+	},
+];
+
+const recentActivity = [
+	{
+		kind: "文章",
+		title: "从母系社会到父权制度：亲缘、私有制与现代性别关系的演变",
+		href: "/posts/from-matriarchal-society-to-patriarchy/",
+	},
+	{
+		kind: "文章",
+		title: "朝朝听雨，岁岁有风",
+		href: "/posts/chao-chao-listening-rain-years-wind/",
+	},
+	{
+		kind: "系统",
+		title: "朋友圈 RSS 聚合与 GitHub Actions 刷新",
+		href: "/moments/",
+	},
+];
+
+const interests = ["效率工具", "AI 工程化", "跨境电商", "开源", "网络安全", "逆向工程"];
+const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok", "BigSeller"];
+const serverStatusEndpoint = import.meta.env.DEV ? "/api/server-status.json" : "/api/server-status.php";
+const serverStats = [
+	{
+		key: "cpu",
+		label: "处理器",
+		value: "2 vCPU",
+		detail: "AMD EPYC 7A23",
+		icon: "material-symbols:memory-rounded",
+	},
+	{
+		key: "memory",
+		label: "内存",
+		value: "3.8 GiB",
+		detail: "可用约 1.5 GiB",
+		icon: "material-symbols:memory-alt-rounded",
+	},
+	{
+		key: "disk",
+		label: "存储",
+		value: "99 GB",
+		detail: "已用约 25 GB",
+		icon: "material-symbols:database",
+	},
+	{
+		key: "system",
+		label: "系统",
+		value: "Debian 12",
+		detail: "Linux 6.1 · x86_64",
+		icon: "material-symbols:dns",
+	},
+];
+---
+
+<MainGridLayout title={i18n(I18nKey.about)} description={i18n(I18nKey.about)}>
+	<!--
+		ABOUT DESIGN CONTRACT
+		THESIS: 用 GitHub profile / README 的信息秩序呈现朝朝听雨，而不是再造一个独立的壁纸英雄页。
+		WORLD: 轻量边框、标签、状态行与项目列表；蓝色代表本站，金色代表被认真打磨的项目，薄荷色代表 RSS 连接。
+		FIRST VIEWPORT: 先看到头像、身份、简介与行动入口，再看到 README 标签页与置顶项目。
+		FINISH: 桌面双栏，手机单列；所有项目、友链与朋友圈入口保持可触达。
+	-->
+	<section class="github-profile" aria-labelledby="about-title">
+		<header class="profile-header card-base onload-animation">
+			<div class="profile-header__main">
+				<div class="profile-avatar" aria-hidden="true">
+					<ImageWrapper
+						src={profileConfig.avatar || ""}
+						alt={profileConfig.name}
+						class="profile-avatar__image"
+						loading="eager"
+						widths={[160, 320]}
+						sizes="6rem"
+					/>
+				</div>
+				<div class="profile-identity">
+					<div class="profile-kicker">
+						<span class="profile-kicker__dot"></span>
+						<span>PUBLIC PROFILE</span>
+						<span class="profile-kicker__divider">/</span>
+						<span>RAINZT.CN</span>
+					</div>
+					<h1 id="about-title">朝朝听雨</h1>
+					<p class="profile-handle">Rain · 独立开发者 / 博客作者</p>
+					<p class="profile-lead">把真实业务问题，拆成能被工具、文字和时间重新组织的答案。</p>
+					<div class="profile-status" aria-label="当前状态">
+						<span class="profile-status__dot"></span>
+						<span>正在构建效率工具，也在持续写作</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="profile-actions" aria-label="个人主页操作">
+				<a class="profile-action profile-action--primary" href="https://github.com/Jarvis0227" target="_blank" rel="noopener noreferrer">
+					<Icon is:inline name="fa7-brands:github" aria-hidden="true" />
+					<span>查看 GitHub</span>
+					<Icon is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" />
+				</a>
+				<a class="profile-action" href="/guestbook/">
+					<Icon is:inline name="material-symbols:chat-bubble-outline-rounded" aria-hidden="true" />
+					<span>去留言</span>
+				</a>
+			</div>
+		</header>
+
+		<nav class="profile-tabs" aria-label="关于我页面导航">
+			<a class="profile-tab profile-tab--active" href="/about/" aria-current="page">
+				<Icon is:inline name="material-symbols:person-outline-rounded" aria-hidden="true" />
+				<span>个人资料</span>
+			</a>
+			<a class="profile-tab" href="/blog-changelog/">
+				<Icon is:inline name="material-symbols:history-rounded" aria-hidden="true" />
+				<span>博客日志</span>
+			</a>
+			<a class="profile-tab" href="/friends/">
+				<Icon is:inline name="material-symbols:link-rounded" aria-hidden="true" />
+				<span>友链</span>
+				<em>{friendCount}</em>
+			</a>
+			<a class="profile-tab" href="/moments/">
+				<Icon is:inline name="material-symbols:rss-feed-rounded" aria-hidden="true" />
+				<span>朋友圈</span>
+			</a>
+		</nav>
+
+		<div class="profile-layout">
+			<main class="profile-main">
+				<section class="profile-panel profile-readme card-base" aria-labelledby="readme-title">
+					<header class="profile-panel__header">
+						<div class="profile-panel__title">
+							<Icon is:inline name="material-symbols:menu-book-rounded" aria-hidden="true" />
+							<h2 id="readme-title">README.md</h2>
+						</div>
+						<span class="profile-panel__meta">公开 · 持续更新</span>
+					</header>
+					<div class="profile-readme__body">
+						<p class="profile-readme__quote">“物物而不物于物，念念而不念于念。”</p>
+						<Markdown class="profile-markdown">
+							<Content />
+						</Markdown>
+					</div>
+				</section>
+
+				<section class="profile-panel card-base" aria-labelledby="personal-projects-title">
+					<header class="profile-section-heading">
+						<div>
+							<p class="profile-section-kicker">MY PROJECTS</p>
+							<h2 id="personal-projects-title">本人项目</h2>
+						</div>
+						<span class="profile-section-note">持续迭代中</span>
+					</header>
+					<div class="project-grid">
+						{personalProjects.map((project) => (
+							<article class:list={["project-card", `project-card--${project.tone}`]}>
+								<span class="project-card__icon" aria-hidden="true"><Icon is:inline name={project.icon} /></span>
+								<span class="project-card__body">
+									<strong>{project.title}</strong>
+									<span>{project.description}</span>
+									<span class="project-card__tags">
+										{project.tags.map((tag) => <em>{tag}</em>)}
+									</span>
+								</span>
+							</article>
+						))}
+					</div>
+				</section>
+
+				<section class="profile-panel card-base" aria-labelledby="pinned-title">
+					<header class="profile-section-heading">
+						<div>
+							<p class="profile-section-kicker">LATEST CHANGES</p>
+							<h2 id="pinned-title">更新摘要</h2>
+						</div>
+						<a href="/blog-changelog/" class="profile-section-link">按日查看 <Icon is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" /></a>
+					</header>
+					<div class="project-grid">
+						{changelogEntries.map((project) => (
+							<a class:list={["project-card", `project-card--${project.tone}`]} href={project.href}>
+								<span class="project-card__icon" aria-hidden="true"><Icon is:inline name={project.icon} /></span>
+								<span class="project-card__body">
+									<strong>{project.title}</strong>
+									<span>{project.description}</span>
+									<span class="project-card__tags">
+										{project.tags.map((tag) => <em>{tag}</em>)}
+									</span>
+								</span>
+								<Icon class="project-card__arrow" is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" />
+							</a>
+						))}
+					</div>
+				</section>
+
+				<section class="profile-panel card-base" aria-labelledby="activity-title">
+					<header class="profile-section-heading">
+						<div>
+							<p class="profile-section-kicker">RECENT ACTIVITY</p>
+							<h2 id="activity-title">最近的提交</h2>
+						</div>
+						<span class="profile-section-note">写下来的，才会留下</span>
+					</header>
+					<ul class="activity-list">
+						{recentActivity.map((item) => (
+							<li>
+								<span class="activity-marker" aria-hidden="true"></span>
+								<span class="activity-kind">{item.kind}</span>
+								<a href={item.href}>{item.title}</a>
+								<Icon class="activity-arrow" is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" />
+							</li>
+						))}
+					</ul>
+				</section>
+			</main>
+
+			<aside class="profile-sidebar" aria-label="个人资料补充信息">
+				<section class="profile-panel profile-side-panel card-base" aria-labelledby="interests-title">
+					<header class="profile-side-heading">
+						<Icon is:inline name="material-symbols:explore-rounded" aria-hidden="true" />
+						<h2 id="interests-title">正在关注</h2>
+					</header>
+					<p>从一线业务里找值得自动化的摩擦，也从文章和开源项目里找新的解法。</p>
+					<div class="chip-list">
+						{interests.map((item) => <span>{item}</span>)}
+					</div>
+				</section>
+
+				<section class="profile-panel profile-side-panel card-base" aria-labelledby="stack-title">
+					<header class="profile-side-heading">
+						<Icon is:inline name="material-symbols:terminal-rounded" aria-hidden="true" />
+						<h2 id="stack-title">技术轨迹</h2>
+					</header>
+					<div class="stack-list">
+						{stack.map((item) => <span>{item}</span>)}
+					</div>
+					<p class="profile-side-note">工具会变化，解决问题的方式会留下。</p>
+				</section>
+
+				<section class="profile-panel profile-side-panel card-base" aria-labelledby="connect-title">
+					<header class="profile-side-heading">
+						<Icon is:inline name="material-symbols:alternate-email-rounded" aria-hidden="true" />
+						<h2 id="connect-title">保持联系</h2>
+					</header>
+					<div class="profile-connect-list">
+						<a href="https://github.com/Jarvis0227" target="_blank" rel="noopener noreferrer"><Icon is:inline name="fa7-brands:github" aria-hidden="true" /><span>GitHub</span><Icon class="profile-connect-arrow" is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" /></a>
+						<a href="https://space.bilibili.com/473321504" target="_blank" rel="noopener noreferrer"><Icon is:inline name="simple-icons:bilibili" aria-hidden="true" /><span>Bilibili</span><Icon class="profile-connect-arrow" is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" /></a>
+						<a href="mailto:1953549196@qq.com"><Icon is:inline name="fa7-solid:envelope" aria-hidden="true" /><span>1953549196@qq.com</span><Icon class="profile-connect-arrow" is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" /></a>
+					</div>
+				</section>
+
+				<section class="profile-panel profile-side-panel profile-server-panel card-base" aria-labelledby="server-title" data-server-metrics data-server-endpoint={serverStatusEndpoint}>
+					<header class="profile-side-heading profile-server-heading">
+						<Icon is:inline name="material-symbols:cloud-outline" aria-hidden="true" />
+						<h2 id="server-title">服务器状态</h2>
+						<span class="server-status" data-server-status><span aria-hidden="true"></span><span data-server-status-text>连接中</span></span>
+					</header>
+					<div class="server-stat-list">
+						{serverStats.map((stat) => (
+							<div class="server-stat" data-server-stat={stat.key}>
+								<span class="server-stat__icon" aria-hidden="true"><Icon is:inline name={stat.icon} /></span>
+								<span class="server-stat__copy">
+									<strong>{stat.label}</strong>
+									<small data-server-detail>{stat.detail}</small>
+								</span>
+								<strong class="server-stat__value" data-server-value>{stat.value}</strong>
+								<span class="server-stat__meter" aria-hidden="true"><span data-server-meter></span></span>
+							</div>
+						))}
+					</div>
+					<p class="profile-side-note server-note" data-server-note>实时刷新 · 每 1 秒更新一次</p>
+				</section>
+			</aside>
+		</div>
+
+		<footer class="profile-footer card-base">
+			<div>
+				<span class="profile-footer__eyebrow">OPEN SOURCE, OPEN CHANNEL</span>
+				<strong>如果你也在把想法变成东西，欢迎来坐坐。</strong>
+			</div>
+			<div class="profile-footer__links">
+				<a href="/friends/">认识友链 <Icon is:inline name="material-symbols:arrow-right-alt-rounded" aria-hidden="true" /></a>
+				<a href="/moments/">看看朋友圈 <Icon is:inline name="material-symbols:arrow-right-alt-rounded" aria-hidden="true" /></a>
+			</div>
+		</footer>
+	</section>
+</MainGridLayout>
+
+<script is:inline>
+	(() => {
+		const runtimeKey = "__rainztAboutServerRuntime";
+		const runtime = window[runtimeKey] || {
+			activeRoot: null,
+			cleanup: null,
+			eventsBound: false,
+			hooksBound: false,
+			scheduledFrame: 0,
+		};
+
+		const clearActiveRuntime = () => {
+			if (typeof runtime.cleanup === "function") runtime.cleanup();
+			runtime.cleanup = null;
+			runtime.activeRoot = null;
+		};
+
+		const clampPercent = (value) => Math.min(100, Math.max(0, Number(value) || 0));
+		const formatBytes = (bytes) => {
+			const value = Number(bytes);
+			if (!Number.isFinite(value) || value <= 0) return "--";
+			const units = ["B", "KiB", "MiB", "GiB", "TiB"];
+			let size = value;
+			let unit = 0;
+			while (size >= 1024 && unit < units.length - 1) {
+				size /= 1024;
+				unit += 1;
+			}
+			return `${size.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+		};
+
+		const setupServerMetrics = () => {
+			const root = document.querySelector("[data-server-metrics]");
+			if (!root) {
+				clearActiveRuntime();
+				return;
+			}
+			if (runtime.activeRoot === root) return;
+
+			clearActiveRuntime();
+			runtime.activeRoot = root;
+
+			const endpoint = root.dataset.serverEndpoint || "/api/server-status.php";
+			const status = root.querySelector("[data-server-status]");
+			const statusText = root.querySelector("[data-server-status-text]");
+			const note = root.querySelector("[data-server-note]");
+			let timer;
+			let refreshInFlight = false;
+			let hasReceivedMetrics = false;
+			let requestController;
+			const cleanups = [];
+			runtime.cleanup = () => {
+				for (const cleanup of cleanups.splice(0)) cleanup();
+				runtime.activeRoot = null;
+			};
+
+			const setStatus = (state, text) => {
+				if (status) status.dataset.state = state;
+				if (statusText) statusText.textContent = text;
+			};
+
+			const setMetric = (key, value, detail, percent) => {
+				const item = root.querySelector(`[data-server-stat="${key}"]`);
+				if (!item) return;
+				const valueElement = item.querySelector("[data-server-value]");
+				const detailElement = item.querySelector("[data-server-detail]");
+				const meter = item.querySelector("[data-server-meter]");
+				if (valueElement) valueElement.textContent = value;
+				if (detailElement) detailElement.textContent = detail;
+				if (meter && percent !== null) meter.style.setProperty("--meter-scale", String(clampPercent(percent) / 100));
+			};
+
+			const applyMetrics = (data) => {
+				const cpu = data.cpu || {};
+				const memory = data.memory || {};
+				const disk = data.disk || {};
+				const system = data.system || {};
+				const cpuUsage = Number(cpu.usage);
+				const memoryUsage = Number(memory.usage);
+				const diskUsage = Number(disk.usage);
+				const load = Number(cpu.load1);
+				const cores = Number(cpu.cores);
+
+				setMetric(
+					"cpu",
+					Number.isFinite(cpuUsage) ? `${cpuUsage.toFixed(1)}%` : "--",
+					`${Number.isFinite(cores) ? `${cores} vCPU` : "CPU"} · ${cpu.model || ""} · 负载 ${Number.isFinite(load) ? load.toFixed(2) : "--"}`,
+					cpuUsage,
+				);
+				setMetric(
+					"memory",
+					Number.isFinite(memoryUsage) ? `${memoryUsage.toFixed(1)}%` : "--",
+					`${formatBytes(memory.usedBytes)} / ${formatBytes(memory.totalBytes)} · 可用 ${formatBytes(memory.availableBytes)}`,
+					memoryUsage,
+				);
+				setMetric(
+					"disk",
+					Number.isFinite(diskUsage) ? `${diskUsage.toFixed(1)}%` : "--",
+					`${formatBytes(disk.usedBytes)} / ${formatBytes(disk.totalBytes)} · 可用 ${formatBytes(disk.availableBytes)}`,
+					diskUsage,
+				);
+				setMetric(
+					"system",
+					system.name || "Linux",
+					`${system.kernel || ""}${system.arch ? ` · ${system.arch}` : ""}`,
+					null,
+				);
+
+				if (note) {
+					const stamp = data.timestamp ? new Date(data.timestamp).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "刚刚";
+					note.textContent = `实时刷新 · 最近更新 ${stamp} · 每 1 秒检查一次`;
+				}
+			};
+
+			const refresh = async () => {
+				if (refreshInFlight) return;
+				refreshInFlight = true;
+				if (!hasReceivedMetrics) setStatus("loading", "连接中");
+				requestController?.abort();
+				requestController = new AbortController();
+				try {
+					const separator = endpoint.includes("?") ? "&" : "?";
+					const response = await fetch(`${endpoint}${separator}t=${Date.now()}`, {
+						cache: "no-store",
+						headers: { Accept: "application/json" },
+						signal: requestController.signal,
+					});
+					if (!response.ok) throw new Error(`server status ${response.status}`);
+					const data = await response.json();
+					if (!data?.ok) throw new Error("invalid server status response");
+					applyMetrics(data);
+					hasReceivedMetrics = true;
+					setStatus("online", "在线");
+				} catch (error) {
+					if (error?.name === "AbortError") return;
+					setStatus("offline", "暂不可用");
+					if (note) note.textContent = "实时接口未连接 · 当前保留规格信息";
+				} finally {
+					refreshInFlight = false;
+				}
+			};
+
+			refresh();
+			timer = window.setInterval(refresh, 1_000);
+			cleanups.push(() => {
+				window.clearInterval(timer);
+				requestController?.abort();
+			});
+		};
+
+		const scheduleServerMetricsInit = () => {
+			if (runtime.scheduledFrame) cancelAnimationFrame(runtime.scheduledFrame);
+			runtime.scheduledFrame = requestAnimationFrame(() => {
+				runtime.scheduledFrame = 0;
+				setupServerMetrics();
+			});
+		};
+
+		const bindSwupHooks = () => {
+			if (runtime.hooksBound || !window.swup?.hooks) return;
+			window.swup.hooks.on("visit:start", clearActiveRuntime);
+			window.swup.hooks.on("content:replace", scheduleServerMetricsInit);
+			window.swup.hooks.on("page:view", scheduleServerMetricsInit);
+			runtime.hooksBound = true;
+		};
+
+		if (!runtime.eventsBound) {
+			for (const eventName of [
+				"astro:page-load",
+				"astro:after-swap",
+				"swup:contentReplaced",
+				"swup:content:replace",
+				"swup:page:view",
+			]) {
+				document.addEventListener(eventName, scheduleServerMetricsInit);
+			}
+			document.addEventListener("astro:before-swap", clearActiveRuntime);
+			document.addEventListener("swup:enable", bindSwupHooks);
+			runtime.eventsBound = true;
+		}
+
+		bindSwupHooks();
+		window[runtimeKey] = runtime;
+		scheduleServerMetricsInit();
+	})();
+</script>
+
+<style>
+	.github-profile {
+		display: grid;
+		gap: 1rem;
+		width: 100%;
+		padding-bottom: 0.5rem;
+	}
+
+	.profile-header,
+	.profile-panel,
+	.profile-footer {
+		border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--line-divider));
+		box-shadow: 0 0.7rem 1.8rem rgb(58 91 137 / 6%);
+	}
+
+	.profile-header {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 1.5rem;
+		padding: clamp(1.1rem, 2.5vw, 1.65rem);
+	}
+
+	.profile-header__main {
+		display: flex;
+		align-items: flex-start;
+		gap: 1.15rem;
+		min-width: 0;
+	}
+
+	.profile-avatar {
+		width: 6.25rem;
+		height: 6.25rem;
+		flex: 0 0 auto;
+		padding: 0.22rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--line-divider));
+		border-radius: 1.2rem;
+		background: color-mix(in srgb, var(--primary) 8%, var(--card-bg));
+		box-shadow: 0 0.55rem 1.2rem color-mix(in srgb, var(--primary) 12%, transparent);
+	}
+
+	:global(.profile-avatar__image) {
+		width: 100%;
+		height: 100%;
+		border-radius: 0.95rem;
+		background: var(--card-bg);
+	}
+
+	:global(.profile-avatar__image img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.profile-identity {
+		min-width: 0;
+	}
+
+	.profile-kicker,
+	.profile-footer__eyebrow,
+	.profile-section-kicker {
+		display: flex;
+		align-items: center;
+		gap: 0.42rem;
+		margin: 0;
+		color: var(--content-meta);
+		font-size: 0.64rem;
+		font-weight: 780;
+		letter-spacing: 0.12em;
+		line-height: 1.3;
+		text-transform: uppercase;
+	}
+
+	.profile-kicker__dot,
+	.profile-status__dot {
+		width: 0.48rem;
+		height: 0.48rem;
+		flex: 0 0 auto;
+		border-radius: 50%;
+		background: #34c759;
+		box-shadow: 0 0 0 0.22rem rgb(52 199 89 / 14%);
+	}
+
+	.profile-kicker__divider {
+		color: color-mix(in srgb, var(--content-meta) 45%, transparent);
+	}
+
+	.profile-identity h1 {
+		margin: 0.55rem 0 0;
+		color: var(--text-color);
+		font-size: clamp(1.7rem, 3.2vw, 2.35rem);
+		font-weight: 800;
+		letter-spacing: -0.04em;
+		line-height: 1.1;
+	}
+
+	.profile-handle {
+		margin: 0.3rem 0 0;
+		color: var(--content-meta);
+		font-size: 0.9rem;
+	}
+
+	.profile-lead {
+		max-width: 42rem;
+		margin: 0.75rem 0 0;
+		color: var(--text-color);
+		font-size: 0.97rem;
+		line-height: 1.7;
+	}
+
+	.profile-status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.48rem;
+		margin-top: 0.75rem;
+		color: var(--content-meta);
+		font-size: 0.76rem;
+	}
+
+	.profile-status__dot {
+		width: 0.38rem;
+		height: 0.38rem;
+		box-shadow: none;
+	}
+
+	.profile-actions {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.55rem;
+		min-width: 9.2rem;
+	}
+
+	.profile-action {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.48rem;
+		min-height: 2.35rem;
+		padding: 0.55rem 0.8rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--line-divider));
+		border-radius: 0.65rem;
+		background: color-mix(in srgb, var(--card-bg) 90%, var(--primary) 10%);
+		color: var(--btn-content);
+		font-size: 0.78rem;
+		font-weight: 720;
+		text-decoration: none;
+		transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+	}
+
+	.profile-action svg:first-child {
+		font-size: 1rem;
+	}
+
+	.profile-action svg:last-child {
+		margin-left: auto;
+		font-size: 0.9rem;
+		opacity: 0.68;
+	}
+
+	.profile-action--primary {
+		border-color: color-mix(in srgb, var(--primary) 65%, var(--line-divider));
+		background: var(--primary);
+		color: #fff;
+	}
+
+	.profile-action:hover,
+	.profile-action:focus-visible {
+		border-color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 15%, var(--card-bg));
+		transform: translateY(-1px);
+		outline: none;
+	}
+
+	.profile-action--primary:hover,
+	.profile-action--primary:focus-visible {
+		background: color-mix(in srgb, var(--primary) 86%, #0b5a8b);
+		color: #fff;
+	}
+
+	.profile-tabs {
+		display: flex;
+		align-items: stretch;
+		gap: 0.25rem;
+		min-height: 3rem;
+		overflow-x: auto;
+		border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--line-divider));
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+		box-shadow: 0 0.35rem 1rem rgb(58 91 137 / 4%);
+		scrollbar-width: none;
+	}
+
+	.profile-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	.profile-tab {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.42rem;
+		min-width: max-content;
+		padding: 0.78rem 0.9rem 0.68rem;
+		border-bottom: 2px solid transparent;
+		border-radius: 0.72rem 0.72rem 0 0;
+		color: var(--content-meta);
+		font-size: 0.8rem;
+		font-weight: 680;
+		text-decoration: none;
+		transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
+	}
+
+	.profile-tab svg {
+		font-size: 1rem;
+	}
+
+	.profile-tab em {
+		min-width: 1.25rem;
+		padding: 0.1rem 0.32rem;
+		border-radius: 999px;
+		background: var(--btn-regular-bg);
+		color: var(--btn-content);
+		font-size: 0.65rem;
+		font-style: normal;
+		line-height: 1.25;
+		text-align: center;
+	}
+
+	.profile-tab:hover,
+	.profile-tab:focus-visible,
+	.profile-tab--active {
+		border-bottom-color: var(--primary);
+		color: var(--primary);
+		outline: none;
+	}
+
+	.profile-layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(15rem, 18rem);
+		align-items: start;
+		gap: 1rem;
+	}
+
+	.profile-main,
+	.profile-sidebar {
+		display: grid;
+		gap: 1rem;
+		min-width: 0;
+	}
+
+	.profile-panel {
+		padding: clamp(1rem, 2.5vw, 1.45rem);
+	}
+
+	.profile-panel__header,
+	.profile-section-heading,
+	.profile-side-heading {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.8rem;
+	}
+
+	.profile-panel__title,
+	.profile-side-heading {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+	}
+
+	.profile-panel__title svg,
+	.profile-side-heading svg {
+		flex: 0 0 auto;
+		color: var(--primary);
+		font-size: 1.08rem;
+	}
+
+	.profile-panel__title h2,
+	.profile-section-heading h2,
+	.profile-side-heading h2 {
+		margin: 0;
+		color: var(--text-color);
+		font-size: 1rem;
+		font-weight: 780;
+		letter-spacing: -0.015em;
+	}
+
+	.profile-panel__meta,
+	.profile-section-note {
+		color: var(--content-meta);
+		font-size: 0.68rem;
+		white-space: nowrap;
+	}
+
+	.profile-readme__body {
+		margin-top: 1.1rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--line-divider);
+	}
+
+	.profile-readme__quote {
+		margin: 0 0 1.15rem;
+		padding: 0.8rem 1rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line-divider));
+		border-radius: 0 0.7rem 0.7rem 0;
+		background: color-mix(in srgb, var(--primary) 7%, var(--card-bg));
+		color: var(--text-color);
+		font-size: clamp(1rem, 1.8vw, 1.18rem);
+		font-weight: 700;
+		line-height: 1.7;
+	}
+
+	.profile-markdown {
+		margin: 0;
+		color: var(--content-meta);
+	}
+
+	.profile-markdown :global(h1) {
+		display: none;
+	}
+
+	.profile-markdown :global(p) {
+		max-width: 72ch;
+		margin: 0.85rem 0 0;
+		font-size: 0.92rem;
+		line-height: 1.9;
+	}
+
+	.profile-markdown :global(p:first-of-type) {
+		margin-top: 0;
+	}
+
+	.profile-markdown :global(strong) {
+		color: color-mix(in srgb, var(--primary) 80%, var(--text-color));
+	}
+
+	.profile-section-heading {
+		align-items: flex-end;
+		margin-bottom: 1rem;
+	}
+
+	.profile-section-heading > div {
+		display: grid;
+		gap: 0.25rem;
+	}
+
+	.profile-section-kicker {
+		color: var(--primary);
+		font-size: 0.6rem;
+	}
+
+	.profile-section-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		color: var(--content-meta);
+		font-size: 0.72rem;
+		text-decoration: none;
+	}
+
+	.profile-section-link:hover,
+	.profile-section-link:focus-visible {
+		color: var(--primary);
+		outline: none;
+	}
+
+	.project-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.7rem;
+	}
+
+	.project-card {
+		display: grid;
+		grid-template-columns: 2rem minmax(0, 1fr) auto;
+		align-items: start;
+		gap: 0.7rem;
+		min-width: 0;
+		padding: 0.82rem;
+		border: 1px solid var(--line-divider);
+		border-radius: 0.78rem;
+		background: color-mix(in srgb, var(--card-bg) 95%, var(--primary) 5%);
+		color: inherit;
+		text-decoration: none;
+		transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+	}
+
+	.project-card:hover,
+	.project-card:focus-visible {
+		border-color: color-mix(in srgb, var(--primary) 48%, var(--line-divider));
+		background: color-mix(in srgb, var(--primary) 7%, var(--card-bg));
+		box-shadow: 0 0.55rem 1.25rem color-mix(in srgb, var(--primary) 10%, transparent);
+		transform: translateY(-2px);
+		outline: none;
+	}
+
+	.project-card__icon {
+		display: grid;
+		place-items: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 0.6rem;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+		font-size: 1.1rem;
+	}
+
+	.project-card--gold .project-card__icon {
+		background: color-mix(in srgb, #f0b933 20%, transparent);
+		color: #c48a08;
+	}
+
+	.project-card--mint .project-card__icon {
+		background: color-mix(in srgb, #42c7b0 18%, transparent);
+		color: #159b8b;
+	}
+
+	.project-card--violet .project-card__icon {
+		background: color-mix(in srgb, #8b78db 17%, transparent);
+		color: #7361c8;
+	}
+
+	.project-card__body {
+		display: grid;
+		gap: 0.35rem;
+		min-width: 0;
+	}
+
+	.project-card__body > strong {
+		overflow: hidden;
+		color: var(--text-color);
+		font-size: 0.88rem;
+		font-weight: 760;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.project-card__body > span:not(.project-card__tags) {
+		display: -webkit-box;
+		overflow: hidden;
+		color: var(--content-meta);
+		font-size: 0.74rem;
+		line-height: 1.55;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+	}
+
+	.project-card__tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+	}
+
+	.project-card__tags em {
+		padding: 0.18rem 0.34rem;
+		border-radius: 0.35rem;
+		background: var(--btn-regular-bg);
+		color: var(--btn-content);
+		font-size: 0.6rem;
+		font-style: normal;
+		line-height: 1.2;
+	}
+
+	.project-card__arrow,
+	.activity-arrow {
+		color: var(--content-meta);
+		font-size: 0.95rem;
+		transition: color 180ms ease, transform 180ms ease;
+	}
+
+	.project-card:hover .project-card__arrow,
+	.project-card:focus-visible .project-card__arrow,
+	.activity-list li:hover .activity-arrow {
+		color: var(--primary);
+		transform: translate(0.1rem, -0.1rem);
+	}
+
+	.activity-list {
+		display: grid;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.activity-list li {
+		display: grid;
+		grid-template-columns: 0.5rem 2.3rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.6rem;
+		min-width: 0;
+		padding: 0.72rem 0;
+		border-top: 1px solid var(--line-divider);
+	}
+
+	.activity-marker {
+		width: 0.42rem;
+		height: 0.42rem;
+		border-radius: 50%;
+		background: var(--primary);
+		box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--primary) 13%, transparent);
+	}
+
+	.activity-kind {
+		color: var(--content-meta);
+		font-size: 0.68rem;
+		font-weight: 720;
+	}
+
+	.activity-list a {
+		overflow: hidden;
+		color: var(--text-color);
+		font-size: 0.8rem;
+		text-decoration: none;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.activity-list a:hover,
+	.activity-list a:focus-visible {
+		color: var(--primary);
+		outline: none;
+	}
+
+	.profile-side-panel {
+		padding: 1rem;
+	}
+
+	.profile-side-heading {
+		justify-content: flex-start;
+		padding-bottom: 0.75rem;
+		border-bottom: 1px solid var(--line-divider);
+	}
+
+	.profile-side-panel > p {
+		margin: 0.85rem 0 0;
+		color: var(--content-meta);
+		font-size: 0.76rem;
+		line-height: 1.75;
+	}
+
+	.chip-list,
+	.stack-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+		margin-top: 0.8rem;
+	}
+
+	.chip-list span,
+	.stack-list span {
+		padding: 0.28rem 0.5rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--line-divider));
+		border-radius: 0.45rem;
+		background: color-mix(in srgb, var(--primary) 6%, var(--card-bg));
+		color: var(--btn-content);
+		font-size: 0.65rem;
+		line-height: 1.2;
+	}
+
+	.stack-list span {
+		border-color: color-mix(in srgb, #42c7b0 18%, var(--line-divider));
+		background: color-mix(in srgb, #42c7b0 7%, var(--card-bg));
+	}
+
+	.profile-side-note {
+		font-size: 0.7rem !important;
+	}
+
+	.profile-server-heading {
+		justify-content: flex-start;
+	}
+
+	.server-status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		flex: 0 0 auto;
+		margin-left: auto;
+		color: #159b62;
+		font-size: 0.66rem;
+		font-weight: 720;
+		white-space: nowrap;
+	}
+
+	.server-status > span:first-child {
+		width: 0.42rem;
+		height: 0.42rem;
+		border-radius: 999px;
+		background: #34c759;
+		box-shadow: 0 0 0 0.2rem rgb(52 199 89 / 14%);
+	}
+
+	.server-status[data-state="loading"] {
+		color: var(--content-meta);
+	}
+
+	.server-status[data-state="loading"] > span:first-child {
+		background: #f2b94b;
+		box-shadow: 0 0 0 0.2rem rgb(242 185 75 / 14%);
+	}
+
+	.server-status[data-state="offline"] {
+		color: #c5782e;
+	}
+
+	.server-status[data-state="offline"] > span:first-child {
+		background: #e19a45;
+		box-shadow: 0 0 0 0.2rem rgb(225 154 69 / 14%);
+	}
+
+	.server-stat-list {
+		display: grid;
+		gap: 0.35rem;
+		margin-top: 0.8rem;
+	}
+
+	.server-stat {
+		display: grid;
+		grid-template-columns: 1.45rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+		padding: 0.5rem 0.45rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 10%, var(--line-divider));
+		border-radius: 0.55rem;
+		background: color-mix(in srgb, var(--card-bg) 96%, var(--primary) 4%);
+	}
+
+	.server-stat__icon {
+		display: grid;
+		place-items: center;
+		width: 1.35rem;
+		height: 1.35rem;
+		border-radius: 0.42rem;
+		background: color-mix(in srgb, var(--primary) 11%, transparent);
+		color: var(--primary);
+		font-size: 0.9rem;
+	}
+
+	.server-stat__copy {
+		display: grid;
+		gap: 0.08rem;
+		min-width: 0;
+	}
+
+	.server-stat__copy strong {
+		overflow: hidden;
+		color: var(--text-color);
+		font-size: 0.72rem;
+		font-weight: 720;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.server-stat__copy small {
+		overflow: hidden;
+		color: var(--content-meta);
+		font-size: 0.62rem;
+		line-height: 1.35;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.server-stat__value {
+		color: var(--text-color);
+		font-size: 0.72rem;
+		font-weight: 780;
+		white-space: nowrap;
+	}
+
+	.server-stat__meter {
+		display: block;
+		grid-column: 2 / -1;
+		height: 0.24rem;
+		overflow: hidden;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, var(--line-divider));
+	}
+
+	.server-stat__meter > span {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border-radius: inherit;
+		background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 68%, #fff), var(--primary));
+		transform: scaleX(var(--meter-scale, 0));
+		transform-origin: left center;
+		transition: transform 420ms ease;
+	}
+
+	.server-stat[data-server-stat="system"] .server-stat__meter {
+		display: none;
+	}
+
+	.server-note {
+		margin-top: 0.7rem !important;
+		font-size: 0.62rem !important;
+		line-height: 1.5 !important;
+	}
+
+	.profile-connect-list {
+		display: grid;
+		gap: 0.4rem;
+		margin-top: 0.8rem;
+	}
+
+	.profile-connect-list a {
+		display: grid;
+		grid-template-columns: 1.1rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.45rem;
+		min-width: 0;
+		padding: 0.47rem 0.45rem;
+		border-radius: 0.45rem;
+		color: var(--content-meta);
+		font-size: 0.74rem;
+		text-decoration: none;
+		transition: background-color 180ms ease, color 180ms ease;
+	}
+
+	.profile-connect-list a:hover,
+	.profile-connect-list a:focus-visible {
+		background: color-mix(in srgb, var(--primary) 8%, var(--card-bg));
+		color: var(--primary);
+		outline: none;
+	}
+
+	.profile-connect-list a > span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.profile-connect-arrow {
+		font-size: 0.82rem;
+	}
+
+	.profile-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 1rem 1.2rem;
+		background: color-mix(in srgb, var(--primary) 5%, var(--card-bg));
+	}
+
+	.profile-footer > div:first-child {
+		display: grid;
+		gap: 0.35rem;
+	}
+
+	.profile-footer__eyebrow {
+		color: var(--primary);
+		font-size: 0.58rem;
+	}
+
+	.profile-footer strong {
+		color: var(--text-color);
+		font-size: 0.86rem;
+		font-weight: 680;
+	}
+
+	.profile-footer__links {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 0.45rem;
+	}
+
+	.profile-footer__links a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.45rem 0.6rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--line-divider));
+		border-radius: 0.5rem;
+		color: var(--primary);
+		font-size: 0.7rem;
+		text-decoration: none;
+		transition: background-color 180ms ease, border-color 180ms ease;
+	}
+
+	.profile-footer__links a:hover,
+	.profile-footer__links a:focus-visible {
+		border-color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 10%, var(--card-bg));
+		outline: none;
+	}
+
+	@media (max-width: 900px) {
+		.profile-header {
+			grid-template-columns: 1fr;
+		}
+
+		.profile-actions {
+			flex-direction: row;
+			min-width: 0;
+		}
+
+		.profile-action {
+			flex: 1 1 0;
+		}
+
+		.profile-layout {
+			grid-template-columns: 1fr;
+		}
+
+		.profile-sidebar {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.profile-side-panel:last-child {
+			grid-column: 1 / -1;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.github-profile {
+			gap: 0.75rem;
+		}
+
+		.profile-header {
+			gap: 1rem;
+			padding: 1rem;
+		}
+
+		.profile-header__main {
+			gap: 0.85rem;
+		}
+
+		.profile-avatar {
+			width: 4.75rem;
+			height: 4.75rem;
+			border-radius: 1rem;
+		}
+
+		.profile-identity h1 {
+			font-size: 1.55rem;
+		}
+
+		.profile-kicker {
+			font-size: 0.56rem;
+			letter-spacing: 0.08em;
+		}
+
+		.profile-kicker__divider,
+		.profile-kicker span:last-child {
+			display: none;
+		}
+
+		.profile-handle {
+			font-size: 0.78rem;
+		}
+
+		.profile-lead {
+			margin-top: 0.6rem;
+			font-size: 0.84rem;
+			line-height: 1.65;
+		}
+
+		.profile-status {
+			margin-top: 0.6rem;
+			font-size: 0.68rem;
+		}
+
+		.profile-actions {
+			gap: 0.45rem;
+		}
+
+		.profile-action {
+			min-height: 2.2rem;
+			padding-inline: 0.55rem;
+			font-size: 0.72rem;
+		}
+
+		.profile-tabs {
+			min-height: 2.8rem;
+			margin-inline: -0.1rem;
+			border-radius: 0.85rem;
+		}
+
+		.profile-tab {
+			padding: 0.7rem 0.65rem 0.58rem;
+			font-size: 0.72rem;
+		}
+
+		.profile-panel {
+			padding: 0.9rem;
+			border-radius: 0.95rem;
+		}
+
+		.profile-panel__meta,
+		.profile-section-note,
+		.profile-section-link {
+			font-size: 0.62rem;
+		}
+
+		.profile-readme__quote {
+			padding: 0.7rem 0.8rem;
+			font-size: 0.92rem;
+		}
+
+		.profile-markdown :global(p) {
+			font-size: 0.86rem;
+			line-height: 1.8;
+		}
+
+		.project-grid,
+		.profile-sidebar {
+			grid-template-columns: 1fr;
+		}
+
+		.profile-side-panel:last-child {
+			grid-column: auto;
+		}
+
+		.project-card {
+			grid-template-columns: 1.85rem minmax(0, 1fr) auto;
+			gap: 0.58rem;
+			padding: 0.72rem;
+		}
+
+		.project-card__icon {
+			width: 1.85rem;
+			height: 1.85rem;
+			font-size: 1rem;
+		}
+
+		.project-card__body > strong {
+			font-size: 0.83rem;
+		}
+
+		.project-card__body > span:not(.project-card__tags) {
+			font-size: 0.7rem;
+		}
+
+		.activity-list li {
+			grid-template-columns: 0.45rem 2rem minmax(0, 1fr) auto;
+			gap: 0.45rem;
+		}
+
+		.activity-list a {
+			font-size: 0.74rem;
+		}
+
+		.profile-footer {
+			align-items: flex-start;
+			flex-direction: column;
+			padding: 0.9rem;
+		}
+
+		.profile-footer__links {
+			justify-content: flex-start;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.profile-action,
+		.project-card,
+		.profile-connect-list a,
+		.profile-footer__links a {
+			transition: none;
+		}
+
+		.profile-action:hover,
+		.project-card:hover {
+			transform: none;
+		}
+	}
+</style>

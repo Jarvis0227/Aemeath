@@ -1,0 +1,1074 @@
+/* Compact paper-style homepage layer for fullscreen wallpaper mode. */
+.home-wallpaper-decor {
+	--home-wallpaper-motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+	position: absolute;
+	inset: 0;
+	display: none;
+	overflow: hidden;
+	pointer-events: none;
+	isolation: isolate;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 260ms ease;
+}
+
+.home-wallpaper-decor.is-ready {
+	opacity: 1;
+	visibility: visible;
+}
+
+html[data-wallpaper-mode="fullscreen"]
+	#wallpaper-wrapper.homepage-fullscreen-decor
+	.home-wallpaper-decor {
+	display: block;
+}
+
+/* The original banner copy stays available in banner mode, but fullscreen uses the compact card instead. */
+html[data-wallpaper-mode="fullscreen"]
+	#wallpaper-wrapper.homepage-fullscreen-decor
+	.banner-home-text-overlay {
+	display: none !important;
+}
+
+html[data-banner-title-enabled="false"]
+	#wallpaper-wrapper.homepage-fullscreen-decor
+	.home-wallpaper-decor {
+	display: none !important;
+}
+
+html.is-page-transitioning .home-wallpaper-decor {
+	opacity: 0;
+}
+
+@keyframes home-wallpaper-backdrop-enter {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+#wallpaper-wrapper.homepage-fullscreen-decor {
+	animation: none;
+}
+
+#wallpaper-wrapper.homepage-fullscreen-decor.home-wallpaper-motion-ready {
+	animation: home-wallpaper-backdrop-enter 900ms ease-out both;
+}
+
+html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
+	animation: none;
+}
+
+@keyframes home-wallpaper-card-enter {
+	from {
+		opacity: 0;
+		transform: translate(-50%, calc(-50% + 22px)) scale(0.965);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+}
+
+@keyframes home-wallpaper-content-enter {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes home-wallpaper-sticker-enter {
+	from {
+		opacity: 0;
+		transform: translateY(20px) scale(0.82)
+			rotate(var(--home-wallpaper-sticker-rotation));
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1)
+			rotate(var(--home-wallpaper-sticker-rotation));
+	}
+}
+
+@keyframes home-wallpaper-note-enter {
+	from {
+		opacity: 0;
+		transform: translateY(-14px) rotate(8deg) scale(0.86);
+	}
+	to {
+		opacity: 1;
+		transform: rotate(4deg) scale(1);
+	}
+}
+
+@keyframes home-wallpaper-note-enter-mobile {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -14px) rotate(8deg) scale(0.86);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(-50%) rotate(4deg) scale(1);
+	}
+}
+
+@keyframes home-wallpaper-tag-enter {
+	from {
+		opacity: 0;
+		transform: translateY(16px) scale(0.86)
+			rotate(var(--home-wallpaper-tag-rotation));
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1)
+			rotate(var(--home-wallpaper-tag-rotation));
+	}
+}
+
+.home-wallpaper-decor.is-ready .home-wallpaper-card {
+	animation: home-wallpaper-card-enter 760ms var(--home-wallpaper-motion-ease)
+		both;
+	animation-delay: 80ms;
+}
+
+.home-wallpaper-decor.is-ready .home-wallpaper-card__avatar-wrap,
+.home-wallpaper-decor.is-ready .home-wallpaper-card__identity,
+.home-wallpaper-decor.is-ready .home-wallpaper-card h1,
+.home-wallpaper-decor.is-ready .home-wallpaper-card__subtitle,
+.home-wallpaper-decor.is-ready .home-wallpaper-card__nav {
+	animation: home-wallpaper-content-enter 520ms var(--home-wallpaper-motion-ease)
+		both;
+}
+
+.home-wallpaper-decor.is-ready .home-wallpaper-card__avatar-wrap {
+	animation-delay: 210ms;
+}
+
+.home-wallpaper-decor.is-ready .home-wallpaper-card__identity {
+	animation-delay: 300ms;
+}
+
+.home-wallpaper-decor.is-ready .home-wallpaper-card h1 {
+	animation-delay: 360ms;
+}
+
+.home-wallpaper-decor.is-ready .home-wallpaper-card__subtitle {
+	animation-delay: 430ms;
+}
+
+.home-wallpaper-decor.is-ready .home-wallpaper-card__nav {
+	animation-delay: 500ms;
+}
+
+.home-wallpaper-decor.is-ready .home-wallpaper-card__social-link {
+	--home-wallpaper-tag-rotation: 2deg;
+	--home-wallpaper-tag-delay: 570ms;
+	animation: home-wallpaper-tag-enter 620ms var(--home-wallpaper-motion-ease)
+		both;
+	animation-delay: var(--home-wallpaper-tag-delay);
+}
+
+.home-wallpaper-decor.is-ready
+	.home-wallpaper-card__social-link:nth-child(2) {
+	--home-wallpaper-tag-rotation: -2deg;
+	--home-wallpaper-tag-delay: 625ms;
+}
+
+.home-wallpaper-decor.is-ready
+	.home-wallpaper-card__social-link:nth-child(3) {
+	--home-wallpaper-tag-delay: 680ms;
+}
+
+.home-wallpaper-decor.is-ready
+	.home-wallpaper-card__social-link:nth-child(4) {
+	--home-wallpaper-tag-delay: 735ms;
+}
+
+.home-wallpaper-decor.is-ready
+	.home-wallpaper-card__social-link:nth-child(5) {
+	--home-wallpaper-tag-delay: 790ms;
+}
+
+.home-wallpaper-decor.is-ready .is-motion-settled {
+	animation: none !important;
+	opacity: 1 !important;
+}
+
+.home-wallpaper-card {
+	--home-wallpaper-wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='8' viewBox='0 0 18 8'%3E%3Cpath d='M0 4C1.5 1.1 3 1.1 4.5 4S7.5 6.9 9 4S12 1.1 13.5 4S16.5 6.9 18 4' fill='none' stroke='%23f2b3bf' stroke-linecap='round' stroke-width='3.2' opacity='.52'/%3E%3Cpath d='M0 3.5C1.5 1.1 3 1.1 4.5 3.5S7.5 5.9 9 3.5S12 1.1 13.5 3.5S16.5 5.9 18 3.5' fill='none' stroke='%23fff9ef' stroke-linecap='round' stroke-width='1.55'/%3E%3C/svg%3E");
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	z-index: 2;
+	width: min(calc(100vw - 2rem), 520px);
+	padding: 2.2rem 2.15rem 0;
+	color: rgba(255, 250, 243, 0.96);
+	text-align: center;
+	transform: translate(-50%, -50%);
+	isolation: isolate;
+	pointer-events: auto;
+}
+
+.home-wallpaper-card::before {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	content: "";
+	background: transparent;
+	border: 1px dashed rgba(255, 246, 219, 0.2);
+	border-radius: 10px 7px 12px 8px;
+	box-shadow:
+		0 22px 54px rgba(17, 17, 25, 0.2),
+		0 7px 20px rgba(17, 17, 25, 0.12),
+		0 0 26px rgba(17, 17, 25, 0.08),
+		inset 0 1px 0 rgba(255, 255, 255, 0.1);
+	-webkit-backdrop-filter: blur(2px) saturate(1.02);
+	backdrop-filter: blur(2px) saturate(1.02);
+	transform: rotate(-0.45deg);
+}
+
+.home-wallpaper-card::after {
+	position: absolute;
+	top: -10px;
+	left: 50%;
+	width: 84px;
+	height: 20px;
+	content: "";
+	background: repeating-linear-gradient(
+		-45deg,
+		rgba(255, 244, 184, 0.82) 0 5px,
+		rgba(239, 206, 111, 0.82) 5px 10px
+	);
+	box-shadow: 0 2px 5px rgba(41, 33, 25, 0.12);
+	transform: translateX(-50%) rotate(0.6deg);
+}
+
+.home-wallpaper-card__content {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.home-wallpaper-card__avatar-wrap {
+	position: relative;
+	flex: 0 0 auto;
+	width: 64px;
+	height: 64px;
+}
+
+.home-wallpaper-card__avatar {
+	width: 100%;
+	height: 100%;
+	border: 1px solid rgba(255, 255, 255, 0.78);
+	border-radius: 15px;
+	background: rgba(255, 255, 255, 0.82);
+	box-shadow: 0 6px 16px rgba(23, 26, 36, 0.18);
+}
+
+.home-wallpaper-card__avatar img {
+	opacity: 1;
+	object-fit: cover;
+}
+
+.home-wallpaper-card__avatar-sticker {
+	position: absolute;
+	top: -0.65rem;
+	left: calc(100% - 0.95rem);
+	z-index: 2;
+	display: block;
+	width: 78px;
+	max-width: none;
+	height: auto;
+	cursor: grab;
+	pointer-events: auto;
+	filter: drop-shadow(0 5px 7px rgba(28, 22, 28, 0.25));
+}
+
+#wallpaper-wrapper.wallpaper-fullscreen
+	.home-wallpaper-card__avatar-sticker {
+	width: 78px !important;
+	height: auto !important;
+	max-width: none !important;
+	max-height: none !important;
+	object-fit: contain !important;
+}
+
+.no-banner-layout #wallpaper-wrapper.wallpaper-fullscreen
+	img.home-wallpaper-card__avatar-sticker {
+	width: 78px !important;
+	height: auto !important;
+	max-width: none !important;
+	max-height: none !important;
+	object-fit: contain !important;
+	object-position: center !important;
+	overflow: visible !important;
+	filter: drop-shadow(0 5px 7px rgba(28, 22, 28, 0.25)) !important;
+}
+
+.home-wallpaper-card__avatar-sticker:active,
+.home-wallpaper-card__avatar-sticker.is-dragging {
+	cursor: grabbing;
+}
+
+.home-wallpaper-card__avatar-sticker {
+	cursor: default;
+	pointer-events: none;
+}
+
+.home-wallpaper-card__identity {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	margin: 0.78rem 0 0.3rem;
+	font-size: 0.76rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-shadow: 0 1px 8px rgba(23, 17, 20, 0.35);
+}
+
+.home-wallpaper-card__identity-mark {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	background: #f2b3bf;
+	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+	transform: rotate(15deg);
+}
+
+.home-wallpaper-card h1 {
+	display: inline-block;
+	margin: 0;
+	font-size: clamp(2.1rem, 4.2vw, 3.35rem);
+	font-weight: 750;
+	line-height: 1;
+	letter-spacing: -0.035em;
+	text-shadow: 0 3px 12px rgba(18, 17, 22, 0.42);
+}
+
+.home-wallpaper-card__subtitle {
+	display: inline-block;
+	position: relative;
+	max-width: 34rem;
+	margin: 0.75rem 0 0;
+	font-size: 0.92rem;
+	line-height: 1.6;
+	color: rgba(255, 247, 236, 0.92);
+	text-shadow: 0 2px 8px rgba(18, 17, 22, 0.36);
+}
+
+.home-wallpaper-card__identity,
+.home-wallpaper-card h1,
+.home-wallpaper-card__subtitle {
+	transition:
+		color 180ms ease,
+		text-shadow 180ms ease;
+}
+
+.home-wallpaper-card__motion-text {
+	display: inline-block;
+	transform-origin: center;
+	transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.home-wallpaper-card h1 {
+	position: relative;
+}
+
+.home-wallpaper-card h1::after,
+.home-wallpaper-card__subtitle::after {
+	position: absolute;
+	left: 0.04em;
+	right: 0.04em;
+	bottom: -0.28rem;
+	height: 0.38rem;
+	content: "";
+	background-image: var(--home-wallpaper-wave);
+	background-position: left center;
+	background-repeat: repeat-x;
+	background-size: 16px 6px;
+	opacity: 0;
+	pointer-events: none;
+	transform: scaleX(0.15);
+	transform-origin: left center;
+	transition:
+		opacity 180ms ease,
+		transform 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.home-wallpaper-card__subtitle::after {
+	bottom: -0.16rem;
+	height: 0.3rem;
+	background-size: 14px 5px;
+}
+
+.home-wallpaper-card__nav {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.35rem 1.05rem;
+	margin-top: 1.1rem;
+}
+
+.home-wallpaper-card__nav a {
+	position: relative;
+	padding: 0.15rem 0.1rem 0.22rem;
+	color: rgba(255, 249, 239, 0.94);
+	font-size: 0.78rem;
+	font-weight: 650;
+	line-height: 1;
+	text-decoration: none;
+	text-shadow: 0 1px 7px rgba(18, 17, 22, 0.32);
+	transition:
+		color 180ms ease,
+		text-shadow 180ms ease;
+}
+
+.home-wallpaper-card__nav a::after {
+	position: absolute;
+	left: 0.1rem;
+	right: 0.1rem;
+	bottom: -0.28rem;
+	height: 0.46rem;
+	content: "";
+	background-image: var(--home-wallpaper-wave);
+	background-position: left center;
+	background-repeat: repeat-x;
+	background-size: 18px 8px;
+	opacity: 1;
+	pointer-events: none;
+	filter: drop-shadow(0 1px 1px rgba(18, 17, 22, 0.3));
+	transition:
+		opacity 180ms ease,
+		filter 180ms ease;
+}
+
+.home-wallpaper-card__nav a:hover,
+.home-wallpaper-card__nav a:focus-visible,
+.home-wallpaper-card__nav a:active {
+	color: #fff;
+	text-shadow: 0 2px 10px rgba(255, 224, 198, 0.28);
+}
+
+.home-wallpaper-card__nav a:hover::after,
+.home-wallpaper-card__nav a:focus-visible::after,
+.home-wallpaper-card__nav a:active::after {
+	opacity: 1;
+	filter: drop-shadow(0 1px 2px rgba(255, 224, 198, 0.34));
+}
+
+.home-wallpaper-card h1:hover::after,
+.home-wallpaper-card h1:focus-visible::after,
+.home-wallpaper-card h1:active::after,
+.home-wallpaper-card__subtitle:hover::after,
+.home-wallpaper-card__subtitle:focus-visible::after,
+.home-wallpaper-card__subtitle:active::after {
+	opacity: 0.9;
+	transform: scaleX(1);
+}
+
+.home-wallpaper-card__nav a:focus-visible,
+.home-wallpaper-card__social-link:focus-visible {
+	outline: 2px solid rgba(255, 236, 170, 0.95);
+	outline-offset: 4px;
+}
+
+.home-wallpaper-card__identity:hover,
+.home-wallpaper-card__identity:active,
+.home-wallpaper-card h1:hover,
+.home-wallpaper-card h1:active,
+.home-wallpaper-card__subtitle:hover,
+.home-wallpaper-card__subtitle:active,
+.home-wallpaper-card__subtitle:focus-visible {
+	color: #fff;
+	text-shadow: 0 2px 10px rgba(255, 224, 198, 0.28);
+}
+
+.home-wallpaper-card__identity:hover .home-wallpaper-card__motion-text,
+.home-wallpaper-card__identity:active .home-wallpaper-card__motion-text,
+.home-wallpaper-card h1:hover .home-wallpaper-card__motion-text,
+.home-wallpaper-card h1:focus-visible .home-wallpaper-card__motion-text,
+.home-wallpaper-card h1:active .home-wallpaper-card__motion-text,
+.home-wallpaper-card__subtitle:hover .home-wallpaper-card__motion-text,
+.home-wallpaper-card__subtitle:focus-visible .home-wallpaper-card__motion-text,
+.home-wallpaper-card__subtitle:active .home-wallpaper-card__motion-text,
+.home-wallpaper-card__nav a:hover .home-wallpaper-card__motion-text,
+.home-wallpaper-card__nav a:focus-visible .home-wallpaper-card__motion-text,
+.home-wallpaper-card__nav a:active .home-wallpaper-card__motion-text {
+	animation: home-wallpaper-card-text-hover 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes home-wallpaper-card-text-hover {
+	0% {
+		transform: translate3d(0, 0, 0) rotate(0deg);
+	}
+
+	30% {
+		transform: translate3d(0, -1.2px, 0) rotate(-0.45deg);
+	}
+
+	55% {
+		transform: translate3d(0, 0.35px, 0) rotate(0.22deg);
+	}
+
+	78% {
+		transform: translate3d(0, -0.65px, 0) rotate(-0.12deg);
+	}
+
+	100% {
+		transform: translate3d(0, -0.55px, 0) rotate(0deg);
+	}
+}
+
+.home-wallpaper-card__socials {
+	display: flex;
+	justify-content: center;
+	gap: 12px;
+	margin-top: 1.15rem;
+	margin-bottom: -49px;
+}
+
+.home-wallpaper-card__social-link {
+	--social-tag-color: rgba(255, 150, 165, 0.95);
+	position: relative;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	width: 36px;
+	height: 49px;
+	padding: 0 0 8px;
+	border: 0;
+	color: #5a1020;
+	font-size: 0.97rem;
+	font-family: inherit;
+	text-decoration: none;
+	background: transparent;
+	border-radius: 0;
+	box-shadow: none;
+	cursor: pointer;
+	overflow: visible;
+	isolation: isolate;
+	transform: rotate(var(--home-wallpaper-tag-rotation, 2deg));
+	transform-origin: 50% 0;
+	transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.home-wallpaper-card__social-link::before {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	content: "";
+	background-color: var(--social-tag-color);
+	background-image: repeating-linear-gradient(
+		45deg,
+		rgba(255, 255, 255, 0.25) 0 2px,
+		transparent 2px 7px
+	);
+	border-radius: 0 0 4px 4px;
+	box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.25);
+	pointer-events: none;
+	transform-origin: 50% 0;
+	transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+		box-shadow 300ms ease;
+}
+
+.home-wallpaper-card__social-icon {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	pointer-events: none;
+	transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.home-wallpaper-card__social-icon svg {
+	display: block;
+	width: 1em;
+	height: 1em;
+}
+
+.home-wallpaper-card__social-link:nth-child(2) {
+	--social-tag-color: rgba(255, 210, 80, 0.95);
+	--home-wallpaper-tag-rotation: -2deg;
+	color: #553500;
+	transform: rotate(-2deg);
+}
+
+.home-wallpaper-card__social-link:nth-child(3) {
+	--social-tag-color: rgba(144, 211, 173, 0.95);
+	color: #174b38;
+}
+
+.home-wallpaper-card__social-link:nth-child(4) {
+	--social-tag-color: rgba(135, 190, 236, 0.95);
+	color: #173b61;
+}
+
+.home-wallpaper-card__social-link:nth-child(5) {
+	--social-tag-color: rgba(246, 184, 98, 0.95);
+	color: #5b3510;
+}
+
+.home-wallpaper-card__social-link:hover,
+.home-wallpaper-card__social-link:focus-visible {
+	transform: none;
+}
+
+.home-wallpaper-card__social-link:hover::before,
+.home-wallpaper-card__social-link:focus-visible::before {
+	box-shadow: 2px 6px 14px rgba(82, 64, 38, 0.2);
+	transform: scaleY(1.3265);
+}
+
+.home-wallpaper-card__social-link:hover .home-wallpaper-card__social-icon,
+.home-wallpaper-card__social-link:focus-visible .home-wallpaper-card__social-icon {
+	transform: translateY(16px);
+}
+
+.home-wallpaper-copy-toast {
+	position: absolute;
+	bottom: -3.35rem;
+	left: 50%;
+	z-index: 4;
+	max-width: calc(100vw - 2rem);
+	padding: 0.42rem 0.8rem;
+	border: 1px solid rgba(255, 249, 239, 0.26);
+	border-radius: 999px;
+	color: rgba(255, 251, 244, 0.96);
+	font-size: 0.72rem;
+	font-weight: 700;
+	line-height: 1.2;
+	white-space: nowrap;
+	background: rgba(42, 28, 32, 0.72);
+	box-shadow: 0 5px 14px rgba(17, 15, 19, 0.22);
+	backdrop-filter: blur(6px);
+	opacity: 0;
+	pointer-events: none;
+	transform: translate(-50%, 0.45rem);
+	transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.home-wallpaper-copy-toast.is-visible {
+	opacity: 1;
+	transform: translate(-50%, 0);
+}
+
+.home-wallpaper-copy-toast.is-error {
+	color: #fff1e8;
+	background: rgba(106, 48, 41, 0.78);
+}
+
+.home-wallpaper-decor__stickers {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	pointer-events: none;
+}
+
+.home-wallpaper-sticker {
+	--home-wallpaper-sticker-rotation: 0deg;
+	position: absolute;
+	display: grid;
+	place-items: center;
+	min-width: 42px;
+	min-height: 42px;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	cursor: grab;
+	pointer-events: auto;
+	touch-action: none;
+	user-select: none;
+}
+
+.home-wallpaper-sticker:active,
+.home-wallpaper-sticker.is-dragging {
+	cursor: grabbing;
+}
+
+.home-wallpaper-sticker--fixed {
+	cursor: default;
+	pointer-events: none;
+}
+
+.home-wallpaper-decor.is-ready
+	.home-wallpaper-sticker:not(.home-wallpaper-sticker--fixed) {
+	animation: home-wallpaper-sticker-enter 760ms
+		var(--home-wallpaper-motion-ease) both;
+	animation-delay: var(--home-wallpaper-sticker-delay, 520ms);
+}
+
+.home-wallpaper-sticker img {
+	display: block;
+	width: 100%;
+	height: auto;
+	max-height: 104px;
+	object-fit: contain;
+	pointer-events: none;
+	filter: drop-shadow(0 7px 10px rgba(28, 22, 28, 0.27));
+}
+
+.home-wallpaper-sticker--coder {
+	--home-wallpaper-sticker-delay: 570ms;
+	--home-wallpaper-sticker-rotation: 3deg;
+	top: 43%;
+	right: 5%;
+	width: min(150px, 7.8125vw, 16.447368vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--coder img {
+	max-height: none;
+	object-fit: contain;
+}
+
+.no-banner-layout #wallpaper-wrapper.wallpaper-fullscreen
+	.home-wallpaper-decor__stickers
+	.home-wallpaper-sticker--coder
+	img {
+	width: 100% !important;
+	height: auto !important;
+	max-height: none !important;
+	object-fit: contain !important;
+}
+
+.home-wallpaper-sticker--blonde {
+	--home-wallpaper-sticker-delay: 625ms;
+	--home-wallpaper-sticker-rotation: 4deg;
+	top: 12%;
+	right: 19%;
+	width: min(112px, 5.833333vw, 12.280702vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--dark {
+	--home-wallpaper-sticker-delay: 680ms;
+	--home-wallpaper-sticker-rotation: -6deg;
+	top: 28%;
+	left: 2%;
+	width: min(105px, 5.46875vw, 11.513158vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--pink-bows {
+	--home-wallpaper-sticker-delay: 735ms;
+	--home-wallpaper-sticker-rotation: -4deg;
+	top: 14%;
+	left: 20%;
+	width: min(92px, 4.791667vw, 10.087719vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--aqua-singer {
+	--home-wallpaper-sticker-delay: 790ms;
+	--home-wallpaper-sticker-rotation: 5deg;
+	top: 14%;
+	right: 2%;
+	width: min(96px, 5vw, 10.526316vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--blue-witch {
+	--home-wallpaper-sticker-delay: 845ms;
+	--home-wallpaper-sticker-rotation: -5deg;
+	top: 58%;
+	left: 2%;
+	width: min(98px, 5.104167vw, 10.745614vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--white-haired-reader {
+	--home-wallpaper-sticker-delay: 900ms;
+	--home-wallpaper-sticker-rotation: 4deg;
+	top: 72%;
+	left: 21%;
+	width: min(96px, 5vw, 10.526316vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--brown-lightning {
+	--home-wallpaper-sticker-delay: 955ms;
+	--home-wallpaper-sticker-rotation: -4deg;
+	top: 71%;
+	right: 3%;
+	width: min(100px, 5.208333vw, 10.964912vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--pink-cat {
+	--home-wallpaper-sticker-delay: 1010ms;
+	--home-wallpaper-sticker-rotation: -4deg;
+	top: 36%;
+	left: 20%;
+	width: min(88px, 4.583333vw, 9.649123vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--bamboo-girl {
+	--home-wallpaper-sticker-delay: 1065ms;
+	--home-wallpaper-sticker-rotation: 4deg;
+	top: 36%;
+	right: 20%;
+	width: min(88px, 4.583333vw, 9.649123vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--pink-uniform {
+	--home-wallpaper-sticker-delay: 1120ms;
+	--home-wallpaper-sticker-rotation: -3deg;
+	top: 73%;
+	left: 40%;
+	width: min(90px, 4.6875vw, 9.868421vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--note {
+	top: 79%;
+	left: 53%;
+	width: 84px;
+	min-height: 63px;
+	padding: 14px 9px 9px;
+	color: #6a5430;
+	font-size: 0.7rem;
+	font-weight: 700;
+	line-height: 1.35;
+	background: #fff1a8;
+	box-shadow: 4px 6px 12px rgba(45, 36, 29, 0.2);
+	transform: rotate(4deg);
+	pointer-events: auto;
+	cursor: grab;
+	user-select: none;
+}
+
+.home-wallpaper-sticker--note.home-wallpaper-sticker--fixed {
+	cursor: default;
+	pointer-events: none;
+}
+
+.home-wallpaper-decor.is-ready .home-wallpaper-sticker--note {
+	animation: home-wallpaper-note-enter 680ms
+		var(--home-wallpaper-motion-ease) both;
+	animation-delay: 490ms;
+}
+
+.home-wallpaper-sticker--note::before {
+	position: absolute;
+	top: -7px;
+	left: 50%;
+	width: 42px;
+	height: 13px;
+	content: "";
+	background: repeating-linear-gradient(
+		-45deg,
+		rgba(135, 193, 163, 0.75) 0 5px,
+		rgba(177, 220, 187, 0.74) 5px 10px
+	);
+	transform: translateX(-50%) rotate(4deg);
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+	.home-wallpaper-card {
+		width: min(calc(100vw - 1.5rem), 440px);
+		padding: 1.65rem 1.45rem 0;
+	}
+
+	.home-wallpaper-card h1 {
+		font-size: clamp(1.85rem, 5.5vw, 2.8rem);
+	}
+
+	.home-wallpaper-card__subtitle {
+		margin-top: 0.62rem;
+		font-size: 0.84rem;
+	}
+
+	.home-wallpaper-card__nav {
+		gap: 0.3rem 0.75rem;
+		margin-top: 0.85rem;
+	}
+
+	.home-wallpaper-card__nav a {
+		font-size: 0.72rem;
+	}
+
+	.home-wallpaper-card__socials {
+		gap: 9px;
+		margin-top: 0.88rem;
+	}
+
+	.home-wallpaper-card__social-link {
+		width: 32px;
+		height: 44px;
+		padding-bottom: 7px;
+		font-size: 0.88rem;
+	}
+
+	.home-wallpaper-copy-toast {
+		bottom: -3rem;
+	}
+}
+
+@media (max-width: 767px) {
+	.home-wallpaper-card {
+		width: min(calc(100vw - 2rem), 360px);
+		padding: 1.7rem 1rem 0;
+	}
+
+	.home-wallpaper-card::after {
+		width: 70px;
+		height: 17px;
+	}
+
+	.home-wallpaper-card__avatar {
+		border-radius: 13px;
+	}
+
+	.home-wallpaper-card__avatar-wrap {
+		width: 56px;
+		height: 56px;
+	}
+
+	.home-wallpaper-card__avatar-sticker {
+		top: -0.55rem;
+		left: calc(100% - 0.7rem);
+		width: 70px;
+	}
+
+	#wallpaper-wrapper.wallpaper-fullscreen
+		.home-wallpaper-card__avatar-sticker {
+		width: 70px !important;
+	}
+
+	.no-banner-layout #wallpaper-wrapper.wallpaper-fullscreen
+		img.home-wallpaper-card__avatar-sticker {
+		width: 70px !important;
+	}
+
+	.home-wallpaper-card__identity {
+		margin-top: 0.62rem;
+		font-size: 0.7rem;
+	}
+
+	.home-wallpaper-card h1 {
+		font-size: clamp(1.95rem, 10vw, 2.6rem);
+	}
+
+	.home-wallpaper-card__subtitle {
+		margin-top: 0.6rem;
+		font-size: 0.78rem;
+	}
+
+	.home-wallpaper-card__nav {
+		gap: 0.35rem 0.72rem;
+		margin-top: 0.88rem;
+	}
+
+	.home-wallpaper-card__nav a {
+		font-size: 0.7rem;
+	}
+
+	.home-wallpaper-card__socials {
+		margin-top: 0.9rem;
+	}
+
+	.home-wallpaper-sticker[data-home-wallpaper-mobile="false"] {
+		display: none;
+	}
+
+	.home-wallpaper-sticker[data-home-wallpaper-mobile="true"] {
+		display: grid;
+		width: clamp(44px, 14vw, 64px);
+	}
+
+	.home-wallpaper-sticker--note.home-wallpaper-sticker--fixed {
+		display: grid;
+		inset: 8% auto auto 50% !important;
+		width: min(116px, 31vw);
+		min-height: 54px;
+		padding: 12px 8px 8px;
+		font-size: 0.65rem;
+		transform: translateX(-50%) rotate(4deg);
+	}
+
+	.home-wallpaper-decor.is-ready .home-wallpaper-sticker--note {
+		animation-name: home-wallpaper-note-enter-mobile;
+	}
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+	#wallpaper-wrapper.homepage-fullscreen-decor {
+		animation: none;
+	}
+
+	.home-wallpaper-decor {
+		opacity: 1;
+		visibility: visible;
+		transition: none;
+	}
+
+	.home-wallpaper-decor.is-ready .home-wallpaper-card,
+	.home-wallpaper-decor.is-ready .home-wallpaper-card__avatar-wrap,
+	.home-wallpaper-decor.is-ready .home-wallpaper-card__identity,
+	.home-wallpaper-decor.is-ready .home-wallpaper-card h1,
+	.home-wallpaper-decor.is-ready .home-wallpaper-card__subtitle,
+	.home-wallpaper-decor.is-ready .home-wallpaper-card__nav,
+	.home-wallpaper-decor.is-ready .home-wallpaper-card__social-link,
+	.home-wallpaper-decor.is-ready .home-wallpaper-sticker {
+		animation: none !important;
+		opacity: 1 !important;
+	}
+
+	.home-wallpaper-card__identity,
+	.home-wallpaper-card h1,
+	.home-wallpaper-card__subtitle,
+	.home-wallpaper-card__nav a,
+	.home-wallpaper-card__motion-text,
+	.home-wallpaper-card__social-link,
+	.home-wallpaper-copy-toast {
+		transition: none;
+	}
+
+	.home-wallpaper-card h1::after,
+	.home-wallpaper-card__subtitle::after,
+	.home-wallpaper-card__nav a::after {
+		transition: none;
+	}
+
+	.home-wallpaper-card h1:is(:hover, :focus-visible, :active)::after,
+	.home-wallpaper-card__subtitle:is(:hover, :focus-visible, :active)::after {
+		opacity: 0.9;
+		transform: scaleX(1);
+	}
+
+	.home-wallpaper-card__identity:hover .home-wallpaper-card__motion-text,
+	.home-wallpaper-card__identity:active .home-wallpaper-card__motion-text,
+	.home-wallpaper-card h1:is(:hover, :focus-visible, :active) .home-wallpaper-card__motion-text,
+	.home-wallpaper-card__subtitle:is(:hover, :focus-visible, :active) .home-wallpaper-card__motion-text,
+	.home-wallpaper-card__nav a:is(:hover, :focus-visible, :active) .home-wallpaper-card__motion-text {
+		animation: none;
+		transform: none;
+	}
+
+	.home-wallpaper-card__social-link:hover,
+	.home-wallpaper-card__social-link:focus-visible {
+		transform: none;
+	}
+
+	.home-wallpaper-card__social-link::before,
+	.home-wallpaper-card__social-link:hover::before,
+	.home-wallpaper-card__social-link:focus-visible::before,
+	.home-wallpaper-card__social-link:hover .home-wallpaper-card__social-icon,
+	.home-wallpaper-card__social-link:focus-visible .home-wallpaper-card__social-icon,
+	.home-wallpaper-copy-toast {
+		transition: none;
+		transform: none;
+	}
+}

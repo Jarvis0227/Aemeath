@@ -1,0 +1,1113 @@
+---
+import { Icon } from "astro-icon/components";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import noticeHtml from "@/data/notice.html?raw";
+
+const noticePath = "src/data/notice.html";
+
+const articlePattern =
+	/<article class="notice-main notice-view" data-notice-version="([^"]+)"(?: hidden)?>([\s\S]*?)<\/article>/g;
+
+const noticeArticles = Array.from(noticeHtml.matchAll(articlePattern)).map(
+	(match) => ({
+		version: match[1],
+		html: match[2].trim(),
+	}),
+);
+
+const notices = [
+	{
+		version: "2026-09-06",
+		kicker: "UPDATE / 2026.9.6",
+		title: "2026.9.6 上架工具更新公告",
+		desc: "本次汇总 8.11 之后的型号表、做表、标题兼容、进度恢复、旧链接折扣、图片参数联动和发布安全更新。",
+		brief: "型号表、标题兼容、进度恢复、旧链接折扣、图片参数联动和发布稳定性",
+		sections: {
+			summary: "latest-0906-summary",
+			"sheet-maker": "latest-0906-models",
+			"bulk-import": "latest-0906-title",
+			universal: "latest-0906-discount",
+			interface: "latest-0906-state",
+			safety: "latest-0906-image",
+			checklist: "latest-0906-checklist",
+		},
+		labels: {
+			summary: "本次更新",
+			"sheet-maker": "型号表与做表",
+			"bulk-import": "标题与店铺",
+			universal: "旧链接折扣",
+			interface: "进度与稳定性",
+			safety: "图片参数联动",
+			checklist: "更新检查",
+		},
+	},
+	{
+		version: "2026-08-11",
+		kicker: "UPDATE / 2026.8.11",
+		title: "2026.8.11 上架底层逻辑更新公告",
+		desc: "Shopee 与 TK 主图改为优先独立上传，批量添加新 Model 先清理 BigSeller 继承数据，并统一标题、做表、通用配置、店铺新建和进度统计规则。",
+		brief: "主图优先上传、新 Model 继承值清理、标题与做表规则、店铺新建和进度修复",
+		sections: {
+			summary: "latest-0811-summary",
+			"sheet-maker": "latest-0811-main-image",
+			"bulk-import": "latest-0811-add-model",
+			universal: "latest-0811-title-sheet",
+			interface: "latest-0811-config-progress",
+			safety: "latest-0811-store-profile",
+			checklist: "latest-0811-checklist",
+		},
+		labels: {
+			summary: "本次更新",
+			"sheet-maker": "主图上传",
+			"bulk-import": "添加新 Model",
+			universal: "标题与做表",
+			interface: "配置与进度",
+			safety: "新建店铺",
+			checklist: "更新检查",
+		},
+	},
+	{
+		version: "2026-08-06",
+		kicker: "UPDATE / 2026.8.6",
+		title: "2026.8.6 标题与批量型号工具更新公告",
+		desc: "修复标题被 AI 改乱、批量添加型号数据错位的问题，并新增批量修改已知 Model 工具。",
+		brief: "标题规则修复、批量添加新型号稳定性、修改已知 Model",
+		sections: {
+			summary: "latest-0806-summary",
+			"sheet-maker": "latest-0806-add-model",
+			"bulk-import": "latest-0806-known-model",
+			universal: "latest-0806-title",
+			interface: "latest-0806-ai",
+			safety: "latest-0806-checklist",
+			checklist: "latest-0806-checklist",
+		},
+		labels: {
+			summary: "本次更新",
+			"sheet-maker": "批量添加新型号",
+			"bulk-import": "修改已知 Model",
+			universal: "标题生成规则",
+			interface: "AI 提示与安全暂停",
+			safety: "使用检查",
+			checklist: "使用检查",
+		},
+	},
+	{
+		version: "2026-08-01",
+		kicker: "UPDATE / 2026.8.1",
+		title: "2026.8.1 店铺配置与上架稳定性更新公告",
+		desc: "新增按店铺保存整个平台模板的配置方案，并完成 TK 通用品牌、上架稳定性、概览与主图缩略图优化。",
+		brief: "店铺整套配置、TK 通用品牌、发布确认、概览加速与主图缩略图",
+		sections: {
+			summary: "latest-0801-summary",
+			"sheet-maker": "latest-0801-tk-universal",
+			"bulk-import": "latest-0801-profiles",
+			universal: "latest-0801-reliability",
+			interface: "latest-0801-overview",
+			safety: "latest-0801-checklist",
+			checklist: "latest-0801-checklist",
+		},
+		labels: {
+			summary: "本次更新",
+			"sheet-maker": "TK 通用品牌",
+			"bulk-import": "店铺整套配置",
+			universal: "上架稳定性",
+			interface: "概览与主图",
+			safety: "使用检查",
+			checklist: "使用检查",
+		},
+	},
+	{
+		version: "2026-07-22",
+		kicker: "UPDATE / 2026.7.22",
+		title: "2026.7.22 批量工具更新公告",
+		desc: "新增批量修改错误 SKU，并全面加强批量添加型号的页面识别、写入复核和慢加载兼容。",
+		brief: "批量修改错误 SKU、添加型号安全升级、BigSeller 慢加载兼容",
+		sections: {
+			summary: "latest-0722-summary",
+			"sheet-maker": "latest-0722-sku-fix",
+			"bulk-import": "latest-0722-sku-fix",
+			universal: "latest-0722-add-model",
+			interface: "latest-0722-model-tables",
+			safety: "latest-0722-checklist",
+			checklist: "latest-0722-checklist",
+		},
+		labels: {
+			summary: "本次更新",
+			"sheet-maker": "错误 SKU 修复",
+			"bulk-import": "错误 SKU 修复",
+			universal: "添加型号升级",
+			interface: "型号表维护",
+			safety: "使用检查",
+			checklist: "使用检查",
+		},
+	},
+	{
+		version: "2026-07-13",
+		kicker: "UPDATE / 2026.7.13",
+		title: "2026.7.13 重大 BUG 修复公告",
+		desc: "自动做表曾存在尺寸价格档误判。修复前上架过受影响型号的同事，请立即检查并修改线上商品价格。",
+		brief: "自动做表尺寸价格档修复，历史商品必须立即复查",
+		sections: {
+			summary: "latest-0713-summary",
+			"sheet-maker": "latest-0713-affected",
+			"bulk-import": "latest-0713-affected",
+			universal: "latest-0713-review",
+			interface: "latest-0713-fix",
+			safety: "latest-0713-checklist",
+			checklist: "latest-0713-checklist",
+		},
+		labels: {
+			summary: "紧急处理",
+			"sheet-maker": "受影响型号",
+			"bulk-import": "受影响型号",
+			universal: "历史商品复查",
+			interface: "修复说明",
+			safety: "使用要求",
+			checklist: "完成检查",
+		},
+	},
+	{
+		version: "2026-07-08",
+		kicker: "UPDATE / 2026.7.8",
+		title: "2026.7.8 更新公告",
+		desc: "上架表格一键制作已更新。以后生成表格时，会按图片编号先排完整型号，方便大家检查表格、SKU 和价格。",
+		brief: "上架表格一键制作的排列方式更新，检查表格更方便",
+		sections: {
+			summary: "summary",
+			"sheet-maker": "sheet-maker",
+			"bulk-import": "sheet-maker",
+			universal: "export-order",
+			interface: "history",
+			safety: "history",
+			checklist: "checklist",
+		},
+		labels: {
+			summary: "本次更新内容",
+			"sheet-maker": "表格制作变化",
+			"bulk-import": "表格制作变化",
+			universal: "检查方法",
+			interface: "公告历史",
+			safety: "公告历史",
+			checklist: "更新后检查",
+		},
+	},
+	{
+		version: "2026-07-07",
+		kicker: "UPDATE / 2026.7.7",
+		title: "2026.7.7 更新公告",
+		desc: "本次在 7.6 的表格制作、通用模板和预览校验基础上，继续补齐通用品牌槽位保存、批量上传提示、主界面统计和 Rain 听雨底部抽屉体验。",
+		brief: "通用槽位独立保存，批量上传提示，主界面统计和 Rain 听雨抽屉优化",
+		sections: {
+			summary: "history-0707-summary",
+			"sheet-maker": "history-0707-bulk-import",
+			"bulk-import": "history-0707-bulk-import",
+			universal: "history-0707-universal",
+			interface: "history-0707-interface",
+			safety: "history-0707-safety",
+			checklist: "history-0707-checklist",
+		},
+		labels: {
+			summary: "本次更新内容",
+			"sheet-maker": "批量上传表格",
+			"bulk-import": "批量上传表格",
+			universal: "通用品牌槽位",
+			interface: "主界面体验",
+			safety: "操作安全提示",
+			checklist: "更新后检查",
+		},
+	},
+	{
+		version: "2026-07-06",
+		kicker: "UPDATE / 2026.7.6",
+		title: "2026.7.6 更新公告",
+		desc: "本次重点更新上架表格一键制作、菲律宾型号表、通用全部品牌上架模板，并补齐生成确认、预览和安全校验。",
+		brief: "一键制作表格确认表、菲律宾型号表、通用品牌上架、预览与校验优化",
+		sections: {
+			summary: "history-0706-summary",
+			"sheet-maker": "history-0706-summary",
+			"bulk-import": "history-0706-summary",
+			universal: "history-0706-summary",
+			interface: "history-0706-summary",
+			safety: "history-0706-summary",
+			checklist: "history-0706-summary",
+		},
+		labels: {
+			summary: "历史公告",
+			"sheet-maker": "7.6 表格制作",
+			"bulk-import": "7.6 历史公告",
+			universal: "7.6 通用品牌",
+			interface: "7.6 界面优化",
+			safety: "7.6 预览校验",
+			checklist: "历史检查项",
+		},
+	},
+	{
+		version: "2026-07-01",
+		kicker: "UPDATE / 2026.7.1",
+		title: "2026.7.1 更新公告",
+		desc: "本次主要围绕 BigSeller 新版页面适配、主界面视觉重塑、AI 辅助能力和偷懒小工具扩展。",
+		brief: "BigSeller 适配、UI 重塑、爱弥斯 AI、批量小工具、单主图库教学",
+		sections: {
+			summary: "old-summary",
+			"sheet-maker": "old-lazy-tools",
+			"bulk-import": "old-lazy-tools",
+			universal: "old-aimisi",
+			interface: "old-summary",
+			safety: "old-single-main",
+			checklist: "old-checklist",
+		},
+		labels: {
+			summary: "本次更新内容",
+			"sheet-maker": "偷懒小工具",
+			"bulk-import": "偷懒小工具",
+			universal: "爱弥斯 AI",
+			interface: "主界面更新",
+			safety: "单主图库教学",
+			checklist: "更新后检查",
+		},
+	},
+];
+
+const articleByVersion = new Map(
+	noticeArticles.map((article) => [article.version, article.html]),
+);
+
+const availableNotices = notices.filter((notice) =>
+	articleByVersion.has(notice.version),
+);
+const latestNotice = availableNotices[0] ?? notices[0];
+const latestNoticeVersion = latestNotice.version;
+const noticeMetaJson = JSON.stringify(
+	Object.fromEntries(notices.map((notice) => [notice.version, notice])),
+);
+---
+
+<MainGridLayout title="更新日志" description="自动上架系统完整更新公告">
+	<section
+		class="notice-page"
+		data-notice-root
+		data-latest-notice-version={latestNoticeVersion}
+		data-notice-views={noticeMetaJson}
+	>
+		<aside class="notice-aside">
+			<section class="notice-hero">
+				<div class="notice-hero-kicker">
+					<Icon is:inline name="material-symbols:history-edu-rounded" />
+					<span data-notice-kicker>{latestNotice.kicker}</span>
+					<span class="notice-new-badge" data-notice-new-badge>NEW</span>
+				</div>
+				<h1 data-notice-title>{latestNotice.title}</h1>
+				<p data-notice-desc>{latestNotice.desc}</p>
+				<div class="notice-version">
+					<span>公告版本</span>
+					<strong data-notice-version>{latestNotice.version}</strong>
+				</div>
+			</section>
+
+			<nav class="notice-nav" aria-label="公告目录">
+				<p class="notice-nav-title">快速查看</p>
+				<a href="#summary" data-section="summary"><i></i>本次更新内容</a>
+				<a href="#sheet-maker" data-section="sheet-maker"><i></i>表格制作变化</a>
+				<a href="#export-order" data-section="universal"><i></i>检查方法</a>
+				<a href="#history" data-section="interface"><i></i>公告历史</a>
+				<a href="#checklist" data-section="checklist"><i></i>更新后检查</a>
+			</nav>
+
+			<section class="notice-history" aria-label="历史公告">
+				<div class="notice-history-title">
+					<Icon is:inline name="material-symbols:history-rounded" />
+					<span>历史公告</span>
+				</div>
+				<div class="history-card">
+					{availableNotices.map((notice, index) => (
+						<button
+							class:list={["history-entry", index === 0 && "active"]}
+							type="button"
+							data-notice-button={notice.version}
+						>
+							<strong>
+								{notice.version.replaceAll("-", ".").replace(".0", ".")} {index === 0 ? "最新公告" : "更新公告"}
+								{index === 0 && <span class="history-new-badge">NEW</span>}
+							</strong>
+							<span>{notice.brief}</span>
+						</button>
+					))}
+				</div>
+			</section>
+		</aside>
+
+		<div class="notice-content">
+			{availableNotices.length > 0 ? (
+				availableNotices.map((notice, index) => (
+					<article
+						class="notice-main notice-view"
+						data-notice-version={notice.version}
+						hidden={index !== 0}
+						set:html={articleByVersion.get(notice.version)}
+					/>
+				))
+			) : (
+				<article class="notice-main notice-empty">
+					<h2>暂时没有读取到公告</h2>
+					<p>请确认主项目公告文件存在：{noticePath}</p>
+				</article>
+			)}
+		</div>
+	</section>
+</MainGridLayout>
+
+<style>
+	.notice-page {
+		display: grid;
+		grid-template-columns: minmax(13rem, 15rem) minmax(0, 1fr);
+		gap: 1rem;
+		align-items: start;
+		width: 100%;
+		position: relative;
+		z-index: 1;
+		--notice-ink: rgb(0 0 0 / 0.9);
+		--notice-muted: rgb(0 0 0 / 0.6);
+		--notice-soft: rgb(0 0 0 / 0.42);
+		--notice-panel: color-mix(in oklab, var(--card-bg) 72%, transparent);
+		--notice-panel-strong: color-mix(in oklab, var(--card-bg) 86%, transparent);
+	}
+
+	:global(:root.dark) .notice-page {
+		--notice-ink: rgb(255 255 255 / 0.9);
+		--notice-muted: rgb(255 255 255 / 0.62);
+		--notice-soft: rgb(255 255 255 / 0.42);
+	}
+
+	.notice-aside {
+		position: sticky;
+		top: 4.75rem;
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.notice-hero,
+	.notice-nav,
+	.notice-history,
+	.notice-main,
+	.notice-section,
+	.notice-lead,
+	.feature-box,
+	.tool-block,
+	.tutorial-step {
+		border: 1px solid color-mix(in oklab, var(--line-divider) 75%, transparent);
+		background: var(--notice-panel);
+		backdrop-filter: blur(18px);
+		box-shadow: 0 14px 38px rgb(0 0 0 / 0.045);
+	}
+
+	.notice-hero,
+	.notice-nav,
+	.notice-history,
+	.notice-main {
+		border-radius: var(--radius-large);
+	}
+
+	.notice-hero {
+		padding: 1rem;
+	}
+
+	.notice-hero-kicker {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-bottom: 0.8rem;
+		padding: 0.36rem 0.6rem;
+		border-radius: 0.5rem;
+		color: var(--primary);
+		background: color-mix(in oklab, var(--primary) 13%, transparent);
+		font-size: 0.76rem;
+		font-weight: 850;
+	}
+
+	.notice-new-badge,
+	.history-new-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 1.38rem;
+		padding: 0.16rem 0.54rem;
+		border-radius: 0.35rem;
+		color: white;
+		background: linear-gradient(135deg, #00b7ff, #007aff);
+		box-shadow:
+			0 0.42rem 1rem rgb(0 183 255 / 0.3),
+			inset 0 1px 0 rgb(255 255 255 / 0.38);
+		font-size: 0.7rem;
+		font-weight: 950;
+		line-height: 1;
+		letter-spacing: 0;
+	}
+
+	.notice-new-badge {
+		position: relative;
+		margin-left: 0.12rem;
+		transform: rotate(-3deg);
+	}
+
+	.notice-new-badge::after {
+		content: "";
+		position: absolute;
+		right: -0.3rem;
+		top: 50%;
+		width: 0;
+		height: 0;
+		border-top: 0.35rem solid transparent;
+		border-bottom: 0.35rem solid transparent;
+		border-left: 0.35rem solid #007aff;
+		transform: translateY(-50%);
+	}
+
+	.notice-new-badge[hidden] {
+		display: none;
+	}
+
+	.notice-hero h1 {
+		margin: 0;
+		color: var(--notice-ink);
+		font-size: 1.35rem;
+		line-height: 1.35;
+		font-weight: 900;
+		letter-spacing: 0;
+	}
+
+	.notice-hero p {
+		margin: 0.65rem 0 0;
+		color: var(--notice-muted);
+		font-size: 0.88rem;
+		line-height: 1.72;
+	}
+
+	.notice-version {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.6rem;
+		margin-top: 0.85rem;
+		padding: 0.65rem 0.7rem;
+		border-radius: 0.65rem;
+		color: var(--notice-muted);
+		background: color-mix(in oklab, var(--primary) 9%, transparent);
+		font-size: 0.76rem;
+		font-weight: 800;
+	}
+
+	.notice-version strong {
+		color: var(--primary);
+	}
+
+	.notice-nav {
+		padding: 0.7rem;
+	}
+
+	.notice-nav-title,
+	.notice-history-title {
+		display: flex;
+		align-items: center;
+		gap: 0.38rem;
+		margin: 0 0 0.55rem;
+		color: var(--notice-soft);
+		font-size: 0.76rem;
+		font-weight: 900;
+	}
+
+	.notice-nav a {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		min-height: 2rem;
+		padding: 0.45rem 0.55rem;
+		border-radius: 0.5rem;
+		color: var(--notice-muted);
+		text-decoration: none;
+		font-size: 0.82rem;
+		font-weight: 850;
+		transition:
+			background 0.2s ease,
+			color 0.2s ease,
+			transform 0.2s ease;
+	}
+
+	.notice-nav a:hover {
+		color: var(--primary);
+		background: color-mix(in oklab, var(--primary) 12%, transparent);
+		transform: translateX(0.12rem);
+	}
+
+	.notice-nav i {
+		width: 0.42rem;
+		height: 0.42rem;
+		border-radius: 999px;
+		background: var(--primary);
+		flex: 0 0 auto;
+	}
+
+	.notice-history {
+		padding: 0.7rem;
+	}
+
+	.history-card {
+		display: grid;
+		gap: 0.45rem;
+	}
+
+	.history-entry {
+		position: relative;
+		width: 100%;
+		display: grid;
+		gap: 0.25rem;
+		padding: 0.78rem 0.75rem;
+		border: 1px solid transparent;
+		border-radius: 0.55rem;
+		background: transparent;
+		color: inherit;
+		text-align: left;
+		cursor: pointer;
+		font: inherit;
+		transition:
+			background 0.2s ease,
+			border-color 0.2s ease,
+			transform 0.2s ease;
+	}
+
+	.history-entry:hover,
+	.history-entry.active {
+		border-color: color-mix(in oklab, var(--primary) 24%, var(--line-divider));
+		background: color-mix(in oklab, var(--primary) 11%, transparent);
+		transform: translateX(0.1rem);
+	}
+
+	.history-entry strong {
+		display: flex;
+		align-items: center;
+		gap: 0.38rem;
+		color: var(--notice-ink);
+		font-size: 0.83rem;
+		line-height: 1.35;
+	}
+
+	.history-new-badge {
+		position: absolute;
+		top: -0.5rem;
+		right: 0.45rem;
+		min-height: 1.35rem;
+		padding: 0.18rem 0.5rem;
+		border: 2px solid color-mix(in oklab, var(--card-bg) 92%, transparent);
+		border-radius: 999px;
+		font-size: 0.66rem;
+		transform: rotate(4deg);
+	}
+
+	.history-entry .history-new-badge {
+		color: white !important;
+	}
+
+	.history-entry span {
+		color: var(--notice-muted);
+		font-size: 0.75rem;
+		line-height: 1.48;
+	}
+
+	.notice-content {
+		min-width: 0;
+	}
+
+	.notice-main {
+		scroll-margin-top: 6rem;
+		padding: 1.15rem;
+		min-width: 0;
+		color: var(--notice-ink);
+	}
+
+	.notice-main[hidden] {
+		display: none;
+	}
+
+	.notice-main :global(.notice-lead) {
+		margin: 0 0 1rem;
+		padding: 1rem;
+		border-radius: 0.85rem;
+		color: var(--notice-muted);
+		line-height: 1.85;
+	}
+
+	.notice-main :global(.notice-tag-row) {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem;
+		margin: 0 0 1rem;
+	}
+
+	.notice-main :global(.notice-tag),
+	.notice-main :global(.tool-chip) {
+		display: inline-flex;
+		align-items: center;
+		min-height: 1.75rem;
+		padding: 0.32rem 0.55rem;
+		border-radius: 999px;
+		color: var(--primary);
+		background: color-mix(in oklab, var(--primary) 12%, transparent);
+		font-size: 0.75rem;
+		font-weight: 900;
+	}
+
+	.notice-main :global(.notice-section) {
+		container: notice-section / inline-size;
+		margin-top: 0.85rem;
+		padding: 1rem;
+		border-radius: 0.85rem;
+	}
+
+	.notice-main :global(.section-head) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: 0.75rem;
+		padding-bottom: 0.65rem;
+		border-bottom: 1px solid color-mix(in oklab, var(--line-divider) 75%, transparent);
+	}
+
+	.notice-main :global(.section-head h2) {
+		margin: 0;
+		color: var(--notice-ink);
+		font-size: 1.05rem;
+		line-height: 1.42;
+		font-weight: 900;
+		letter-spacing: 0;
+	}
+
+	.notice-main :global(.section-index) {
+		color: var(--primary);
+		font-size: 0.78rem;
+		font-weight: 900;
+	}
+
+	.notice-main :global(h3) {
+		margin: 1rem 0 0.5rem;
+		color: var(--notice-ink);
+		font-size: 0.98rem;
+		line-height: 1.45;
+		font-weight: 900;
+		letter-spacing: 0;
+	}
+
+	.notice-main :global(p) {
+		color: var(--notice-muted);
+		line-height: 1.82;
+	}
+
+	.notice-main :global(.notice-list) {
+		display: grid;
+		gap: 0.6rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.notice-main :global(.notice-list li) {
+		display: grid;
+		grid-template-columns: 1.75rem minmax(0, 1fr);
+		gap: 0.6rem;
+		padding: 0.7rem;
+		border-radius: 0.7rem;
+		border: 1px solid color-mix(in oklab, var(--line-divider) 70%, transparent);
+		background: var(--notice-panel-strong);
+		color: var(--notice-muted);
+		line-height: 1.75;
+	}
+
+	.notice-main :global(.num) {
+		width: 1.75rem;
+		height: 1.75rem;
+		display: grid;
+		place-items: center;
+		border-radius: 0.55rem;
+		background: color-mix(in oklab, var(--primary) 12%, transparent);
+		color: var(--primary);
+		font-size: 0.75rem;
+		font-weight: 900;
+	}
+
+	.notice-main :global(.feature-grid),
+	.notice-main :global(.tutorial-grid) {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+		gap: 0.7rem;
+	}
+
+	.notice-main :global(.feature-box),
+	.notice-main :global(.tool-block),
+	.notice-main :global(.tutorial-step),
+	.notice-main :global(.notice-note),
+	.notice-main :global(.notice-warning) {
+		border-radius: 0.75rem;
+	}
+
+	.notice-main :global(.feature-box),
+	.notice-main :global(.tool-block) {
+		padding: 0.9rem;
+	}
+
+	.notice-main :global(.feature-box) {
+		border: 1px solid color-mix(in oklab, var(--primary) 22%, var(--line-divider));
+		background:
+			linear-gradient(
+				135deg,
+				color-mix(in oklab, var(--primary) 8%, var(--card-bg)),
+				color-mix(in oklab, var(--card-bg) 92%, transparent)
+			);
+		box-shadow:
+			inset 0 1px 0 rgb(255 255 255 / 0.55),
+			0 0.65rem 1.6rem color-mix(in oklab, var(--primary) 8%, transparent);
+	}
+
+	.notice-main :global(.feature-box h3) {
+		margin-top: 0;
+		color: var(--notice-ink);
+	}
+
+	.notice-main :global(.feature-box p) {
+		margin-bottom: 0;
+	}
+
+	.notice-main :global(.tool-title) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.7rem;
+		margin-bottom: 0.45rem;
+	}
+
+	.notice-main :global(.notice-note),
+	.notice-main :global(.notice-warning) {
+		margin: 0.75rem 0;
+		padding: 0.75rem 0.85rem;
+		line-height: 1.75;
+	}
+
+	.notice-main :global(.notice-note) {
+		color: color-mix(in oklab, var(--primary) 78%, var(--notice-ink));
+		background: color-mix(in oklab, var(--primary) 10%, transparent);
+		border: 1px solid color-mix(in oklab, var(--primary) 20%, transparent);
+	}
+
+	.notice-main :global(.notice-warning) {
+		color: color-mix(in oklab, #d97706 70%, var(--notice-ink));
+		background: color-mix(in oklab, #f59e0b 11%, transparent);
+		border: 1px solid color-mix(in oklab, #f59e0b 24%, transparent);
+	}
+
+	.notice-main :global(.tutorial-grid) {
+		counter-reset: step;
+		margin-top: 0.7rem;
+	}
+
+	.notice-main :global(.tutorial-step) {
+		counter-increment: step;
+		position: relative;
+		min-height: 5.5rem;
+		padding: 0.85rem 0.9rem 0.85rem 3rem;
+		color: var(--notice-muted);
+		line-height: 1.7;
+	}
+
+	.notice-main :global(.tutorial-step::before) {
+		content: counter(step);
+		position: absolute;
+		left: 0.75rem;
+		top: 0.85rem;
+		width: 1.55rem;
+		height: 1.55rem;
+		display: grid;
+		place-items: center;
+		border-radius: 0.5rem;
+		background: color-mix(in oklab, var(--primary) 12%, transparent);
+		color: var(--primary);
+		font-size: 0.75rem;
+		font-weight: 900;
+	}
+
+	.notice-main :global(.tutorial-step strong) {
+		display: block;
+		margin-bottom: 0.18rem;
+		color: var(--notice-ink);
+	}
+
+	.notice-main :global(.checklist) {
+		display: grid;
+		gap: 0.5rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.notice-main :global(.checklist li) {
+		position: relative;
+		padding-left: 1.3rem;
+		color: var(--notice-muted);
+		line-height: 1.75;
+	}
+
+	.notice-main :global(.checklist li::before) {
+		content: "";
+		position: absolute;
+		left: 0;
+		top: 0.68em;
+		width: 0.48rem;
+		height: 0.48rem;
+		border-radius: 999px;
+		background: var(--primary);
+		box-shadow: 0 0 0 0.22rem color-mix(in oklab, var(--primary) 12%, transparent);
+	}
+
+	.notice-main :global(code) {
+		padding: 0.12rem 0.35rem;
+		border-radius: 0.35rem;
+		background: color-mix(in oklab, var(--primary) 10%, transparent);
+		color: var(--primary);
+		font-size: 0.9em;
+	}
+
+	.notice-main :global(.notice-table-wrap) {
+		width: 100%;
+		margin: 0.75rem 0;
+		overflow-x: auto;
+		border-radius: 0.75rem;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior-x: contain;
+	}
+
+	.notice-main :global(.notice-table) {
+		width: 100%;
+		min-width: 48rem;
+		margin: 0;
+		border: 1px solid color-mix(in oklab, var(--line-divider) 78%, transparent);
+		border-collapse: separate;
+		border-spacing: 0;
+		border-radius: 0.75rem;
+		overflow: hidden;
+		table-layout: fixed;
+		color: var(--notice-muted);
+		font-size: 0.86rem;
+		line-height: 1.65;
+	}
+
+	.notice-main :global(.notice-table th),
+	.notice-main :global(.notice-table td) {
+		padding: 0.72rem 0.75rem;
+		border: 0;
+		border-bottom: 1px solid color-mix(in oklab, var(--line-divider) 68%, transparent);
+		text-align: left;
+		vertical-align: top;
+		overflow-wrap: anywhere;
+	}
+
+	.notice-main :global(.notice-table th) {
+		color: var(--notice-ink);
+		background: color-mix(in oklab, var(--primary) 9%, var(--notice-panel-strong));
+		font-weight: 900;
+	}
+
+	.notice-main :global(.notice-table th:nth-child(1)) {
+		width: 5.5rem;
+	}
+
+	.notice-main :global(.notice-table th:nth-child(2)) {
+		width: 41%;
+	}
+
+	.notice-main :global(.notice-table th:nth-child(3)) {
+		width: 30%;
+	}
+
+	.notice-main :global(.notice-table th:nth-child(4)) {
+		width: 9.5rem;
+	}
+
+	.notice-main :global(.notice-table tbody tr:nth-child(even) td) {
+		background: color-mix(in oklab, var(--primary) 4%, transparent);
+	}
+
+	.notice-main :global(.notice-table tbody tr:last-child td) {
+		border-bottom: 0;
+	}
+
+	.notice-main :global(.notice-table td:first-child) {
+		color: var(--notice-ink);
+		font-weight: 850;
+		white-space: nowrap;
+	}
+
+	.notice-main :global(.notice-table .price-tier) {
+		color: color-mix(in oklab, #15803d 76%, var(--notice-ink));
+		font-weight: 900;
+	}
+
+	.notice-main :global(.notice-table code) {
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+
+	@container notice-section (max-width: 46rem) {
+		.notice-main :global(.notice-table-wrap) {
+			overflow: visible;
+		}
+
+		.notice-main :global(.notice-table) {
+			display: block;
+			min-width: 0;
+			border: 0;
+			border-radius: 0;
+			overflow: visible;
+			background: transparent;
+		}
+
+		.notice-main :global(.notice-table thead) {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
+			border: 0;
+		}
+
+		.notice-main :global(.notice-table tbody) {
+			display: grid;
+			gap: 0.7rem;
+		}
+
+		.notice-main :global(.notice-table tr) {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(9rem, auto);
+			grid-template-areas:
+				"market price"
+				"model model"
+				"risk risk";
+			gap: 0.55rem 0.75rem;
+			padding: 0.78rem;
+			border: 1px solid color-mix(in oklab, var(--line-divider) 74%, transparent);
+			border-radius: 0.7rem;
+			background: var(--notice-panel-strong);
+		}
+
+		.notice-main :global(.notice-table td),
+		.notice-main :global(.notice-table tbody tr:nth-child(even) td) {
+			display: grid;
+			gap: 0.22rem;
+			width: auto;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			white-space: normal;
+		}
+
+		.notice-main :global(.notice-table td::before) {
+			color: var(--notice-soft);
+			font-size: 0.7rem;
+			font-weight: 900;
+			line-height: 1.2;
+		}
+
+		.notice-main :global(.notice-table td:nth-child(1)) {
+			grid-area: market;
+		}
+
+		.notice-main :global(.notice-table td:nth-child(1)::before) {
+			content: "\5e02\573a";
+		}
+
+		.notice-main :global(.notice-table td:nth-child(2)) {
+			grid-area: model;
+			padding-top: 0.58rem;
+			border-top: 1px solid color-mix(in oklab, var(--line-divider) 62%, transparent);
+		}
+
+		.notice-main :global(.notice-table td:nth-child(2)::before) {
+			content: "\578b\53f7";
+		}
+
+		.notice-main :global(.notice-table td:nth-child(3)) {
+			grid-area: risk;
+		}
+
+		.notice-main :global(.notice-table td:nth-child(3)::before) {
+			content: "\65e7\7248\672c\98ce\9669";
+		}
+
+		.notice-main :global(.notice-table td:nth-child(4)) {
+			grid-area: price;
+			justify-items: end;
+			text-align: right;
+		}
+
+		.notice-main :global(.notice-table td:nth-child(4)::before) {
+			content: "\6b63\786e\89c4\5219";
+		}
+	}
+
+	@container notice-section (max-width: 28rem) {
+		.notice-main :global(.notice-table tr) {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-areas:
+				"market"
+				"price"
+				"model"
+				"risk";
+		}
+
+		.notice-main :global(.notice-table td:nth-child(4)) {
+			justify-items: start;
+			text-align: left;
+		}
+	}
+
+	.notice-empty {
+		display: grid;
+		gap: 0.4rem;
+	}
+
+	.notice-empty h2,
+	.notice-empty p {
+		margin: 0;
+	}
+
+	@media (max-width: 1020px) {
+		.notice-page {
+			grid-template-columns: 1fr;
+		}
+
+		.notice-aside {
+			position: static;
+		}
+
+		.notice-nav {
+			display: none;
+		}
+	}
+
+	@media (max-width: 680px) {
+		.notice-main,
+		.notice-hero {
+			padding: 0.9rem;
+		}
+
+		.notice-main :global(.feature-grid),
+		.notice-main :global(.tutorial-grid) {
+			grid-template-columns: 1fr;
+		}
+
+		.notice-main :global(.section-head),
+		.notice-main :global(.tool-title) {
+			align-items: flex-start;
+			flex-direction: column;
+		}
+	}
+
+</style>

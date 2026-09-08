@@ -1,0 +1,2083 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>系统公告</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/style.min.css">
+  <style>
+    :root {
+      --bg: #f5f9ff;
+      --surface: rgba(255,255,255,.88);
+      --surface-solid: rgba(255,255,255,.9);
+      --panel: rgba(248,251,255,.76);
+      --line: rgba(191,219,254,.58);
+      --line-strong: rgba(96,165,250,.42);
+      --ink: #172033;
+      --muted: #64748b;
+      --soft: #8aa0ba;
+      --accent: #2563eb;
+      --accent-ink: #1d4ed8;
+      --good: #16a34a;
+      --warning: #d97706;
+      --danger: #b91c1c;
+      --danger-bg: rgba(254,226,226,.74);
+      --shadow: 0 12px 28px rgba(37,99,235,.10), inset 0 1px 0 rgba(255,255,255,.86);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+    body {
+      margin: 0;
+      font-family: 'LXGW WenKai Screen', system-ui, sans-serif;
+      color: var(--ink);
+      background: transparent;
+    }
+    .notice-page {
+      height: 100vh;
+      padding: 22px;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.35), rgba(239,246,255,.46)),
+        radial-gradient(circle at 10% 10%, rgba(59,130,246,.12), transparent 32%),
+        radial-gradient(circle at 90% 18%, rgba(14,165,233,.10), transparent 28%);
+    }
+    .notice-shell {
+      width: min(1060px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      height: calc(100vh - 44px);
+      min-height: 0;
+    }
+    .notice-aside {
+      position: sticky;
+      top: 0;
+      display: grid;
+      gap: 12px;
+      max-height: calc(100vh - 44px);
+      overflow-y: auto;
+      padding-right: 4px;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(96,165,250,.35) transparent;
+    }
+    .notice-aside::-webkit-scrollbar { width: 6px; }
+    .notice-aside::-webkit-scrollbar-track { background: transparent; }
+    .notice-aside::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgba(96,165,250,.30);
+    }
+    .notice-hero,
+    .notice-nav,
+    .notice-main {
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .notice-hero {
+      padding: 18px;
+      overflow: hidden;
+    }
+    .notice-hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(37,99,235,.18);
+      background: rgba(37,99,235,.08);
+      color: var(--accent-ink);
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .notice-hero h1 {
+      margin: 14px 0 8px;
+      font-size: 26px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+    .notice-hero p {
+      margin: 0;
+      color: #334155;
+      font-size: 14px;
+      line-height: 1.75;
+    }
+    .notice-version {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(191,219,254,.52);
+      background: rgba(255,255,255,.58);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .notice-version strong {
+      color: var(--accent-ink);
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-weight: 700;
+    }
+    .notice-nav {
+      padding: 12px;
+    }
+    .notice-nav-title {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .notice-nav a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 7px 9px;
+      border-radius: 10px;
+      color: #334155;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .notice-nav a:hover {
+      background: rgba(239,246,255,.86);
+      color: var(--accent-ink);
+    }
+    .notice-nav i {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(37,99,235,.42);
+      flex: 0 0 auto;
+    }
+    .notice-main {
+      padding: 24px;
+      min-width: 0;
+      max-height: calc(100vh - 44px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(96,165,250,.35) transparent;
+    }
+    .notice-main::-webkit-scrollbar { width: 8px; }
+    .notice-main::-webkit-scrollbar-track { background: transparent; }
+    .notice-main::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgba(96,165,250,.30);
+    }
+    .notice-main[hidden] { display: none; }
+    .notice-lead {
+      margin: 0 0 18px;
+      padding: 16px 18px;
+      border-radius: 15px;
+      border: 1px solid rgba(191,219,254,.52);
+      background: rgba(255,255,255,.62);
+      color: #334155;
+      font-size: 15px;
+      line-height: 1.85;
+    }
+    .notice-tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 20px;
+    }
+    .notice-tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(191,219,254,.62);
+      background: rgba(255,255,255,.68);
+      color: #1e40af;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .notice-section {
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.58);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.82);
+    }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(191,219,254,.44);
+    }
+    .section-head h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+    .section-index {
+      color: var(--accent-ink);
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .notice-section h3 {
+      margin: 18px 0 8px;
+      font-size: 16px;
+      line-height: 1.4;
+      letter-spacing: 0;
+    }
+    .notice-section h3:first-child { margin-top: 0; }
+    .notice-section p {
+      margin: 0 0 12px;
+      color: #334155;
+      font-size: 15px;
+      line-height: 1.8;
+    }
+    .notice-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .notice-list li {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(191,219,254,.38);
+      background: rgba(248,251,255,.72);
+      color: #334155;
+      line-height: 1.75;
+    }
+    .notice-list .num {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: rgba(37,99,235,.10);
+      color: var(--accent-ink);
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .feature-box {
+      padding: 14px;
+      border-radius: 13px;
+      border: 1px solid rgba(191,219,254,.46);
+      background: var(--panel);
+    }
+    .feature-box h3 { margin-top: 0; }
+    .notice-note,
+    .notice-warning {
+      margin: 12px 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.75;
+    }
+    .notice-note {
+      border: 1px solid rgba(37,99,235,.20);
+      background: rgba(37,99,235,.08);
+      color: #1e3a8a;
+    }
+    .notice-warning {
+      border: 1px solid rgba(217,119,6,.26);
+      background: rgba(245,158,11,.10);
+      color: #7c2d12;
+    }
+    .notice-critical {
+      margin: 0 0 18px;
+      padding: 15px 16px;
+      border: 1px solid rgba(185,28,28,.36);
+      border-radius: 12px;
+      background: var(--danger-bg);
+      color: #7f1d1d;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.8;
+      text-wrap: pretty;
+    }
+    .notice-critical strong { color: var(--danger); }
+    .notice-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid rgba(191,219,254,.58);
+      border-radius: 12px;
+      background: rgba(255,255,255,.7);
+    }
+    .notice-table {
+      width: 100%;
+      min-width: 660px;
+      border-collapse: collapse;
+      color: #334155;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    .notice-table th,
+    .notice-table td {
+      padding: 11px 12px;
+      border-bottom: 1px solid rgba(191,219,254,.46);
+      text-align: left;
+      vertical-align: top;
+    }
+    .notice-table th {
+      background: rgba(239,246,255,.82);
+      color: #1e3a8a;
+      font-weight: 900;
+    }
+    .notice-table th:first-child,
+    .notice-table td:first-child {
+      width: 58px;
+      white-space: nowrap;
+    }
+    .notice-table tr:last-child td { border-bottom: 0; }
+    .notice-table .price-tier {
+      color: #166534;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .tool-block {
+      margin-top: 14px;
+      padding: 15px;
+      border-radius: 14px;
+      border: 1px solid rgba(191,219,254,.44);
+      background: rgba(248,251,255,.74);
+    }
+    .tool-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .tool-title h3 { margin: 0; }
+    .tool-chip {
+      flex: 0 0 auto;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(22,163,74,.10);
+      color: #15803d;
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .tutorial-grid {
+      counter-reset: step;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .tutorial-step {
+      counter-increment: step;
+      position: relative;
+      min-height: 94px;
+      padding: 13px 14px 13px 48px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.68);
+      border: 1px solid rgba(191,219,254,.42);
+      color: #334155;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .tutorial-step::before {
+      content: counter(step);
+      position: absolute;
+      left: 12px;
+      top: 13px;
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(37,99,235,.10);
+      color: var(--accent-ink);
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .tutorial-step strong {
+      display: block;
+      margin-bottom: 3px;
+      color: #172033;
+    }
+    .checklist {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .checklist li {
+      position: relative;
+      padding-left: 24px;
+      color: #334155;
+      line-height: 1.75;
+    }
+    .checklist li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: .68em;
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--good);
+      box-shadow: 0 0 0 4px rgba(22,163,74,.12);
+    }
+    code {
+      padding: 2px 6px;
+      border-radius: 7px;
+      background: rgba(15,23,42,.06);
+      color: #0f172a;
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: .9em;
+    }
+    .notice-history {
+      border: 1px solid rgba(191,219,254,.62);
+      border-radius: 18px;
+      background: rgba(255,255,255,.72);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .notice-history summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 13px 14px;
+      color: #1e40af;
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .notice-history summary::-webkit-details-marker { display: none; }
+    .notice-history summary::after {
+      content: '+';
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(37,99,235,.10);
+      color: var(--accent-ink);
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-weight: 800;
+    }
+    .notice-history[open] summary::after { content: '-'; }
+    .history-card {
+      margin: 0 12px 12px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(191,219,254,.48);
+      background: rgba(248,251,255,.82);
+      display: grid;
+      gap: 9px;
+    }
+    .history-entry {
+      width: 100%;
+      display: grid;
+      gap: 4px;
+      padding: 11px 12px;
+      border: 1px solid rgba(191,219,254,.55);
+      border-radius: 12px;
+      background: rgba(255,255,255,.74);
+      color: #334155;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+    }
+    .history-entry strong {
+      color: #172033;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+    .history-entry span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .history-entry:hover,
+    .history-entry.active {
+      border-color: rgba(37,99,235,.32);
+      background: rgba(239,246,255,.86);
+      color: var(--accent-ink);
+    }
+    @media (max-width: 920px) {
+      html, body {
+        height: auto;
+        overflow: auto;
+      }
+      .notice-page {
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+      }
+      .notice-shell { grid-template-columns: 1fr; }
+      .notice-aside { position: static; }
+      .notice-shell,
+      .notice-aside,
+      .notice-main {
+        height: auto;
+        max-height: none;
+      }
+      .notice-nav { display: none; }
+    }
+    @media (max-width: 720px) {
+      .notice-page { padding: 12px; }
+      .notice-main { padding: 16px; }
+      .notice-hero h1 { font-size: 23px; }
+      .feature-grid,
+      .tutorial-grid { grid-template-columns: 1fr; }
+      .section-head { align-items: flex-start; flex-direction: column; }
+      .notice-table-wrap {
+        overflow: visible;
+        border-radius: 10px;
+      }
+      .notice-table,
+      .notice-table tbody,
+      .notice-table tr,
+      .notice-table td {
+        display: block;
+        width: 100%;
+        min-width: 0;
+      }
+      .notice-table thead { display: none; }
+      .notice-table tr {
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(191,219,254,.58);
+      }
+      .notice-table tr:last-child { border-bottom: 0; }
+      .notice-table td,
+      .notice-table td:first-child {
+        position: relative;
+        min-height: 34px;
+        padding: 6px 10px 6px 92px;
+        border-bottom: 0;
+        white-space: normal;
+      }
+      .notice-table td::before {
+        position: absolute;
+        left: 10px;
+        top: 6px;
+        width: 72px;
+        color: #1e3a8a;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .notice-table td:nth-child(1)::before { content: '市场'; }
+      .notice-table td:nth-child(2)::before { content: '型号'; }
+      .notice-table td:nth-child(3)::before { content: '旧版风险'; }
+      .notice-table td:nth-child(4)::before { content: '正确规则'; }
+      .notice-table .price-tier { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <main class="notice-page">
+    <div class="notice-shell">
+      <aside class="notice-aside">
+        <section class="notice-hero">
+          <span class="notice-hero-kicker">UPDATE / 2026.9.6</span>
+          <h1>2026.9.6 上架工具更新公告</h1>
+          <p>本次汇总 8.11 之后的型号表、做表、标题兼容、进度恢复、旧链接折扣、图片参数联动和发布安全更新。</p>
+          <div class="notice-version">
+            <span>公告版本</span>
+            <strong>2026-09-06</strong>
+          </div>
+        </section>
+
+        <nav class="notice-nav" aria-label="公告目录">
+          <p class="notice-nav-title">快速查看</p>
+          <a href="#latest-0906-summary" data-section="summary"><i></i>本次更新</a>
+          <a href="#latest-0906-models" data-section="sheet-maker"><i></i>型号表与做表</a>
+          <a href="#latest-0906-title" data-section="bulk-import"><i></i>标题与店铺</a>
+          <a href="#latest-0906-discount" data-section="universal"><i></i>旧链接折扣</a>
+          <a href="#latest-0906-state" data-section="interface"><i></i>进度与稳定性</a>
+          <a href="#latest-0906-image" data-section="store"><i></i>图片参数联动</a>
+          <a href="#latest-0906-checklist" data-section="checklist"><i></i>更新检查</a>
+        </nav>
+
+        <details class="notice-history">
+          <summary>历史公告</summary>
+          <div class="history-card">
+            <button class="history-entry active" type="button" data-notice-button="2026-09-06" onclick="showNoticeVersion('2026-09-06')">
+              <strong>2026.9.6 8.11 之后更新汇总</strong>
+              <span>型号表、标题兼容、进度恢复、旧链接折扣、图片参数联动和发布稳定性</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-08-11" onclick="showNoticeVersion('2026-08-11')">
+              <strong>2026.8.11 上架底层逻辑更新</strong>
+              <span>主图优先上传、新 Model 继承值清理、标题与做表规则、店铺新建和进度修复</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-08-06" onclick="showNoticeVersion('2026-08-06')">
+              <strong>2026.8.6 标题与批量型号工具更新</strong>
+              <span>标题规则修复、批量添加新型号稳定性、修改已知 Model</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-08-01" onclick="showNoticeVersion('2026-08-01')">
+              <strong>2026.8.1 店铺配置与上架稳定性更新</strong>
+              <span>店铺整套配置、TK 通用品牌、发布确认、概览加速与主图缩略图</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-07-22" onclick="showNoticeVersion('2026-07-22')">
+              <strong>2026.7.22 批量工具更新</strong>
+              <span>批量修改错误 SKU、添加型号安全升级、BigSeller 慢加载兼容</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-07-13" onclick="showNoticeVersion('2026-07-13')">
+              <strong>2026.7.13 重大 BUG 修复</strong>
+              <span>自动做表尺寸价格档修复，历史商品必须立即复查</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-07-08" onclick="showNoticeVersion('2026-07-08')">
+              <strong>2026.7.8 更新公告</strong>
+              <span>上架表格一键制作的排列方式更新，检查表格更方便</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-07-07" onclick="showNoticeVersion('2026-07-07')">
+              <strong>2026.7.7 更新公告</strong>
+              <span>通用槽位独立保存，批量上传提示，主界面统计和 Rain 听雨抽屉优化</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-07-06" onclick="showNoticeVersion('2026-07-06')">
+              <strong>2026.7.6 更新公告</strong>
+              <span>一键制作表格确认表、菲律宾型号表、通用品牌上架、预览与校验优化</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-07-01" onclick="showNoticeVersion('2026-07-01')">
+              <strong>2026.7.1 更新公告</strong>
+              <span>BigSeller 适配、UI 重塑、爱弥斯 AI、批量小工具、单主图库教学</span>
+            </button>
+          </div>
+        </details>
+      </aside>
+
+      <article class="notice-main notice-view" data-notice-version="2026-09-06">
+        <p class="notice-lead">9.6 公告集中记录 8.11 之后已经落地的更新。重点是让新版 BigSeller 页面变化不再直接中断标题填写，让 PH / ID 型号表和做表规则跟上最新资料，并让批量任务在断线、旧链接折扣不一致或图片参数冲突时保持可检查、可恢复和可安全暂停。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">PH / ID 型号表更新</span>
+          <span class="notice-tag">BigSeller 标题兼容</span>
+          <span class="notice-tag">SSE + 状态校准</span>
+          <span class="notice-tag">旧链接折扣安全判断</span>
+          <span class="notice-tag">图片参数联动</span>
+          <span class="notice-tag">发布收尾稳定</span>
+        </div>
+
+        <section class="notice-section" id="latest-0906-summary">
+          <div class="section-head">
+            <h2>一、8.11 之后的更新总览</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>型号资料更新到最新版本。</strong> 做表和 SKU 修复现在使用印尼 8.19 型号表与菲律宾 9.6 型号表，旧的 7.12 / 8.12 资料不再作为当前规则入口。</span></li>
+            <li><span class="num">2</span><span><strong>做表价格与型号匹配更严格。</strong> 只读取标准的书本、笔槽、3Y、旋转价格档；纯色和 BB-笔不会污染标准价格，价格冲突会阻止导出，无法识别的型号不会静默猜测。</span></li>
+            <li><span class="num">3</span><span><strong>适配 BigSeller 更新后的标题输入框。</strong> 标题读取、填写和复核改按稳定的 <code>autoid="product_name_text"</code> 定位，不再要求输入框必须带旧版 <code>ant-input</code> class。</span></li>
+            <li><span class="num">4</span><span><strong>Shopee 和 TK 的进度状态可以断线校准。</strong> 两个平台仍然使用独立 Worker、独立 SSE 和独立状态；SSE 断开、页面重新获得焦点或网络恢复后，界面会用紧凑状态接口补齐最新进度。</span></li>
+            <li><span class="num">5</span><span><strong>旧链接折扣增加安全判断。</strong> 只比较折扣列里非空且有效的数值；全部数值一致才会批量更新，不一致、无效或没有数值时自动跳过并记录原因。</span></li>
+            <li><span class="num">6</span><span><strong>图片参数可以在当前范围内联动。</strong> 联动严格限制在当前平台、当前生效店铺、当前模板和当前通用类型；只同步指定的四项图片参数，主图、变种图、偏移、标题和视频仍然独立。</span></li>
+            <li><span class="num">7</span><span><strong>页面结构变化和发布收尾继续安全化。</strong> 变种表会等待稳定结构并动态识别列；发布成功以本次成功提示为准，BigSeller 自动关闭编辑页不会再被误判为失败。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0906-models">
+          <div class="section-head">
+            <h2>二、PH / ID 型号表与自动做表</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>型号表是“批量修改错误 SKU”和“上架表格一键制作”的共同资料源。使用工具内显示的最新上传版本，不要继续按历史公告里的旧文件名判断当前规则。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>菲律宾 9.6 型号表</h3>
+              <p><code>sheet-maker/builtin/model-ph-2026-09-06.xls</code></p>
+              <p>当前内置解析记录 270 条。本次源表的有效变化位于“平板套”表的 Q47，补充型号编号 <code>W3-C-17</code>。</p>
+            </div>
+            <div class="feature-box">
+              <h3>印尼 8.19 型号表</h3>
+              <p><code>sheet-maker/builtin/model-id-2026-08-19.xls</code></p>
+              <p>当前内置解析记录 301 条，继续作为印尼 SKU 修复和做表的型号规则来源。</p>
+            </div>
+          </div>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>只读第一张表</strong>型号记录从内置工作簿第一张表读取，其他说明或暂存工作表不会混入型号数量。</div>
+            <div class="tutorial-step"><strong>价格档只认四类</strong>标准价格只对应书本、笔槽、3Y、旋转和 8 / 11 / 12–13 寸档位；纯色、BB-笔等行不会覆盖标准价格。</div>
+            <div class="tutorial-step"><strong>冲突直接提示</strong>同一类型和尺寸出现不同价格时，导出会保留问题并阻止静默选一个价格。</div>
+            <div class="tutorial-step"><strong>特殊尺寸已归档</strong><code>XPAD20 Pro12"</code> 会归入 12–13 寸价格档；线上名称仍需和 BigSeller 的 Model 精确对应。</div>
+          </div>
+          <div class="notice-warning">型号表更新后，先停止正在运行的批量任务，再重新打开工具读取最新资料；不要在任务进行中直接修改 Excel。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0906-title">
+          <div class="section-head">
+            <h2>三、标题输入与店铺方案</h2>
+            <span class="section-index">03</span>
+          </div>
+          <p>本次 BigSeller 页面把标题输入框的 class 从旧的 <code>ant-input</code> 变成了带有新版样式的输入框，导致旧定位器等待 10 秒后出现 FATAL。现在程序按稳定属性定位，因此只要当前确实位于正确的编辑页，标题可以继续填写和复核。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>标题定位不再绑旧 class</h3>
+              <p>标题填写、编辑页标题读取、品牌二次确认和保存后复核都使用 <code>input[autoid="product_name_text"]</code>。页面样式 class 变化不会再单独造成标题定位超时。</p>
+            </div>
+            <div class="feature-box">
+              <h3>标题规则继续按配置</h3>
+              <p>标题里的品牌前缀、品牌、型号和功能词仍由当前模板配置决定；需要 <code>For</code> 时手动写入，型号之间的 <code>/</code> 不要改成空格。</p>
+            </div>
+            <div class="feature-box">
+              <h3>店铺方案按平台隔离</h3>
+              <p>Shopee 与 TikTok Shop 分别保存、应用、重命名和删除店铺方案。新建方案只清空标题内容，图片、视频、品牌开关等基础配置继续保留；AI 密钥和本机路径不写入店铺方案。</p>
+            </div>
+          </div>
+          <div class="notice-note">如果更新文件后仍看到旧的标题定位错误，先完整重启上架工具，让 Worker 和服务端加载新代码，再用 1 个 Item ID 测试。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0906-discount">
+          <div class="section-head">
+            <h2>四、批量开启旧链接折扣</h2>
+            <span class="section-index">04</span>
+          </div>
+          <p>“批量开启旧链接折扣”是独立工具，针对 BigSeller 列表页已有的旧链接促销。它不会进入商品编辑页，也不会把促销价、限购输入框或其他数字误当成折扣。</p>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>打开正确列表页</strong>在 BigSeller 打开 Shopee 产品列表页，输入 Item ID。工具会从列表页的促销价入口打开对应促销弹窗。</div>
+            <div class="tutorial-step"><strong>先开启全部变种</strong>进入促销弹窗后先确认全部变种开关，再识别标题为“折扣”的列和其中的 <code>% OFF</code> 输入值。</div>
+            <div class="tutorial-step"><strong>只比较非空折扣</strong>空白折扣不参与比较；非空值必须是 0–100 的有效数值。所有有效值相同，才允许继续批量编辑。</div>
+            <div class="tutorial-step"><strong>统一后等待成功</strong>批量填写原有一致的折扣，确认“应用到所有变种”，点击更新并等待成功提示，然后关闭弹窗进入下一个 Item。</div>
+          </div>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>不一致自动跳过</h3>
+              <p>折扣值不一致、存在无效非空值或完全没有可比较数值时，不会强行覆盖，任务会关闭弹窗并在结果中记录具体跳过原因。</p>
+            </div>
+            <div class="feature-box">
+              <h3>与普通批量折扣分开</h3>
+              <p>旧链接工具按页面现有折扣自动判断；普通“批量开启折扣”仍按用户填写的目标百分比处理。使用前确认入口名称，避免操作错工具。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="latest-0906-state">
+          <div class="section-head">
+            <h2>五、进度、变种表与发布稳定性</h2>
+            <span class="section-index">05</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>SSE 增加心跳和断线恢复。</strong> Shopee 使用 <code>/events</code>，TK 使用 <code>/events-tk</code>；页面会在 SSE 重连、窗口重新获得焦点或网络恢复时请求当前紧凑状态。</span></li>
+            <li><span class="num">2</span><span><strong>进度按真实商品完成更新。</strong> 当前批次的商品完成数和已完成批次基数分开计算；批次报错不会被错误标记为完成，两个平台的进度不会互相覆盖。</span></li>
+            <li><span class="num">3</span><span><strong>变种表结构必须稳定。</strong> 工具会动态识别 Color、Model、SKU、库存、价格、重量等列，并对临时重复或缺失的行等待复核；持续冲突时安全暂停。</span></li>
+            <li><span class="num">4</span><span><strong>继承值和成功收尾更可控。</strong> 添加新 Model 时先清理 BigSeller 继承的 SKU、库存和价格；发布后只有看到本次成功提示才算成功，编辑页自动关闭会正常收尾。</span></li>
+          </ol>
+          <div class="notice-note">界面上的进度是服务端状态的展示。遇到 SSE 短暂断开时先看当前商品和日志，不要立即刷新或手动关闭编辑页。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0906-image">
+          <div class="section-head">
+            <h2>六、图片参数联动与冲突检查</h2>
+            <span class="section-index">06</span>
+          </div>
+          <p>设置里新增“图片参数联动”后，可以在当前配置范围内统一重复参数，减少多品牌逐项填写的工作量。联动不是全局覆盖，范围会跟随当前平台、当前生效店铺、当前模板；通用模板还会继续区分当前的 3Y、书本、笔槽或旋转类型。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>只同步四项</h3>
+              <p>联动的字段是每组图数、辅图数量、AI 识别图和跳过序号。主图序号、变种图序号、品牌偏移、标题、视频和品牌顺序继续各自独立。</p>
+            </div>
+            <div class="feature-box">
+              <h3>保存前检查图片上限</h3>
+              <p>系统会检查跳过序号是否和主图、变种图或 AI 图冲突，并检查产品图总数是否超过 9 张；冲突或超限时不会静默保存。</p>
+            </div>
+            <div class="feature-box">
+              <h3>随机主图也受保护</h3>
+              <p>启用单品牌主图随机模式时，主图和变种图候选序号会分别校验，跳过序号不能与任何候选重复。</p>
+            </div>
+          </div>
+          <div class="notice-warning">修改图片参数后先抽查一个品牌：确认主图排第一、详情图数量不超过 9 张、变种图与页面 Color 一一对应，再开始整批上架。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0906-checklist">
+          <div class="section-head">
+            <h2>七、9.6 更新后的使用检查</h2>
+            <span class="section-index">07</span>
+          </div>
+          <ul class="checklist">
+            <li>更新项目文件后先完整重启上架工具，再开始新的 Shopee 或 TK 批次。</li>
+            <li>做表或 SKU 修复前确认当前选择的是菲律宾 9.6 型号表或印尼 8.19 型号表，并抽查线上 Model 名称。</li>
+            <li>标题 FATAL 修复后先用 1 个 Item ID 测试标题填写、品牌识别和保存后复核。</li>
+            <li>旧链接折扣只在同一 Item 的非空折扣值完全一致时更新；不一致的商品查看跳过原因，不要手动绕过。</li>
+            <li>开启图片参数联动前确认当前平台、店铺、模板和通用类型；联动后抽查主图、变种图、总图片数和跳过序号。</li>
+            <li>批量运行期间不要刷新、跳转或关闭编辑页；SSE 断开时先等待状态校准。</li>
+            <li>发布或更新必须看到成功提示，并抽查标题、SKU、库存、价格、促销和变种图片对应关系。</li>
+          </ul>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-07-22" hidden>
+        <p class="notice-lead">7.22 更新重点解决 BigSeller 批量维护商品时“型号多、SKU 容易错、页面加载不稳定”的问题。偷懒小工具新增“批量修改错误 SKU”，批量添加新型号也完成了列表页、编辑页、变种表格和提交结果的整套安全升级。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">批量修改错误 SKU</span>
+          <span class="notice-tag">批量添加型号升级</span>
+          <span class="notice-tag">PH / ID 型号表</span>
+          <span class="notice-tag">动态识别表格列</span>
+          <span class="notice-tag">慢加载兼容</span>
+        </div>
+
+        <section class="notice-section" id="latest-0722-summary">
+          <div class="section-head">
+            <h2>一、本次更新内容</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>新增“批量修改错误 SKU”。</strong> 支持菲律宾和印尼商品，按地区、类型、品牌及内置型号表核对全部 Color + Model，只修改确实错误的 SKU。</span></li>
+            <li><span class="num">2</span><span><strong>批量添加新型号不再依赖固定列号。</strong> 工具会动态识别 Color、Model、SKU、库存和价格列，BigSeller 调整列顺序后也能按表头定位。</span></li>
+            <li><span class="num">3</span><span><strong>Item ID 与编辑页身份改为严格核对。</strong> 兼容新版 Shopee 在线产品列表，并用商品链接、完整标题和编辑入口共同确认当前商品，避免改错链接。</span></li>
+            <li><span class="num">4</span><span><strong>编辑页慢加载增加等待。</strong> 商品标题、“销售信息”编辑按钮以及 Color/Model 区块都会等待最多 20 秒，不再因为局部内容晚几秒出现而立即失败。</span></li>
+            <li><span class="num">5</span><span><strong>SKU 写入改为快速替换并多轮复核。</strong> 先清空旧值，再一次性写入目标 SKU；库存、价格、重量、尺寸和旧变种行都纳入检查。</span></li>
+            <li><span class="num">6</span><span><strong>更新成功后自动关页可以继续批次。</strong> 只有先检测到本次“操作成功/更新成功”提示，编辑页随后自动关闭时才会继续下一个 Item。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0722-sku-fix">
+          <div class="section-head">
+            <h2>二、批量修改错误 SKU 使用方法</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>入口在主界面顶部“偷懒小工具”中的“批量修改错误 SKU”。适合已有商品的 Model 正确、但部分 SKU 前缀或颜色编号写错时统一核对。</p>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>准备列表页</strong>在 BigSeller 打开 Shopee 在线产品列表页，并选择一个具体店铺。不要停在编辑页，也不要同时打开多个 Shopee 在线列表页。</div>
+            <div class="tutorial-step"><strong>选择规则</strong>依次选择菲律宾或印尼、书本/笔槽/旋转/3Y 类型以及商品品牌。选择项变化后需要重新打开安全确认。</div>
+            <div class="tutorial-step"><strong>填写 Item ID</strong>每行粘贴一个 Item ID。建议第一次先放 1 个商品，确认型号表和页面 Model 完全对应后再跑整批。</div>
+            <div class="tutorial-step"><strong>开启安全确认</strong>确认当前店铺、地区、类型、品牌和型号表无误，再打开安全确认开关并开始。</div>
+            <div class="tutorial-step"><strong>等待完整核对</strong>工具会开启全部 Model，检查行数是否等于已启用 Color × 全部 Model，并为每一行生成正确 SKU。</div>
+            <div class="tutorial-step"><strong>查看处理结果</strong>原 SKU 正确的行不会重复写入；只有不一致的行会修改。每个商品完成后会显示检查行数和修正行数。</div>
+          </div>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>SKU 生成规则</h3>
+              <p>完整 SKU 为“型号表中的 SKU 编号 + 连字符 + Color 中的颜色编号”。例如型号前缀为 <code>SXZ-HMSE#11</code>、Color 为 <code>Y132</code>，结果就是 <code>SXZ-HMSE#11-Y132</code>。</p>
+            </div>
+            <div class="feature-box">
+              <h3>不会猜未知型号</h3>
+              <p>页面 Model 必须与型号表的“线上sku名称”准确对应。未知型号、同名冲突、重复变种或无法唯一识别的颜色编号都会暂停整批任务。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="latest-0722-add-model">
+          <div class="section-head">
+            <h2>三、批量添加新型号升级</h2>
+            <span class="section-index">03</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>Model 和 SKU 前缀仍由用户填写。</strong> 这个工具不读取 PH/ID 型号表；它按输入的新 Model、SKU 前缀和页面 Color 生成新变种。</span></li>
+            <li><span class="num">2</span><span><strong>只填写新 Model 的精确行。</strong> 工具临时关闭旧 Model 后，只对“Color + 新 Model”唯一匹配的行写入 SKU、库存和价格。</span></li>
+            <li><span class="num">3</span><span><strong>旧行必须保持不变。</strong> 重新开启全部 Model 后，工具会检查原有 SKU、库存、价格、重量和尺寸，任何意外变化都会暂停。</span></li>
+            <li><span class="num">4</span><span><strong>已存在的型号自动跳过。</strong> 重跑同一批 Item 时，已经成功添加的新 Model 不会重复创建，可以安全继续后面的商品。</span></li>
+            <li><span class="num">5</span><span><strong>颜色编号兼容范围扩大。</strong> 支持 <code>Y132</code> 这类单字母编号，也继续支持 <code>KK001</code> 等编号；同一 Color 出现多个候选编号时仍会暂停。</span></li>
+          </ol>
+          <div class="notice-note">批量添加型号仍受平台 100 个变种上限约束。正式执行前先核对“启用 Color 数量 × 全部 Model 数量”，并优先用 1 个商品测试价格、库存和 SKU 结果。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0722-model-tables">
+          <div class="section-head">
+            <h2>四、PH / ID 型号表维护</h2>
+            <span class="section-index">04</span>
+          </div>
+          <p>“批量修改错误 SKU”使用项目内置的菲律宾和印尼型号表。需要补新型号或修正 SKU 时，可以直接用 Excel 打开对应文件修改。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>菲律宾型号表</h3>
+              <p><code>sheet-maker/builtin/model-ph-2026-07-12.xls</code></p>
+              <p>旋转款主要维护 N/O/P 列，依次为“型号、线上sku名称、sku编号”。</p>
+            </div>
+            <div class="feature-box">
+              <h3>印尼型号表</h3>
+              <p><code>sheet-maker/builtin/model-id-2026-07-12.xls</code></p>
+              <p>旋转款主要维护 Q/R/S 列，依次为“型号、线上sku名称、sku编号”。</p>
+            </div>
+          </div>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>线上名称必须准确</strong>“线上sku名称”要与 BigSeller 页面里的 Model 一致。程序只做大小写、空格和全半角归一化，不做模糊猜测。</div>
+            <div class="tutorial-step"><strong>SKU 编号不带颜色</strong>“sku编号”填写型号前缀，例如 <code>SXZ-HMSE#11</code>；末尾颜色编号由页面 Color 自动拼接。</div>
+            <div class="tutorial-step"><strong>三个字段都要填写</strong>新增一行时，“型号、线上sku名称、sku编号”不能留空；型号内容还会参与品牌识别。</div>
+            <div class="tutorial-step"><strong>保存后重新打开工具</strong>表格会按文件修改时间重新读取，不需要重启服务；关闭再打开“批量修改错误 SKU”即可刷新选项和记录数。</div>
+          </div>
+          <div class="notice-warning">不要在批次运行过程中修改型号表。正在运行的任务使用开始时已经确认的规则；需要改表时先停止任务，保存 Excel，再重新打开工具开始新批次。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0722-checklist">
+          <div class="section-head">
+            <h2>五、更新后的使用检查</h2>
+            <span class="section-index">05</span>
+          </div>
+          <ul class="checklist">
+            <li>先确认 BigSeller 已登录，并停留在唯一的 Shopee 在线产品列表页。</li>
+            <li>批量工具运行时不要手动刷新、跳转或关闭正在处理的编辑页。</li>
+            <li>批量修改错误 SKU 前，确认地区、单一店铺、类型和品牌全部一致。</li>
+            <li>新增或修改型号表后，先用一个商品验证 Model、SKU 前缀和 Color 编号。</li>
+            <li>遇到未知 Model、重复行、列识别失败或身份冲突时，不要绕过安全暂停，应先检查页面与型号表。</li>
+            <li>任务完成后抽查至少 1 个商品，确认全部 Model、SKU、库存、价格和促销状态符合预期。</li>
+          </ul>
+          <div class="notice-warning"><strong>关于安全暂停：</strong>7.22 版本会等待页面慢加载，但不会取消关键校验。等待 20 秒后仍无法确认商品身份、销售信息或变种结构时，任务仍会暂停，防止修改错误商品。</div>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-08-11" hidden>
+        <p class="notice-lead">8.11 更新调整了实际上架过程中最关键的几条底层路径：产品主图不再和详情图一次性竞争上传顺序；批量添加新 Model 会先清除 BigSeller 自动继承的旧 SKU、库存和价格；标题、做表平台限制、通用品牌配置、店铺新建以及上架进度也统一按明确规则执行。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">主图优先上传</span>
+          <span class="notice-tag">Shopee / TK 同步升级</span>
+          <span class="notice-tag">新 Model 数据清理</span>
+          <span class="notice-tag">标题规则固定</span>
+          <span class="notice-tag">做表平台限制</span>
+          <span class="notice-tag">新店铺标题从空白开始</span>
+          <span class="notice-tag">商品进度更新</span>
+        </div>
+
+        <section class="notice-section" id="latest-0811-summary">
+          <div class="section-head">
+            <h2>一、本次更新内容</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>主图改为单独优先上传。</strong> Shopee 和 TK 都会先上传第 1 张主图，等待缩略图和上传状态稳定，再上传剩余详情图，降低小图先完成后占据首位的概率。</span></li>
+            <li><span class="num">2</span><span><strong>适配 BigSeller 新 Model 继承逻辑。</strong> 关闭旧 Model 后，新行仍可能复制第一个旧 Model 的 SKU、库存和价格；工具现在会先全部清空并稳定复核为空，再填写新数据。</span></li>
+            <li><span class="num">3</span><span><strong>标题连接词完全交给配置。</strong> 系统不再自动插入 <code>For</code>；品牌前缀、品牌、型号和功能词按设置拼接，型号之间的 <code>/</code> 保持不变。</span></li>
+            <li><span class="num">4</span><span><strong>自动做表区分 Shopee 和 TK。</strong> Shopee 继续执行单品牌 100 个变种上限；TK 不再被 Shopee 的 100 变种规则阻止导出。</span></li>
+            <li><span class="num">5</span><span><strong>通用品牌配置减少错位和丢失。</strong> 动态品牌槽位拥有稳定身份；删除后重新添加同一品牌时，会恢复该品牌原有图片、标题和上架参数。</span></li>
+            <li><span class="num">6</span><span><strong>上架进度按批次和商品连续更新。</strong> 每完成一个商品立即增加 1；切换批次时从已完成批次的基数继续累计，批次报错时不会标记为已完成。</span></li>
+            <li><span class="num">7</span><span><strong>新建店铺默认从空白标题开始。</strong> 首次保存新店铺时，保留当前平台的模板结构、品牌开关和图片/视频等基础配置，清空所有模板里的标题前缀、品牌、型号、功能词、后缀和固定标题格式，并立即应用；原有店铺方案不会被改动。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0811-main-image">
+          <div class="section-head">
+            <h2>二、Shopee / TK 主图上传底层调整</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>过去 9 张产品图会作为同一批文件交给 BigSeller。多数情况下页面会保留文件顺序，但图片大小和网络速度不同，详情小图也可能先完成上传，造成首张缩略图偶尔不是预定主图。本次把产品图上传拆成两个阶段。</p>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>第一阶段：只传主图</strong>只提交图片列表中的第 1 张主图，不让另外 8 张详情图同时竞争上传完成顺序。</div>
+            <div class="tutorial-step"><strong>等待主图稳定</strong>持续检查主图缩略图已经加载完成、存在有效地址、没有上传或进度状态，并要求连续 3 轮读取一致。</div>
+            <div class="tutorial-step"><strong>第二阶段：上传详情图</strong>主图稳定后，再一次性上传剩余详情图；不足 9 张时按实际图片数量处理。</div>
+            <div class="tutorial-step"><strong>复核完整图片组</strong>等待全部缩略图加载完成且状态稳定，最终图片数量不对时仍会进入原有重试或停止逻辑。</div>
+          </div>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>Shopee 与 TK 同时生效</h3>
+              <p>两个平台仍使用各自独立的 Worker 和发布流程，但产品图都采用相同的“主图先传、稳定后再传详情图”策略。</p>
+            </div>
+            <div class="feature-box">
+              <h3>没有取消原有安全检查</h3>
+              <p>旧图必须先删除干净；主图阶段失败、完整图片数量不足或缩略图长期不稳定时，不会直接进入视频、变种图或发布步骤。</p>
+            </div>
+          </div>
+          <div class="notice-note">最近上架商品卡片仍使用本次上传主图的缩略图，不使用发布前页面截图。正式批量前建议先上架 1 个商品，确认编辑页首图和最近商品缩略图一致。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0811-add-model">
+          <div class="section-head">
+            <h2>三、批量添加新 Model 适配 BigSeller 新逻辑</h2>
+            <span class="section-index">03</span>
+          </div>
+          <p>BigSeller 官方优化在线产品编辑页后，即使工具已经关闭全部旧 Model，再添加并仅启用新 Model，页面仍会把第一个旧 Model 的 SKU、库存和价格复制到所有新行。SKU ID 虽然显示为 <code>--</code>，输入框里的旧值却真实存在，不能直接当作空白新行。</p>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>保存旧行基线</strong>先读取全部旧 Model 的 SKU、库存、价格、重量和尺寸，后续任何旧行变化都会停止。</div>
+            <div class="tutorial-step"><strong>只保留新 Model</strong>添加目标 Model 后，确认表格中每一行都是“启用 Color + 新 Model”，不允许混入旧 Model。</div>
+            <div class="tutorial-step"><strong>先清空继承数据</strong>逐行清空 SKU、库存和价格，不触碰促销价、SKU ID 或其他字段；任一输入框不可编辑都会安全暂停。</div>
+            <div class="tutorial-step"><strong>三轮空值复核</strong>连续检查表格行集合和空值状态。如果 BigSeller 又把旧值带回来，任务会在写新数据前停止。</div>
+            <div class="tutorial-step"><strong>再填写目标数据</strong>确认全部为空后，才按 Color + 新 Model 精确填写新 SKU、库存、价格以及页面支持的重量和尺寸。</div>
+            <div class="tutorial-step"><strong>恢复并核对全部 Model</strong>重新开启全部 Model，三轮确认新行正确、旧行完全没有变化后，才允许点击更新。</div>
+          </div>
+          <div class="notice-warning">此功能修改了服务端批量工具逻辑，更新后必须重启整个上架工具。只刷新控制面板不会加载新代码。第一次请先用 1 个 Item ID 测试，并在日志中确认出现“继承数据已全部清空并稳定复核为空”。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0811-title-sheet">
+          <div class="section-head">
+            <h2>四、标题规则与上架表格一键制作</h2>
+            <span class="section-index">04</span>
+          </div>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>标题不再自动添加 For</h3>
+              <p>标题固定顺序为“AI 图案词 → 品牌前缀 → 品牌 → 型号 → 功能词”。需要 <code>For</code> 时由用户写在自己的配置字段中，系统不会额外添加或删除字段里的内容。</p>
+            </div>
+            <div class="feature-box">
+              <h3>型号搜索分隔符保持不变</h3>
+              <p>型号使用 <code>/</code> 或全角 <code>／</code> 分组；随机只改变组的顺序，输出仍用 <code>/</code> 连接。功能短语使用英文逗号或分号分隔，逗号前后的空格不影响识别。</p>
+            </div>
+            <div class="feature-box">
+              <h3>AI 只识别图片图案</h3>
+              <p><code>ai_image_shuffle</code> 模式只让 AI 返回 2–3 个图案词；品牌、品牌前缀、型号和功能词均由本地规则生成，不交给 AI 重写。</p>
+            </div>
+            <div class="feature-box">
+              <h3>做表平台限制分开</h3>
+              <p>“上架表格一键制作”新增上架平台选择。选择 Shopee 时单品牌型号数 × Color 数超过 100 不能导出；选择 TK 时不执行这一限制。</p>
+            </div>
+          </div>
+          <div class="notice-note">标题设置示例：如果希望出现 <code>For Samsung Galaxy Tab</code>，请把 <code>For</code> 写入品牌前缀或其他固定字段。不要等待系统自动补充。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0811-config-progress">
+          <div class="section-head">
+            <h2>五、通用品牌配置与上架进度</h2>
+            <span class="section-index">05</span>
+          </div>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>删除品牌不再导致后续配置串位</h3>
+              <p>通用全部品牌的动态槽位不再因为删除中间卡片就整体重新编号。剩余品牌保留各自身份，只重新计算实际图片批次偏移。</p>
+            </div>
+            <div class="feature-box">
+              <h3>重新添加同一品牌可恢复配置</h3>
+              <p>删除的品牌会按类型保存原槽位、图片、标题和视频等参数；之后重新选择同一品牌时优先恢复，不会套用其他品牌的方案。</p>
+            </div>
+            <div class="feature-box">
+              <h3>每完成一个商品立即更新进度</h3>
+              <p>当前批次每收到一个商品完成事件，已处理数量就立即增加，不需要等整批结束后才跳动。</p>
+            </div>
+            <div class="feature-box">
+              <h3>批次切换与错误状态更清楚</h3>
+              <p>完成一批后保存该批次基数，下一批在此基础上逐商品累计；收到批次错误时保持未完成状态，不会把错误批次加入已完成列表。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="latest-0811-store-profile">
+          <div class="section-head">
+            <h2>六、新建店铺：标题配置从空白开始</h2>
+            <span class="section-index">06</span>
+          </div>
+          <p>“店铺整套上架配置”用于保存同一平台的一整套模板和基础设置。为了避免把上一家店铺的品牌、型号和功能词误带到新店铺，输入一个全新的店铺名称并首次保存时，系统会保留模板结构、品牌开关、图片/视频参数和平台基础开关，但把标题内容初始化为空白。</p>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>先确认平台</strong>切换到 Shopee 或 TikTok Shop，再在设置里操作；两个平台的店铺方案完全分开。</div>
+            <div class="tutorial-step"><strong>点击新建店铺</strong>输入一个未保存过的店铺名称。页面会提示这家店铺的标题前缀、品牌、型号、功能词、后缀和固定标题从空白开始。</div>
+            <div class="tutorial-step"><strong>保存整套并自动应用</strong>点击“保存整套”后，系统先保存当前可见的非标题配置，再创建并立即应用新的空白标题方案。</div>
+            <div class="tutorial-step"><strong>重新填写标题</strong>根据新店铺实际品牌和型号填写标题字段；标题模式和通用 AI 提示词会继续保留，不需要重复设置。</div>
+          </div>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>旧店铺不会被覆盖</h3>
+              <p>新建使用新的方案 ID。之前保存的店铺标题、模板和基础配置继续保留；要修改旧店铺，应先应用旧店铺并使用原名称更新。</p>
+            </div>
+            <div class="feature-box">
+              <h3>只清空标题内容</h3>
+              <p>清空的是标题前缀、品牌、型号、功能词、后缀和固定标题格式；模板结构、品牌启用状态、图片/视频参数和平台开关继续保留。</p>
+            </div>
+            <div class="feature-box">
+              <h3>AI 与本机配置保持独立</h3>
+              <p>AI Key、模型、端点和本机图库/Excel路径不写入店铺方案；标题模式和通用提示词作为模板规则保留。</p>
+            </div>
+          </div>
+          <div class="notice-note">新建后第一次上架前，必须重新检查每个启用品牌的标题字段。若需要沿用旧店铺标题，请应用旧店铺，不要用“新建店铺”代替复制。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0811-checklist">
+          <div class="section-head">
+            <h2>七、更新后的使用检查</h2>
+            <span class="section-index">07</span>
+          </div>
+          <ul class="checklist">
+            <li>本次包含 Worker 和服务端修改，更新文件后先重启整个上架工具，再开始测试。</li>
+            <li>Shopee 和 TK 各先上架 1 个商品，确认第 1 张图片为预定主图，详情图数量和顺序正常。</li>
+            <li>批量添加新 Model 先用 1 个 Item ID，确认日志先显示清空继承数据，再显示填写新数据。</li>
+            <li>新增 Model 完成后抽查至少两个 Color，确认 SKU、库存、价格属于新 Model，旧 Model 数据没有变化。</li>
+            <li>检查标题配置中是否自行填写了需要的 <code>For</code>，并确认型号之间仍使用 <code>/</code>。</li>
+            <li>使用“上架表格一键制作”前先选对 Shopee 或 TK，避免套用错误的 100 变种限制。</li>
+            <li>新建店铺后先重新填写并检查启用品牌的标题前缀、品牌、型号、功能词和固定标题格式；需要继承旧标题时应用原店铺。</li>
+            <li>通用品牌删除或重新添加后，抽查该品牌的标题、图片目录、主图序号、视频和补充图数量。</li>
+            <li>批量运行期间不要手动刷新、跳转或关闭编辑页；进度未增加时以实时日志中的当前商品状态为准。</li>
+          </ul>
+          <div class="notice-warning"><strong>安全暂停仍然有效：</strong>图片缩略图不稳定、新 Model 行混入旧 Model、继承数据清不掉、输入框不可编辑、配置身份冲突或页面结构无法确认时，工具会停止后续商品，不会绕过检查继续发布。</div>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-08-06" hidden>
+        <p class="notice-lead">8.2 以来，本次更新重点解决两个实际问题：标题被 AI 改乱，以及 BigSeller 批量添加型号时价格、库存和 SKU 偶尔错位。同时新增“修改已知 Model”工具，方便批量更正旧型号名称。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">标题规则修复</span>
+          <span class="notice-tag">品牌信息保护</span>
+          <span class="notice-tag">批量添加新型号</span>
+          <span class="notice-tag">修改已知 Model</span>
+          <span class="notice-tag">AI 重试</span>
+          <span class="notice-tag">安全暂停</span>
+        </div>
+
+        <section class="notice-section" id="latest-0806-summary">
+          <div class="section-head">
+            <h2>一、本次更新内容</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>标题不会再被 AI 随意改写。</strong> AI 只负责识别图片图案，品牌、品牌前缀、型号和功能词按照设置生成。</span></li>
+            <li><span class="num">2</span><span><strong>批量添加新型号更稳定。</strong> 工具会等待 BigSeller 表格刷新完成，再填写新型号的 SKU、库存和价格，并检查旧型号有没有被改动。</span></li>
+            <li><span class="num">3</span><span><strong>新增“修改已知 Model”。</strong> 可以按 Item ID 批量把旧 Model 改成新 Model，已经修改过的商品会自动跳过。</span></li>
+            <li><span class="num">4</span><span><strong>异常时自动暂停。</strong> 页面没有加载完成、数据重复或结果无法确认时，工具会停止后续商品，不会继续猜测写入。</span></li>
+            <li><span class="num">5</span><span><strong>AI 暂时繁忙时会重试。</strong> 遇到供应商临时拥堵会自动重试；多次失败后会明确提示原因。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0806-title">
+          <div class="section-head">
+            <h2>二、标题生成规则修复</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>现在标题的固定部分由本地规则控制，AI 不再重新写整条标题。这样可以避免品牌、品牌前缀和型号被删掉或放错位置。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>固定不变的内容</h3>
+              <p>品牌前缀、品牌名称、型号列表和配置中填写的 <code>for</code> 都会原样保留。系统不会自动插入连接词，多个型号之间的 <code>/</code> 也会保留。</p>
+            </div>
+            <div class="feature-box">
+              <h3>可以随机的内容</h3>
+              <p>只有型号顺序、功能词顺序，以及图片识别出的图案词可以变化。型号随机后仍使用 <code>/</code> 分隔，<code>360°</code> 不会被当成型号。</p>
+            </div>
+          </div>
+          <div class="notice-note">标题中出现两个 <code>for</code> 不一定是错误，有可能一个来自品牌设置，另一个是型号连接词。请以设置内容为准。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0806-add-model">
+          <div class="section-head">
+            <h2>三、批量添加新型号修复</h2>
+            <span class="section-index">03</span>
+          </div>
+          <p>BigSeller 有时在旧型号仍打开时没有及时刷新新行，可能造成新型号价格无法填写、SKU 继承旧型号等问题。本次已调整操作顺序和检查方式。</p>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>先确认旧数据</strong>先记录原有型号的 SKU、库存、价格等信息。</div>
+            <div class="tutorial-step"><strong>等待表格刷新</strong>关闭旧型号并等待新型号行真正出现，不抢跑填写。</div>
+            <div class="tutorial-step"><strong>只写新型号</strong>只对对应的 Color + 新 Model 填写 SKU、库存和价格。</div>
+            <div class="tutorial-step"><strong>完成后复核</strong>重新打开全部型号，确认旧型号数据没有变化。</div>
+          </div>
+          <div class="notice-warning">第一次使用或修改了大量型号时，建议先只放 1 个 Item ID 测试。遇到价格输入框不可编辑、SKU 对不上或变种表重复时，不要强行继续。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0806-known-model">
+          <div class="section-head">
+            <h2>四、新增“修改已知 Model”</h2>
+            <span class="section-index">04</span>
+          </div>
+          <p>这个工具用于把已经存在的型号名称批量改成新名称，例如把 <code>HONOR Pad X8A 11&quot;</code> 改为 <code>HONOR X8a/X8b 11&quot;</code>。</p>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>填写 Item ID</strong>每行填写一个商品 ID，数量不限制 50 个。</div>
+            <div class="tutorial-step"><strong>填写原 Model 和新 Model</strong>原 Model 必须是页面上实际存在的名称。</div>
+            <div class="tutorial-step"><strong>自动修改</strong>工具会进入销售信息，只点击目标 Model 后面的专属编辑按钮。</div>
+            <div class="tutorial-step"><strong>自动复核</strong>已经改过的商品会跳过；找不到原 Model 或结果不明确会安全暂停。</div>
+          </div>
+          <div class="notice-note">更新成功提示最长等待 60 秒。若 BigSeller 更新后自动关闭页面，工具会重新打开商品确认新 Model 已保存。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0806-ai">
+          <div class="section-head">
+            <h2>五、AI 提示和安全处理</h2>
+            <span class="section-index">05</span>
+          </div>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>看到“系统繁忙”怎么办</h3>
+              <p>这通常是 AI 服务暂时拥堵，不代表程序把品牌或标题删掉了。工具会自动重试，仍失败时等待一会儿再重新开始。</p>
+            </div>
+            <div class="feature-box">
+              <h3>看到“安全暂停”怎么办</h3>
+              <p>先检查当前商品、店铺和页面，不要直接点击继续。确认页面恢复正常后，再从暂停商品重新开始。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="latest-0806-checklist">
+          <div class="section-head">
+            <h2>六、更新后的使用检查</h2>
+            <span class="section-index">06</span>
+          </div>
+          <ul class="checklist">
+            <li>第一次使用新功能时，先用 1 个商品测试。</li>
+            <li>开始前确认 BigSeller 当前打开的是正确店铺和正确列表页。</li>
+            <li>批量运行时不要手动刷新、跳转或关闭编辑页面。</li>
+            <li>批量添加新型号后，抽查 SKU、库存和价格。</li>
+            <li>修改已知 Model 后，抽查新旧型号名称是否正确。</li>
+            <li>遇到安全暂停，先检查原因，不要绕过提示强行继续。</li>
+          </ul>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-08-01" hidden>
+        <p class="notice-lead">8.1 更新新增“店铺整套上架配置”：每个店铺可以一次保存当前平台的全部模板、标题和基础设置，来回切换店铺时无需逐项重改。TK 也拥有独立的“通用全部品牌”配置与保存逻辑；同时修复了传音标题被 iPad 宽泛关键词误判、通用品牌图片超过 9 张、Shopee 发布后未能稳定关页、变种表短暂刷新、概览切换卡顿以及最近商品误用截图缩略图等问题。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">店铺整套配置</span>
+          <span class="notice-tag">TK 通用全部品牌</span>
+          <span class="notice-tag">品牌二次确认</span>
+          <span class="notice-tag">9 张图片上限</span>
+          <span class="notice-tag">发布确认升级</span>
+          <span class="notice-tag">概览切换加速</span>
+          <span class="notice-tag">主图缩略图</span>
+        </div>
+
+        <section class="notice-section" id="latest-0801-summary">
+          <div class="section-head">
+            <h2>一、本次更新内容</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>TK 新增“通用全部品牌”模板。</strong> Shopee 与 TK 的通用品牌槽位、类型配置和保存位置完全独立；在 TK 中设置不会覆盖 Shopee 的通用品牌配置。</span></li>
+            <li><span class="num">2</span><span><strong>传音标题优先识别真实品牌。</strong> Infinix、TECNO、XPAD、MegaPad、VistaTab 等明确关键词会先于 iPad 的 <code>Pro</code>/<code>Air</code> 等宽泛词判断，避免被错误跳过为“未启用 iPad”。</span></li>
+            <li><span class="num">3</span><span><strong>通用品牌产品图自动限制为最多 9 张。</strong> 当同组图较多时，系统会自动压低补充图数量；保存配置与上架前校验都会执行同一限制。</span></li>
+            <li><span class="num">4</span><span><strong>Shopee 发布确认更可靠。</strong> 点击“保存&amp;发布”后，会继续等待包含“产品已提交 Shopee”的最终成功弹窗，再执行关闭页面，避免页面仍在处理时卡在编辑页。</span></li>
+            <li><span class="num">5</span><span><strong>变种表短暂刷新不再立即中断。</strong> 遇到 <code>rowid</code> 临时重复或两次读取不一致时，工具会等待并重读；连续 3 次仍不能确认才安全暂停。</span></li>
+            <li><span class="num">6</span><span><strong>近 7 天 / 近 30 天概览切换加速。</strong> 概览改为读取轻量运行摘要，切换时不再重复加载全部历史详情、事件和图片；旧请求会取消，近期数据会短暂缓存。</span></li>
+            <li><span class="num">7</span><span><strong>新增“店铺整套上架配置”。</strong> 每个店铺一次保存当前平台全部模板、标题与基础设置；Shopee 和 TK 分开管理，打开设置时默认选中该平台最近保存的店铺。</span></li>
+            <li><span class="num">8</span><span><strong>最近上架商品改为显示真实主图。</strong> 商品卡片现在使用本次上传的主图缩略图，不再把发布前的页面截图当成商品链接图。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0801-profiles">
+          <div class="section-head">
+            <h2>二、店铺整套上架配置</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>设置页面的 AI 模型上方新增“店铺整套上架配置”。它适合多个店铺来回切换：先把当前店铺需要的模板、标题和基础参数调好，再用店铺名称保存；下次回到这个店铺时直接应用即可。</p>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>先选对平台</strong>切换到 Shopee 或 TikTok Shop 后再进入设置。两个平台的店铺列表和配置快照完全分开，不会互相显示或覆盖。</div>
+            <div class="tutorial-step"><strong>保存当前店铺</strong>填写店铺名称并点击“保存整套”。一次保存的是当前平台全部模板，不只是当时选中的那个模板。</div>
+            <div class="tutorial-step"><strong>应用已有店铺</strong>点击店铺卡片后选择“应用店铺”，该店铺保存的模板、标题、批次参数和图片模式会一起恢复。</div>
+            <div class="tutorial-step"><strong>更新同一店铺</strong>调整配置后选中原店铺再保存，会更新该店铺；要保存另一家店铺则点击“新建店铺”并填写新名称。</div>
+          </div>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>默认最近保存</h3>
+              <p>每次打开设置，会优先选中当前平台最近保存的店铺；店铺列表会始终完整显示，方便直接切换。</p>
+            </div>
+            <div class="feature-box">
+              <h3>全局设置保持独立</h3>
+              <p>AI 模型、API 密钥和本机图库、Excel 路径不会写进店铺方案，应用店铺时也不会覆盖这些全局或本机配置。</p>
+            </div>
+          </div>
+          <div class="notice-note">每个平台最多保存 50 个店铺配置。删除店铺配置只删除保存的方案，不会删除模板文件、图库、Excel 或上架历史。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0801-tk-universal">
+          <div class="section-head">
+            <h2>三、TK 通用全部品牌使用方法</h2>
+            <span class="section-index">03</span>
+          </div>
+          <p>进入 TikTok Shop 后，在设置中选择模板“通用全部品牌”。这里的品牌槽位是 TK 专用配置，和 Shopee 模板不会互相影响。</p>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>选择正确店铺</strong>先切换到 TikTok Shop，并确认 BigSeller 已打开 TK 在线产品列表页。不要停在编辑页，也不要同时开多个 TK 在线列表页。</div>
+            <div class="tutorial-step"><strong>选择产品类型</strong>按当前图片和标题规则选择 3Y、书本、笔槽或其他已配置类型，再设置每个槽位实际对应的品牌、关键词、图片序号和视频。</div>
+            <div class="tutorial-step"><strong>核对品牌关键词</strong>传音类建议保留 Infinix、TECNO、itel、XPAD、MegaPad、VistaTab 等明确关键词；不要只用 <code>Pro</code>、<code>Air</code> 这类泛词判断品牌。</div>
+            <div class="tutorial-step"><strong>保存后再开始</strong>保存设置后，先用 1 个搜索组验证品牌、产品图、变种图和标题；确认无误后再执行整批。</div>
+          </div>
+          <div class="notice-note">如果编辑页识别到的真实品牌没有配置到当前 TK 槽位，任务会明确提示“未配置”，不会把它当作其他品牌继续上传图片。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0801-reliability">
+          <div class="section-head">
+            <h2>四、发布与变种表稳定性</h2>
+            <span class="section-index">04</span>
+          </div>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>Shopee 最终发布确认</h3>
+              <p>页面出现普通“操作成功”提示并不代表发布已经完成。系统现在会继续确认最终提交结果，再关闭编辑页并进入下一条商品。</p>
+            </div>
+            <div class="feature-box">
+              <h3>变种表安全重读</h3>
+              <p>BigSeller 刷新变种表时可能瞬间出现重复 <code>rowid</code>。工具会先等待页面稳定并重读，只有持续异常才暂停，避免误写 SKU、库存或价格。</p>
+            </div>
+          </div>
+          <div class="notice-warning"><strong>安全暂停仍然有效：</strong>重试不是跳过校验。页面身份、Color + Model 唯一性、图片前缀或变种表结构持续异常时，任务仍会停止，需先检查当前商品与配置。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0801-overview">
+          <div class="section-head">
+            <h2>五、概览切换与主图缩略图</h2>
+            <span class="section-index">05</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>切换“近 7 天 / 近 30 天”会立即更新选中状态。</strong> 当前数据保留在页面上，拿到新统计后再做轻量更新，不会整块清空等待。</span></li>
+            <li><span class="num">2</span><span><strong>最近上架商品不随范围切换重复读取。</strong> 首次加载或点击“刷新”才会更新商品卡片；范围切换只读取需要的统计数据。</span></li>
+            <li><span class="num">3</span><span><strong>快速连续点击不会串数据。</strong> 较早的请求会被取消，旧的 7 天结果不会覆盖刚切换完成的 30 天结果。</span></li>
+            <li><span class="num">4</span><span><strong>商品链接图使用上传主图缩略图。</strong> “最近上架商品”卡片读取本次上架保存的主图；如果主图资源不存在则保持空白，不会退回使用页面截图冒充商品图。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0801-checklist">
+          <div class="section-head">
+            <h2>六、更新后的使用检查</h2>
+            <span class="section-index">06</span>
+          </div>
+          <ul class="checklist">
+            <li>保存店铺前先确认平台和店铺名称正确；一次保存会记录当前平台的全部模板配置。</li>
+            <li>应用店铺后抽查当前模板、标题、批次参数和品牌开关；AI 密钥与本机路径应保持原值。</li>
+            <li>TK 使用“通用全部品牌”前，确认当前店铺、模板、类型和槽位品牌均为 TK 配置。</li>
+            <li>每个通用品牌产品图不能超过 9 张；保存设置后再次打开配置，确认补充图数量符合预期。</li>
+            <li>上架过程中不要手动刷新、跳转或关闭 BigSeller 当前编辑页。</li>
+            <li>遇到“未配置品牌”或安全暂停时，先检查编辑页标题、模板槽位与图片目录，不要强行继续。</li>
+            <li>Shopee 发布后以最终“产品已提交 Shopee”结果为准；TK 则以“更新成功”结果为准。</li>
+            <li>“最近上架商品”的图片应为本次上传主图缩略图，而不是发布前页面截图。</li>
+            <li>更新服务后第一次打开公告会自动弹出；概览优化需要在服务重启后生效。</li>
+          </ul>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-07-13" hidden>
+        <div class="notice-critical" role="alert"><strong>必须立即处理：</strong>凡是在 2026.7.13 修复前使用“上架表格一键制作”，并上架过下列型号的同事，请立即检查 BigSeller 以及已经同步或发布到店铺的商品。旧表格不会自动修正，线上错误价格也不会自动恢复。</div>
+
+        <p class="notice-lead">我们在 7.13 完成了自动做表尺寸识别逻辑的重大修复。旧版本可能把型号中的代数或型号数字误认为屏幕英寸，导致部分型号匹配到错误价格档；另有一个 8.8 寸型号因为线上 SKU 名称为空，可能没有进入导出结果。这属于会直接影响售价和商品完整性的重大 BUG，请所有相关同事按本公告完成历史商品复查。给大家带来的额外核查工作，我们深表歉意。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">重大 BUG 修复</span>
+          <span class="notice-tag">价格档识别</span>
+          <span class="notice-tag">菲律宾与印尼</span>
+          <span class="notice-tag">历史商品立即复查</span>
+          <span class="notice-tag">自动做表</span>
+        </div>
+
+        <section class="notice-section" id="latest-0713-summary">
+          <div class="section-head">
+            <h2>一、谁需要立即处理</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>修复前使用过自动做表。</strong> 只要曾用“上架表格一键制作”生成并上传过下面列出的型号，就属于本次复查范围。</span></li>
+            <li><span class="num">2</span><span><strong>已经上传或发布过商品。</strong> 不论商品目前在 BigSeller、Shopee、TikTok Shop，还是正在参加促销，都要检查每个相关变种的原价和促销价。</span></li>
+            <li><span class="num">3</span><span><strong>不能只检查新生成的表格。</strong> 本次代码修复只影响修复后重新生成的表格，不会修改历史 Excel，也不会修改已经发布的线上商品。</span></li>
+            <li><span class="num">4</span><span><strong>发现错误后立即修改。</strong> 按本公告的正确价格档重新核价，修改 BigSeller 和店铺端错误价格，并确认促销折扣后的价格也正确。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0713-affected">
+          <div class="section-head">
+            <h2>二、受影响型号与正确价格档</h2>
+            <span class="section-index">02</span>
+          </div>
+          <div class="notice-table-wrap">
+            <table class="notice-table">
+              <thead>
+                <tr><th>市场</th><th>型号</th><th>旧版本风险</th><th>正确规则</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>菲律宾</td><td><code>iPad 10th/11th/12th</code></td><td><code>12th</code> 可能被当成 12 寸</td><td class="price-tier">按 11 寸价格</td></tr>
+                <tr><td>印尼</td><td><code>MatePad Pro 10.8"</code></td><td><code>10.8</code> 末尾的 8 可能被当成 8 寸</td><td class="price-tier">按 11 寸价格</td></tr>
+                <tr><td>印尼</td><td><code>xiaomi pad mini 8.8"</code><br>SKU：<code>SB-XIAOMIPADMINI#8.8</code></td><td>线上 SKU 名称为空时，旧版本可能跳过该型号</td><td class="price-tier">按 8 寸价格</td></tr>
+                <tr><td>印尼</td><td><strong>SIRKELS：</strong>S12、PRO12、S13、S10、S10PRO<br><strong>Wheywhey：</strong>S12、PRO12、S13、S10、S10PRO<br><strong>KLORUS：</strong>Mate S12、Mate PRO12、Mate S13、Mate S10、S10PRO<br><strong>LUXIS：</strong>Mate S12、PRO12、Mate S13、Mate S10、S10PRO</td><td>S12、PRO12、S13 等型号数字可能被当成屏幕英寸</td><td class="price-tier">20 个型号全部按 11 寸价格</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="notice-warning"><strong>特别提醒：</strong>四个品牌的 20 个型号是按当前业务价格规则统一使用 11 寸价格档，包括名称里带 <code>S13</code> 的型号。不要根据型号数字自行改成 12-13 寸价格。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0713-fix">
+          <div class="section-head">
+            <h2>三、问题原因与修复内容</h2>
+            <span class="section-index">03</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>问题原因。</strong> 旧尺寸规则直接搜索名称里的 8、12、13 等数字，没有严格区分“屏幕英寸”“产品代数”和“型号编号”。</span></li>
+            <li><span class="num">2</span><span><strong>尺寸识别已重写。</strong> 现在优先识别带英寸标记的真实尺寸，<code>10th/11th/12th</code> 不再被当成英寸。</span></li>
+            <li><span class="num">3</span><span><strong>业务价格规则已固定。</strong> SIRKELS、Wheywhey、KLORUS、LUXIS 的 20 个型号全部强制使用 11 寸价格档。</span></li>
+            <li><span class="num">4</span><span><strong>8.8 寸线上名称已补齐。</strong> 读取到 <code>SB-XIAOMIPADMINI#8.8</code> 时，工具会自动补为 <code>xiaomi pad mini 8.8"</code> 并使用 8 寸价格。</span></li>
+            <li><span class="num">5</span><span><strong>修复范围保持独立。</strong> 本次只修改“上架表格一键制作”，没有修改 Shopee 或 TikTok Shop 的上架 worker、模板和页面操作规则。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0713-review">
+          <div class="section-head">
+            <h2>四、历史商品复查方法</h2>
+            <span class="section-index">04</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>整理历史商品。</strong> 按上面的型号名称和 SKU，找出修复前制作、上传或发布过的所有相关商品。</span></li>
+            <li><span class="num">2</span><span><strong>逐个检查变种。</strong> 检查每个颜色、型号变种的原价、促销价和折扣结果，不要只看商品列表显示的最低价。</span></li>
+            <li><span class="num">3</span><span><strong>按正确档位重新核价。</strong> 使用当前价格表核对 8 寸、11 寸或 12-13 寸档；发现不一致立即修改并更新商品。</span></li>
+            <li><span class="num">4</span><span><strong>确认店铺端已生效。</strong> BigSeller 修改后还要检查对应店铺页面，确认价格已经同步，促销活动没有继续使用旧价格。</span></li>
+            <li><span class="num">5</span><span><strong>留下复查记录。</strong> 建议记录 Item ID、店铺、检查人和修改结果，避免多人重复检查或漏查。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0713-checklist">
+          <div class="section-head">
+            <h2>五、修复后的使用要求</h2>
+            <span class="section-index">05</span>
+          </div>
+          <ul class="checklist">
+            <li>重新打开或刷新“上架表格一键制作”，确保加载到 7.13 修复后的版本。</li>
+            <li>先用少量数据生成一份测试表，确认受影响型号进入正确价格档。</li>
+            <li>每次导出后都要人工检查线上 SKU 名称、SKU、价格、库存状态、品牌和型号。</li>
+            <li>自动做表无法识别供应端是否缺货，无库存型号必须人工删除。</li>
+            <li>价格识别仍以人工复核为最终标准，确认无误后再上传 BigSeller。</li>
+          </ul>
+          <div class="notice-critical"><strong>统一操作要求：</strong>自动做表仅保证线上 SKU 名称、SKU 和表格结构基本正确，不能保证价格识别百分百准确，也不能识别无库存型号。做表完成后必须认真检查。</div>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-07-08" hidden>
+        <p class="notice-lead">今天更新了“偷懒小工具”里的“上架表格一键制作”。以后导出的表格会按图片编号来排：先把 CK001 的所有型号排完，再排 CK002、CK003。大家检查表格时，直接按图片编号一段一段看就可以。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">上架表格一键制作</span>
+          <span class="notice-tag">按图片编号排列</span>
+          <span class="notice-tag">CK001 先排完整型号</span>
+          <span class="notice-tag">检查更方便</span>
+          <span class="notice-tag">7.7 移入历史</span>
+        </div>
+
+        <section class="notice-section" id="summary">
+          <div class="section-head">
+            <h2>一、本次更新内容</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>表格排列方式变了。</strong> 现在导出的表格会先排同一个图片编号下的全部型号，例如先排完 CK001，再排 CK002。</span></li>
+            <li><span class="num">2</span><span><strong>检查表格更方便。</strong> 看表格时可以按 CK001、CK002、CK003 这样一段一段检查，不用在不同型号之间来回找。</span></li>
+            <li><span class="num">3</span><span><strong>SKU、价格、库存规则不变。</strong> 这次只调整表格排列顺序，不影响 SKU 生成、价格匹配和库存填写。</span></li>
+            <li><span class="num">4</span><span><strong>多个品牌也可以正常用。</strong> 如果一次选择多个品牌，系统会先按品牌分开，再在每个品牌里面按 CK001、CK002 的顺序排列。</span></li>
+            <li><span class="num">5</span><span><strong>7.7 公告已放到历史公告。</strong> 需要查看昨天的更新内容，可以点左侧“历史公告”里的 2026.7.7。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="sheet-maker">
+          <div class="section-head">
+            <h2>二、表格制作变化</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>大家只需要记住一点：以后检查导出的表格时，按图片编号检查。每一个图片编号下面，都会放这个品牌的完整型号列表。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>以前的顺序</h3>
+              <p>同一个型号下面连续出现 CK001、CK002、CK003，检查时容易看串。</p>
+            </div>
+            <div class="feature-box">
+              <h3>现在的顺序</h3>
+              <p>CK001 下面先显示全部型号，排完后再显示 CK002 的全部型号。</p>
+            </div>
+            <div class="feature-box">
+              <h3>检查方式</h3>
+              <p>检查时先看 CK001 这一段，再看 CK002 这一段，确认型号、SKU、价格都没有问题。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="export-order">
+          <div class="section-head">
+            <h2>三、导出后怎么检查</h2>
+            <span class="section-index">03</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>先看图片编号。</strong> 例如 OPPO 选择 CK001 到 CK006，表格会先出现 <code>3Y-Fold-CK001</code> 这一段。</span></li>
+            <li><span class="num">2</span><span><strong>再看型号是否完整。</strong> 在 CK001 这一段里，应该能看到 OPPO 的全部型号；CK002、CK003 也一样。</span></li>
+            <li><span class="num">3</span><span><strong>再看 SKU。</strong> SKU 仍然是“型号 SKU + 图片编号”，例如 <code>3Y-OPPOSE#11-CK001</code>。</span></li>
+            <li><span class="num">4</span><span><strong>最后看价格和库存。</strong> 价格、库存没有改规则，导出后仍然要照常检查一遍。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="history">
+          <div class="section-head">
+            <h2>四、公告历史整理</h2>
+            <span class="section-index">04</span>
+          </div>
+          <p>7.7 公告已经放到历史公告里。需要查看昨天的更新内容时，点击左侧“历史公告”，再选择 2026.7.7 即可。</p>
+          <div class="notice-note">请第一次看到本公告的同事先读完“导出后怎么检查”和“更新后建议先做的检查”，再去制作正式上架表格。</div>
+        </section>
+
+        <section class="notice-section" id="checklist">
+          <div class="section-head">
+            <h2>五、更新后建议先做的检查</h2>
+            <span class="section-index">05</span>
+          </div>
+          <ul class="checklist">
+            <li>打开“偷懒小工具”，进入“上架表格一键制作”。</li>
+            <li>先用一个品牌测试，例如 OPPO，勾选 CK001、CK002、CK003。</li>
+            <li>点击“生成确认”，确认型号没少、价格没空，再导出 Excel。</li>
+            <li>打开 Excel，检查 CK001 下面是不是这个品牌的全部型号。</li>
+            <li>再往下检查 CK002、CK003，每一段都应该是完整型号列表。</li>
+            <li>确认 SKU、价格、库存、主图和附属图都没问题后，再上传到 BigSeller。</li>
+          </ul>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-07-07" hidden>
+        <p class="notice-lead">7.6 重点解决“表格怎么做、通用模板怎么上、图片怎么预览校验”；7.7 继续把这些能力做稳：通用类型各自保存槽位，批量上传开始前说清楚风险，主界面更容易看懂今天相较昨天的运行变化，Rain 听雨关于页恢复为底部抽屉式动画。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">通用全部品牌</span>
+          <span class="notice-tag">槽位独立保存</span>
+          <span class="notice-tag">3Y / 旋转互不影响</span>
+          <span class="notice-tag">批量上传表格提示</span>
+          <span class="notice-tag">今日较昨日统计</span>
+          <span class="notice-tag">Rain 听雨底部抽屉</span>
+        </div>
+
+        <section class="notice-section" id="history-0707-summary">
+          <div class="section-head">
+            <h2>一、本次更新内容</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>通用品牌槽位改为按类型独立保存。</strong> <code>3Y</code>、<code>旋转</code>、<code>书本</code>、<code>笔槽</code> 现在各自保存完整槽位配置，包括品牌顺序、槽位数量、主图/变种图序号、视频模式和标题字段。</span></li>
+            <li><span class="num">2</span><span><strong>3Y 和旋转不再互相覆盖槽位。</strong> 例如 3Y 保存 7 个槽位后，切到旋转只设置 4 个槽位，不会再把 3Y 的第 5、6、7 个槽位删掉。</span></li>
+            <li><span class="num">3</span><span><strong>切换通用类型时自动保存当前类型。</strong> 从 3Y 切到旋转、再切回 3Y，会先保存当前页面上的设置，再加载目标类型自己的设置，减少忘记保存造成的配置丢失。</span></li>
+            <li><span class="num">4</span><span><strong>偷懒小工具的批量上传表格增加提示。</strong> 开始批量上传前会更明确提醒当前店铺、即将自动打开导入窗口并连续上传全部表格，避免没准备好页面或选错店铺就开始。</span></li>
+            <li><span class="num">5</span><span><strong>运行概览增加“今日较昨日”对比。</strong> 上架成功数、Token 消耗和累计时间现在会显示今天相较昨天的变化，方便判断今天的运行量和消耗是否异常。</span></li>
+            <li><span class="num">6</span><span><strong>通用品牌展示更直观。</strong> 通用全部品牌的最近商品和当前商品展示会尽量显示真实品牌名，不再只看到 slot0、slot1 这类内部槽位名。</span></li>
+            <li><span class="num">7</span><span><strong>Rain 听雨关于页恢复为底部抽屉动画。</strong> 点击后从底部向上滑出，展开位置仍贴在顶部状态/错误条下方，并修复关于页底部横向滚动条。</span></li>
+            <li><span class="num">8</span><span><strong>公告历史整理。</strong> 7.6 的内容已经放入历史公告，当前默认展示 7.7 最新公告。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="history-0707-universal">
+          <div class="section-head">
+            <h2>二、通用品牌槽位独立保存</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>“通用全部品牌”模板现在不再共用一套槽位。每个通用类型都有自己的完整配置，适合不同款式使用不同品牌数量和不同图片规则。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>各类型独立</h3>
+              <p>3Y、旋转、书本、笔槽会分别记住自己的槽位数量、品牌选择、组偏移、图片序号、视频设置和标题配置。</p>
+            </div>
+            <div class="feature-box">
+              <h3>切换不丢配置</h3>
+              <p>3Y 设 7 个槽位、旋转设 4 个槽位是两个独立结果，后续切换回来会恢复各自原来的槽位。</p>
+            </div>
+            <div class="feature-box">
+              <h3>上架逻辑不变</h3>
+              <p>正式上架时仍使用当前选中的通用类型，不影响 Shopee 原有上架流程和搜索规则。</p>
+            </div>
+          </div>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>选择通用模板</strong>进入设置，模板选择“通用全部品牌”。</div>
+            <div class="tutorial-step"><strong>选择通用类型</strong>在通用类型里选择 3Y、旋转、书本或笔槽。</div>
+            <div class="tutorial-step"><strong>配置当前类型</strong>添加或删除槽位，设置品牌、图片序号、视频模式和标题字段。</div>
+            <div class="tutorial-step"><strong>切换测试</strong>切到另一个类型配置不同槽位，再切回来确认原类型配置仍然保留。</div>
+            <div class="tutorial-step"><strong>上架前确认</strong>正式跑批前确认当前停留在要上架的通用类型。</div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="history-0707-bulk-import">
+          <div class="section-head">
+            <h2>三、批量上传表格提示优化</h2>
+            <span class="section-index">03</span>
+          </div>
+          <p>偷懒小工具里的“批量上传表格”增加了更明确的开始前提示，帮助确认当前店铺和即将执行的动作。</p>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>开始前确认更清楚。</strong> 点击开始后会提示当前店铺，并说明脚本会自动打开导入创建产品窗口、连续上传目录里的全部表格。</span></li>
+            <li><span class="num">2</span><span><strong>避免选错店铺。</strong> 如果当前店铺不是本次要上传的店铺，请先切换店铺再开始批量上传。</span></li>
+            <li><span class="num">3</span><span><strong>避免误点开始。</strong> 批量上传会连续执行，请先确认表格目录、BigSeller 登录状态和当前页面状态。</span></li>
+          </ol>
+          <div class="notice-warning">批量上传表格会连续处理目录里的表格。开始前请确认表格目录里只放本次需要上传的文件。</div>
+        </section>
+
+        <section class="notice-section" id="history-0707-interface">
+          <div class="section-head">
+            <h2>四、主界面与 Rain 听雨体验</h2>
+            <span class="section-index">04</span>
+          </div>
+          <p>这部分主要是把 7.6 后新增的能力在主界面里显示得更清楚，同时修复关于页展开时的动画和滚动体验。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>运行统计更好看懂</h3>
+              <p>概览卡片会显示今天相较昨天的上架成功数、Token 消耗和累计运行时间变化；运行时间卡也会显示本轮启动时间。</p>
+            </div>
+            <div class="feature-box">
+              <h3>通用品牌不只显示槽位</h3>
+              <p>通用全部品牌模板下，当前商品和最近商品会尽量把 slot 槽位映射成实际品牌名，复盘历史记录时更容易看懂。</p>
+            </div>
+            <div class="feature-box">
+              <h3>关于页回到底部抽屉</h3>
+              <p>Rain 听雨关于页不再挤压主界面，而是从底部向上滑出；展开后顶部细栏仍贴在状态/错误条下面，并去掉了横向滚动条。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="history-0707-safety">
+          <div class="section-head">
+            <h2>五、操作安全提示</h2>
+            <span class="section-index">05</span>
+          </div>
+          <ul class="checklist">
+            <li>通用类型切换后，请看一眼当前开启槽位数量和品牌顺序是否正确。</li>
+            <li>3Y、旋转、书本、笔槽各自独立保存，修改其中一个类型不会再覆盖另一个类型。</li>
+            <li>批量上传表格前，请确认当前店铺、表格目录和 BigSeller 登录状态。</li>
+            <li>Rain 听雨关于页现在是底部抽屉式展示，如展开后看不到主面板，点击顶部细栏即可收起。</li>
+            <li>正式上架前仍建议刷新图片验证，确认缺图数量为 0。</li>
+          </ul>
+        </section>
+
+        <section class="notice-section" id="history-0707-checklist">
+          <div class="section-head">
+            <h2>六、更新后建议先做的检查</h2>
+            <span class="section-index">06</span>
+          </div>
+          <ul class="checklist">
+            <li>打开设置，确认“通用全部品牌”的 3Y、旋转、书本、笔槽是否分别保留了各自槽位。</li>
+            <li>如果 3Y 用 7 个槽位、旋转用 4 个槽位，请来回切换一次确认互不影响。</li>
+            <li>批量上传表格前确认当前店铺和表格目录，只保留本次要上传的 Excel。</li>
+            <li>查看主界面右侧概览，确认“今日较昨日”的成功数、Token 和累计时间显示正常。</li>
+            <li>点击 Rain 听雨细栏，确认关于页从底部滑出且底部没有横向滚动条。</li>
+            <li>批量上架、添加型号、开启折扣前，仍建议先用少量商品测试。</li>
+          </ul>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-07-06" hidden>
+        <p class="notice-lead">2026.7.6 更新围绕“更快做表、更灵活上架、更少误识别”展开，重点包括上架表格一键制作、菲律宾型号表、通用全部品牌上架模板、生成确认表、预览和安全校验。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">一键制作上架表格</span>
+          <span class="notice-tag">菲律宾型号表更新</span>
+          <span class="notice-tag">通用全部品牌</span>
+          <span class="notice-tag">生成确认表</span>
+          <span class="notice-tag">预览优化</span>
+        </div>
+
+        <section class="notice-section" id="history-0706-summary">
+          <div class="section-head">
+            <h2>2026.7.6 历史公告</h2>
+            <span class="section-index">H1</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>一键制作上架表格更新菲律宾型号表。</strong> 补充并更新菲律宾常用平板型号数据，减少手动补型号、改型号的时间。</span></li>
+            <li><span class="num">2</span><span><strong>新增通用全部品牌模板能力。</strong> 通用模板可以按槽位选择品牌，并通过统一类型选择 3Y、书本、笔槽、旋转。</span></li>
+            <li><span class="num">3</span><span><strong>通用模板支持额外槽位。</strong> 前 4 个默认槽位只能关闭不能删除，第 5 个开始可以添加或删除。</span></li>
+            <li><span class="num">4</span><span><strong>上架表格一键制作补回生成确认。</strong> 可按品牌切换确认表，修改型号名称、Parent SKU、SKU 前缀、价格和库存后再导出 Excel。</span></li>
+            <li><span class="num">5</span><span><strong>预览与校验优化。</strong> 设置页和预览页减少内部字段显示，并加强品牌识别安全提示。</span></li>
+          </ol>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-07-01" hidden>
+        <p class="notice-lead">新版工具仍然保持 Shopee 与 TikTok Shop 两套上架流程独立运行。正常上架前，请先确认当前店铺、模板、表格和图库配置，尤其是涉及批量工具时，先用少量商品测试。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">BigSeller 适配修复</span>
+          <span class="notice-tag">UI 重塑</span>
+          <span class="notice-tag">3D 图标替换</span>
+          <span class="notice-tag">爱弥斯 AI</span>
+          <span class="notice-tag">批量小工具</span>
+          <span class="notice-tag">单主图库教学</span>
+        </div>
+
+        <section class="notice-section" id="old-summary">
+          <div class="section-head">
+            <h2>一、本次更新内容</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>修复 BigSeller 产品列表页更新后的链接问题。</strong> BigSeller 更新列表界面后，部分编辑入口和列表链接无法正常打开，本次已适配新版列表结构。</span></li>
+            <li><span class="num">2</span><span><strong>整体 UI 界面重塑。</strong> 主界面、弹窗、按钮、工具入口和状态展示进行了统一整理，减少杂乱感，重点信息更容易看。</span></li>
+            <li><span class="num">3</span><span><strong>替换网页内全部 emoji 图标为 3D 图标。</strong> 顶部按钮、工具卡片、提示、状态和弹窗图标都改为统一的 3D PNG 风格，界面观感更一致。</span></li>
+            <li><span class="num">4</span><span><strong>新增左上角吉祥物：爱弥斯。</strong> 点击左上角吉祥物可打开爱弥斯面板，支持 AI 分析与 AI 聊天。</span></li>
+            <li><span class="num">5</span><span><strong>偷懒小工具新增多个批量工具。</strong> 新增批量添加新型号、批量开启折扣、一键修改描述、上架表格一键制作。</span></li>
+            <li><span class="num">6</span><span><strong>设置里的单主图库功能新增教学。</strong> 使用单主图库模式时，可以按教学说明准备图片和配置，降低配置出错概率。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="old-aimisi">
+          <div class="section-head">
+            <h2>二、爱弥斯 AI 功能说明</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>爱弥斯在主界面左上角，点击吉祥物即可打开。现在分为两个方向：AI 分析和 AI 聊天。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>AI 分析</h3>
+              <p>导入上架表格和图库后，可以让爱弥斯简单分析产品标题、描述、图片和可能的上架风险。它适合做辅助检查，例如标题是否太长、描述是否缺少重点、主图风格是否清楚、型号和品牌是否容易混淆。</p>
+              <div class="notice-note">AI 分析只是辅助判断，不会替代最终人工确认。正式上架前仍建议核对表格、图片、变种顺序和截图。</div>
+            </div>
+            <div class="feature-box">
+              <h3>AI 聊天</h3>
+              <p>AI 聊天基于大模型，可做部分记忆对话、翻译、标题改写、描述润色、简单解释和操作建议。目前没有设置天气之外的联网查询能力，所以涉及实时网页、最新政策、平台规则变化等内容时，以实际页面和平台通知为准。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="old-lazy-tools">
+          <div class="section-head">
+            <h2>三、偷懒小工具新增功能</h2>
+            <span class="section-index">03</span>
+          </div>
+          <p>入口在主界面顶部的“偷懒小工具”。这些工具主要用于 BigSeller 已有商品的后处理，和正式 Shopee/TK 批量上架互相独立。</p>
+
+          <div class="tool-block">
+            <div class="tool-title">
+              <h3>批量添加新型号</h3>
+              <span class="tool-chip">重点功能</span>
+            </div>
+            <p>适合给已经在线的商品批量追加一个新型号，例如新增某个平板型号、颜色组或特殊型号。工具会按 Item ID 搜索商品，进入编辑页，添加新型号，填写 SKU、库存、价格，然后更新商品。</p>
+            <div class="notice-warning">使用前请先在 BigSeller 打开对应平台的产品列表页，并确认当前页面能搜索到这些 Item ID。批量工具不会重新导航页面，它会直接操作你已经打开好的 BigSeller 页面。</div>
+            <div class="tutorial-grid">
+              <div class="tutorial-step"><strong>准备 Item ID</strong>在 BigSeller 产品列表里筛选需要处理的商品，复制每个商品的 Item ID。一个商品一行，最多建议一次放 50 个以内。</div>
+              <div class="tutorial-step"><strong>打开工具</strong>回到控制面板，点击“偷懒小工具”，选择“批量添加新型号”。</div>
+              <div class="tutorial-step"><strong>填写参数</strong>粘贴 ID，填写新 Model 名称、SKU 前缀、库存、价格。SKU 前缀建议清楚稳定，不要和旧 SKU 混淆。</div>
+              <div class="tutorial-step"><strong>检查 BigSeller 页面</strong>确认当前 BigSeller 页面停留在产品列表页，不要停在编辑页或其他弹窗里。</div>
+              <div class="tutorial-step"><strong>开始执行</strong>工具会逐个搜索 Item ID，打开编辑页，进入销售信息，关闭旧型号勾选，新增新型号并填写数据。</div>
+              <div class="tutorial-step"><strong>等待验证</strong>工具会多次检查新 SKU 是否填写正确。如果 SKU 检查失败，工具会立即停止，避免发布错误型号。</div>
+              <div class="tutorial-step"><strong>查看结果</strong>每个 Item ID 会显示成功或失败。失败时先看日志，再检查商品是否能搜索到、是否超过变种数量限制、编辑页是否有异常弹窗。</div>
+            </div>
+            <div class="notice-note">如果商品颜色很多，新增型号后可能超过平台变种上限。工具会尝试从末尾减少颜色数量来控制总变种数，但仍建议批量执行前先拿 1 个商品测试。</div>
+          </div>
+
+          <div class="tool-block">
+            <div class="tool-title">
+              <h3>批量开启折扣</h3>
+              <span class="tool-chip">配合型号工具</span>
+            </div>
+            <p>这个功能通常和“批量添加新型号”配合使用。添加新型号后，把需要处理的 Item ID 输入到折扣工具，设置折扣百分比，就可以批量打开促销价并应用到所有变种。</p>
+            <div class="tutorial-grid">
+              <div class="tutorial-step"><strong>准备 Item ID</strong>可以使用刚才批量添加新型号处理过的 Item ID，也可以手动整理一批需要设置折扣的商品 ID。</div>
+              <div class="tutorial-step"><strong>打开工具</strong>点击“偷懒小工具”，选择“批量开启折扣”。</div>
+              <div class="tutorial-step"><strong>填写折扣</strong>粘贴 Item ID 列表，填写折扣百分比。例如填写 <code>49</code>，表示设置为 49% 折扣。</div>
+              <div class="tutorial-step"><strong>确认列表页</strong>保持 BigSeller 产品列表页打开，工具会在列表页直接点击促销价链接，不会进入商品编辑页。</div>
+              <div class="tutorial-step"><strong>开始执行</strong>工具会逐个搜索商品，打开“编辑促销价”弹窗，开启总开关，批量编辑折扣，并应用到所有变种。</div>
+              <div class="tutorial-step"><strong>核对结果</strong>完成后看日志是否出现更新成功。建议抽查 1 到 2 个商品，确认折扣已经应用到所有变种。</div>
+            </div>
+          </div>
+
+          <div class="tool-block">
+            <div class="tool-title">
+              <h3>一键修改描述</h3>
+              <span class="tool-chip">辅助功能</span>
+            </div>
+            <p>这个功能目前属于辅助性质比较强的鸡肋功能，适合临时批量调整描述内容。具体用法可以自行探索，正式大量处理前建议先拿少量商品测试，确认描述内容和保存效果符合预期。</p>
+          </div>
+
+          <div class="tool-block">
+            <div class="tool-title">
+              <h3>上架表格一键制作</h3>
+              <span class="tool-chip">表格生成</span>
+            </div>
+            <p>这是本次新增里比较强的功能。工具内置 2026.6.30 最新型号表，上传价格表后，选择品牌和颜色，就可以一键制作 BigSeller 上架表格。</p>
+            <div class="tutorial-grid">
+              <div class="tutorial-step"><strong>准备价格表</strong>先准备好价格表，确保价格、型号、品牌或可识别字段没有明显空行和错位。</div>
+              <div class="tutorial-step"><strong>打开工具</strong>点击“偷懒小工具”，选择“上架表格一键制作”。它会以独立页面形式显示在主界面浮窗里，不影响当前上架面板。</div>
+              <div class="tutorial-step"><strong>上传价格表</strong>在工具中上传价格表，等待解析完成。解析后先看预览，确认数据列识别正常。</div>
+              <div class="tutorial-step"><strong>选择品牌和颜色</strong>根据本批次要做的商品选择对应品牌、颜色和模板要求。品牌和颜色会影响生成表格里的标题、型号和变种信息。</div>
+              <div class="tutorial-step"><strong>生成表格</strong>点击制作后，工具会根据内置最新型号表和你的价格表生成可用于 BigSeller 的上架表格。</div>
+              <div class="tutorial-step"><strong>保存并上传</strong>生成后把表格放到自动上架数据的上架表格目录，再按正常流程进行批量上传或上架。</div>
+            </div>
+            <div class="notice-note">生成表格后仍建议打开 Excel 抽查几行，重点检查品牌、型号、价格、颜色、标题和图片批次是否对应。自动生成可以省时间，但最后一眼人工确认很重要。</div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="old-single-main">
+          <div class="section-head">
+            <h2>四、单主图库功能新增教学</h2>
+            <span class="section-index">04</span>
+          </div>
+          <p>设置页面里的“单主图库”适合只有单张主图、或者主图不按常规组图规则走的批次。开启后，工具会从单主图库目录里读取主图，而不是完全依赖常规图库分组。</p>
+          <ul class="checklist">
+            <li>先在设置里开启单主图库模式。</li>
+            <li>按教学提示准备单主图库目录和图片命名。</li>
+            <li>确认当前模板、品牌、批次和图片文件能对应上。</li>
+            <li>正式上架前先用少量商品测试，检查主图、产品图、变种图和截图是否正确。</li>
+          </ul>
+          <div class="notice-warning">单主图库模式和单品牌主图随机模式不要混着理解。开启前请先确认本批次到底是“每个品牌固定单主图”，还是“每个品牌从多个主图序号里随机选择”。</div>
+        </section>
+
+        <section class="notice-section" id="old-checklist">
+          <div class="section-head">
+            <h2>五、更新后建议先做的检查</h2>
+            <span class="section-index">05</span>
+          </div>
+          <ul class="checklist">
+            <li>重启工具，确认主界面能正常打开。</li>
+            <li>确认 BigSeller 已登录，Chrome 状态显示正常。</li>
+            <li>先用少量商品测试新增的批量工具，不要第一次就跑大批量。</li>
+            <li>使用 AI 分析时，把它当作辅助检查，不要把 AI 输出直接当最终结论。</li>
+            <li>上架、添加型号、开启折扣前，都建议先确认当前页面和店铺没有选错。</li>
+          </ul>
+        </section>
+      </article>
+    </div>
+  </main>
+  <script>
+    const NOTICE_VIEWS = {
+      '2026-09-06': {
+        kicker: 'UPDATE / 2026.9.6',
+        title: '2026.9.6 上架工具更新公告',
+        desc: '本次汇总 8.11 之后的型号表、做表、标题兼容、进度恢复、旧链接折扣、图片参数联动和发布安全更新。',
+        version: '2026-09-06',
+        sections: {
+          summary: 'latest-0906-summary',
+          'sheet-maker': 'latest-0906-models',
+          'bulk-import': 'latest-0906-title',
+          universal: 'latest-0906-discount',
+          interface: 'latest-0906-state',
+          store: 'latest-0906-image',
+          safety: 'latest-0906-checklist',
+          checklist: 'latest-0906-checklist',
+        },
+        labels: {
+          summary: '本次更新',
+          'sheet-maker': '型号表与做表',
+          'bulk-import': '标题与店铺',
+          universal: '旧链接折扣',
+          interface: '进度与稳定性',
+          store: '图片参数联动',
+          safety: '更新检查',
+          checklist: '更新检查',
+        },
+      },
+      '2026-08-11': {
+        kicker: 'UPDATE / 2026.8.11',
+        title: '2026.8.11 上架底层逻辑更新公告',
+        desc: 'Shopee 与 TK 主图改为优先独立上传，批量添加新 Model 先清理 BigSeller 继承数据，并统一标题、做表、通用配置、店铺新建和进度统计规则。',
+        version: '2026-08-11',
+        sections: {
+          summary: 'latest-0811-summary',
+          'sheet-maker': 'latest-0811-main-image',
+          'bulk-import': 'latest-0811-add-model',
+          universal: 'latest-0811-title-sheet',
+          interface: 'latest-0811-config-progress',
+          store: 'latest-0811-store-profile',
+          safety: 'latest-0811-checklist',
+          checklist: 'latest-0811-checklist',
+        },
+        labels: {
+          summary: '本次更新',
+          'sheet-maker': '主图上传',
+          'bulk-import': '添加新 Model',
+          universal: '标题与做表',
+          interface: '配置与进度',
+          store: '新建店铺',
+          safety: '更新检查',
+          checklist: '更新检查',
+        },
+      },
+      '2026-08-06': {
+        kicker: 'UPDATE / 2026.8.6',
+        title: '2026.8.6 标题与批量型号工具更新公告',
+        desc: '修复标题被 AI 改乱、批量添加型号数据错位的问题，并新增批量修改已知 Model 工具。',
+        version: '2026-08-06',
+        sections: {
+          summary: 'latest-0806-summary',
+          'sheet-maker': 'latest-0806-add-model',
+          'bulk-import': 'latest-0806-known-model',
+          universal: 'latest-0806-title',
+          interface: 'latest-0806-ai',
+          safety: 'latest-0806-checklist',
+          checklist: 'latest-0806-checklist',
+        },
+        labels: {
+          summary: '本次更新',
+          'sheet-maker': '添加新型号',
+          'bulk-import': '修改已知 Model',
+          universal: '标题规则',
+          interface: 'AI 与提示',
+          safety: '使用检查',
+          checklist: '使用检查',
+        },
+      },
+      '2026-08-01': {
+        kicker: 'UPDATE / 2026.8.1',
+        title: '2026.8.1 店铺配置与上架稳定性更新公告',
+        desc: '新增按店铺保存整个平台模板的配置方案，并完成 TK 通用品牌、上架稳定性、概览与主图缩略图优化。',
+        version: '2026-08-01',
+        sections: {
+          summary: 'latest-0801-summary',
+          'sheet-maker': 'latest-0801-tk-universal',
+          'bulk-import': 'latest-0801-profiles',
+          universal: 'latest-0801-reliability',
+          interface: 'latest-0801-overview',
+          safety: 'latest-0801-checklist',
+          checklist: 'latest-0801-checklist',
+        },
+        labels: {
+          summary: '本次更新',
+          'sheet-maker': 'TK 通用品牌',
+          'bulk-import': '店铺整套配置',
+          universal: '上架稳定性',
+          interface: '概览与主图',
+          safety: '使用检查',
+          checklist: '使用检查',
+        },
+      },
+      '2026-07-22': {
+        kicker: 'UPDATE / 2026.7.22',
+        title: '2026.7.22 批量工具更新公告',
+        desc: '新增批量修改错误 SKU，并全面加强批量添加型号的页面识别、写入复核和慢加载兼容。',
+        version: '2026-07-22',
+        sections: {
+          summary: 'latest-0722-summary',
+          'sheet-maker': 'latest-0722-sku-fix',
+          'bulk-import': 'latest-0722-sku-fix',
+          universal: 'latest-0722-add-model',
+          interface: 'latest-0722-model-tables',
+          safety: 'latest-0722-checklist',
+          checklist: 'latest-0722-checklist',
+        },
+        labels: {
+          summary: '本次更新',
+          'sheet-maker': '错误 SKU 修复',
+          'bulk-import': '错误 SKU 修复',
+          universal: '添加型号升级',
+          interface: '型号表维护',
+          safety: '使用检查',
+          checklist: '使用检查',
+        },
+      },
+      '2026-07-13': {
+        kicker: 'UPDATE / 2026.7.13',
+        title: '2026.7.13 重大 BUG 修复公告',
+        desc: '自动做表曾存在尺寸价格档误判。修复前上架过受影响型号的同事，请立即检查并修改线上商品价格。',
+        version: '2026-07-13',
+        sections: {
+          summary: 'latest-0713-summary',
+          'sheet-maker': 'latest-0713-affected',
+          'bulk-import': 'latest-0713-affected',
+          universal: 'latest-0713-review',
+          interface: 'latest-0713-fix',
+          safety: 'latest-0713-checklist',
+          checklist: 'latest-0713-checklist',
+        },
+        labels: {
+          summary: '紧急处理',
+          'sheet-maker': '受影响型号',
+          'bulk-import': '受影响型号',
+          universal: '历史商品复查',
+          interface: '修复说明',
+          safety: '使用要求',
+          checklist: '完成检查',
+        },
+      },
+      '2026-07-08': {
+        kicker: 'UPDATE / 2026.7.8',
+        title: '2026.7.8 更新公告',
+        desc: '上架表格一键制作已更新。以后生成表格时，会按图片编号先排完整型号，方便大家检查表格、SKU 和价格。',
+        version: '2026-07-08',
+        sections: {
+          summary: 'summary',
+          'sheet-maker': 'sheet-maker',
+          'bulk-import': 'sheet-maker',
+          universal: 'export-order',
+          interface: 'history',
+          safety: 'history',
+          checklist: 'checklist',
+        },
+        labels: {
+          summary: '本次更新内容',
+          'sheet-maker': '表格制作变化',
+          'bulk-import': '表格制作变化',
+          universal: '检查方法',
+          interface: '公告历史',
+          safety: '公告历史',
+          checklist: '更新后检查',
+        },
+      },
+      '2026-07-07': {
+        kicker: 'UPDATE / 2026.7.7',
+        title: '2026.7.7 更新公告',
+        desc: '本次在 7.6 的表格制作、通用模板和预览校验基础上，继续补齐通用品牌槽位保存、批量上传提示、主界面统计和 Rain 听雨底部抽屉体验。',
+        version: '2026-07-07',
+        sections: {
+          summary: 'history-0707-summary',
+          'sheet-maker': 'history-0707-bulk-import',
+          'bulk-import': 'history-0707-bulk-import',
+          universal: 'history-0707-universal',
+          interface: 'history-0707-interface',
+          safety: 'history-0707-safety',
+          checklist: 'history-0707-checklist',
+        },
+        labels: {
+          summary: '本次更新内容',
+          'sheet-maker': '批量上传表格',
+          'bulk-import': '批量上传表格',
+          universal: '通用品牌槽位',
+          interface: '主界面体验',
+          safety: '操作安全提示',
+          checklist: '更新后检查',
+        },
+      },
+      '2026-07-06': {
+        kicker: 'UPDATE / 2026.7.6',
+        title: '2026.7.6 更新公告',
+        desc: '本次重点更新上架表格一键制作、菲律宾型号表、通用全部品牌上架模板，并补齐生成确认、预览和安全校验。',
+        version: '2026-07-06',
+        sections: {
+          summary: 'history-0706-summary',
+          'sheet-maker': 'history-0706-summary',
+          'bulk-import': 'history-0706-summary',
+          universal: 'history-0706-summary',
+          interface: 'history-0706-summary',
+          safety: 'history-0706-summary',
+          checklist: 'history-0706-summary',
+        },
+        labels: {
+          summary: '历史公告',
+          'sheet-maker': '7.6 表格制作',
+          'bulk-import': '7.6 历史公告',
+          universal: '7.6 通用品牌',
+          interface: '7.6 界面优化',
+          safety: '7.6 预览校验',
+          checklist: '历史检查项',
+        },
+      },
+      '2026-07-01': {
+        kicker: 'UPDATE / 2026.7.1',
+        title: '2026.7.1 更新公告',
+        desc: '本次主要围绕 BigSeller 新版页面适配、主界面视觉重塑、AI 辅助能力和偷懒小工具扩展。',
+        version: '2026-07-01',
+        sections: {
+          summary: 'old-summary',
+          'sheet-maker': 'old-lazy-tools',
+          'bulk-import': 'old-lazy-tools',
+          universal: 'old-aimisi',
+          interface: '旧版界面',
+          safety: 'old-single-main',
+          checklist: 'old-checklist',
+        },
+        labels: {
+          summary: '本次更新内容',
+          'sheet-maker': '偷懒小工具',
+          'bulk-import': '偷懒小工具',
+          universal: '爱弥斯 AI',
+          interface: '主界面更新',
+          safety: '单主图库教学',
+          checklist: '更新后检查',
+        },
+      },
+    };
+
+    function showNoticeVersion(version) {
+      const meta = NOTICE_VIEWS[version] || NOTICE_VIEWS['2026-09-06'];
+      document.querySelectorAll('.notice-view').forEach(view => {
+        view.hidden = view.dataset.noticeVersion !== version;
+      });
+      document.querySelector('.notice-hero-kicker').textContent = meta.kicker;
+      document.querySelector('.notice-hero h1').textContent = meta.title;
+      document.querySelector('.notice-hero p').textContent = meta.desc;
+      document.querySelector('.notice-version strong').textContent = meta.version;
+      document.querySelectorAll('[data-notice-button]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.noticeButton === version);
+      });
+      document.querySelectorAll('.notice-nav a[data-section]').forEach(link => {
+        const target = meta.sections[link.dataset.section] || meta.sections.summary;
+        const label = meta.labels[link.dataset.section] || link.textContent.trim();
+        link.href = `#${target}`;
+        const dot = link.querySelector('i');
+        link.textContent = '';
+        if (dot) link.appendChild(dot);
+        link.append(label);
+      });
+      document.querySelector(`.notice-view[data-notice-version="${version}"]`)?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

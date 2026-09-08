@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>朝朝听雨 - 评论回复邮件预览</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #edf6ff;
+        color: #26364a;
+        font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+      }
+
+      .preview-shell {
+        box-sizing: border-box;
+        width: min(100%, 760px);
+        margin: 0 auto;
+        padding: 40px 20px 56px;
+      }
+
+      .preview-note {
+        margin: 0 0 18px;
+        color: #5f7894;
+        font-size: 12px;
+        line-height: 1.7;
+        text-align: center;
+      }
+
+      .email-stage {
+        box-sizing: border-box;
+        overflow: hidden;
+        border-radius: 18px;
+        box-shadow: 0 18px 48px rgba(92, 147, 196, 0.18);
+      }
+
+      /* Keep the preview faithful to an email client while allowing the hero
+         to become a comfortable, single-column composition on small screens. */
+      .mail-hero {
+        table-layout: fixed;
+      }
+
+      .mail-hero-copy,
+      .mail-hero-art {
+        box-sizing: border-box;
+      }
+
+      .mail-hero-title {
+        white-space: normal;
+        overflow-wrap: break-word;
+      }
+
+      .mail-hero-break {
+        display: none;
+      }
+
+      .mail-hero-desc-mobile {
+        display: none;
+      }
+
+      .mail-hero-wrap,
+      .mail-header-pad,
+      .mail-reply-pad,
+      .mail-button-pad {
+        box-sizing: border-box;
+      }
+
+      @media (max-width: 640px) {
+        .preview-shell {
+          padding: 22px 12px 34px;
+        }
+
+        .email-stage {
+          border-radius: 14px;
+        }
+      }
+
+      @media only screen and (max-width: 600px) {
+        .mail-hero {
+          table-layout: fixed !important;
+        }
+
+        .mail-hero-copy,
+        .mail-hero-art {
+          display: table-cell !important;
+          box-sizing: border-box !important;
+          vertical-align: middle !important;
+        }
+
+        .mail-hero-copy {
+          width: 100% !important;
+          max-width: 100% !important;
+          padding: 25px 22px 7px !important;
+          text-align: center !important;
+          vertical-align: middle !important;
+        }
+
+        .mail-hero-art {
+          display: none !important;
+        }
+
+        .mail-hero-desc {
+          font-size: 13px !important;
+          line-height: 1.65 !important;
+        }
+
+        .mail-hero-desc-desktop {
+          display: none !important;
+        }
+
+        .mail-hero-desc-mobile {
+          display: table-row !important;
+        }
+
+        .mail-hero-desc-mobile > td {
+          padding: 0 22px 18px !important;
+          color: #62809d !important;
+          font-size: 13px !important;
+          line-height: 1.65 !important;
+        }
+
+        .mail-hero-wrap {
+          padding: 20px 16px 8px !important;
+        }
+
+        .mail-header-pad {
+          padding: 18px 20px 15px !important;
+        }
+
+        .mail-reply-pad,
+        .mail-button-pad {
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+        }
+
+        .mail-button-pad {
+          padding-top: 24px !important;
+          padding-bottom: 12px !important;
+        }
+
+        .mail-hero-title {
+          font-size: 24px !important;
+          line-height: 1.35 !important;
+          letter-spacing: 0 !important;
+          white-space: normal !important;
+          word-break: keep-all !important;
+          text-align: center !important;
+        }
+
+        .mail-body-pad,
+        .mail-footer-pad {
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="preview-shell">
+      <p class="preview-note">本地邮件预览，尚未应用到评论系统，也不会发送测试邮件。</p>
+
+      <!-- The content below intentionally mirrors an HTML email: tables and inline styles only. -->
+      <div class="email-stage">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse; background: #edf6ff">
+          <tr>
+            <td align="center" style="padding: 0 12px">
+              <table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 640px; border-collapse: collapse; background: #ffffff">
+                <tr>
+                  <td style="padding: 0">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse">
+                      <tr>
+                        <td width="25%" height="5" style="height: 5px; background: #6eb7f5; font-size: 0; line-height: 0">&nbsp;</td>
+                        <td width="25%" height="5" style="height: 5px; background: #9cdaec; font-size: 0; line-height: 0">&nbsp;</td>
+                        <td width="25%" height="5" style="height: 5px; background: #f4d995; font-size: 0; line-height: 0">&nbsp;</td>
+                        <td width="25%" height="5" style="height: 5px; background: #9bbef6; font-size: 0; line-height: 0">&nbsp;</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="mail-header-pad" style="padding: 20px 32px 17px; border-bottom: 1px solid #e8f0f8">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse">
+                      <tr>
+                        <td valign="middle" style="padding: 0; color: #2a4d72; font-size: 16px; font-weight: 700; line-height: 1.25">
+                          朝朝听雨
+                          <span style="padding-left: 7px; color: #8ba2bb; font-size: 12px; font-weight: 400">rainzt.cn</span>
+                        </td>
+                        <td align="right" valign="middle" style="padding: 0; color: #7892ad; font-size: 12px; line-height: 1.25">评论回复提醒</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="mail-hero-wrap" style="padding: 28px 32px 8px">
+                    <table class="mail-hero" role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; background: #eff8ff; border-radius: 14px">
+                      <tr>
+                        <td class="mail-hero-copy" width="64%" valign="middle" style="width: 64%; padding: 26px 0 25px 28px">
+                          <p class="mail-hero-title" style="margin: 0 0 9px; color: #315d8b; font-size: 24px; font-weight: 700; line-height: 1.38">你的评论收到新回复</p>
+                          <p class="mail-hero-desc-desktop" style="margin: 0; color: #62809d; font-size: 14px; line-height: 1.8">有人继续了这段交流。点开看看，也许刚好能延续一段新的想法。</p>
+                        </td>
+                        <td class="mail-hero-art" width="36%" align="right" valign="bottom" style="width: 36%; padding: 14px 12px 0 8px">
+                          <img src="/assets/images/home-truncated/b-1.webp" width="142" alt="" aria-hidden="true" style="display: block; width: 142px; max-width: 100%; height: auto; border: 0; outline: none" />
+                        </td>
+                      </tr>
+                      <tr class="mail-hero-desc-mobile">
+                        <td colspan="2" style="padding: 0 22px 18px; color: #62809d; font-size: 13px; line-height: 1.65">
+                          有人继续了这段交流。点开看看，也许刚好能延续一段新的想法。
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                    <td class="mail-body-pad" style="padding: 23px 32px 0">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse">
+                      <tr>
+                        <td valign="top" style="padding: 0 10px 0 0">
+                          <p style="margin: 0 0 9px; color: #6b88a6; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.5">你此前的留言</p>
+                          <a href="https://rainzt.cn/posts/auto-listing-system/" style="display: inline-block; margin: 0 0 10px; color: #3a75ad; font-size: 14px; font-weight: 700; line-height: 1.6; text-decoration: none">自动上架系统的设计与迭代记录</a>
+                        </td>
+                        <td width="92" align="right" valign="top" style="width: 92px; padding: 0">
+                          <img src="/assets/images/email/comment-decor.webp" width="82" alt="" aria-hidden="true" style="display: block; width: 82px; max-width: 82px; height: auto; border: 0; outline: none" />
+                        </td>
+                      </tr>
+                    </table>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: separate; border-spacing: 0; background: #f8fbfe; border-radius: 11px">
+                      <tr>
+                        <td style="padding: 16px 18px; color: #667f97; font-size: 14px; line-height: 1.85">“批量处理逻辑这里讲得很清楚，实际使用时遇到异常状态该怎么排查？”</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="mail-reply-pad" style="padding: 24px 32px 0">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: separate; border-spacing: 0; background: #ffffff; border: 1px solid #dbeaf8; border-radius: 13px">
+                      <tr>
+                        <td style="padding: 21px 21px 20px">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse">
+                            <tr>
+                              <td style="padding: 0 0 10px; color: #417eb5; font-size: 14px; font-weight: 700; line-height: 1.5">Rain 回复了你</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 0; color: #344b62; font-size: 16px; line-height: 1.82">这类情况通常先看失败记录中的平台返回信息，再核对商品属性和图片链接。后续我会把常见异常整理成一篇单独的排查文章。</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="mail-button-pad" align="center" style="padding: 28px 32px 14px">
+                    <a href="https://rainzt.cn/posts/auto-listing-system/#waline" style="display: inline-block; padding: 12px 22px; border-radius: 9px; background: #6caeeb; color: #ffffff; font-size: 14px; font-weight: 700; line-height: 1.2; text-decoration: none; box-shadow: 0 7px 16px rgba(74, 142, 208, 0.23)">查看完整对话</a>
+                  </td>
+                </tr>
+
+                <tr>
+                    <td class="mail-footer-pad" style="padding: 16px 32px 28px">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse">
+                      <tr>
+                        <td height="1" style="height: 1px; background: #e8f0f8; font-size: 0; line-height: 0">&nbsp;</td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding: 18px 8px 0; color: #829ab1; font-size: 12px; line-height: 1.8">
+                          此邮件由 Rainzt 评论系统自动发送，请勿直接回复。<br />
+                          <span style="color: #6d8db0">物物而不物于物，念念而不念于念</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </main>
+  </body>
+</html>

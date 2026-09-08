@@ -1,0 +1,322 @@
+---
+export interface Props {
+	text: string | string[];
+	speed?: number;
+	deleteSpeed?: number;
+	pauseTime?: number;
+	class?: string;
+}
+
+const {
+	text,
+	speed = 100,
+	deleteSpeed = 50,
+	pauseTime = 2000,
+	class: className = "",
+} = Astro.props;
+const textData = Array.isArray(text) ? JSON.stringify(text) : text;
+---
+
+<span
+  class={`typewriter ${className}`}
+  data-text={textData}
+  data-speed={speed}
+  data-delete-speed={deleteSpeed}
+  data-pause-time={pauseTime}></span>
+
+<script>
+  class TypewriterEffect {
+    private element: HTMLElement;
+    private texts: string[];
+    private currentTextIndex: number = 0;
+    private speed: number;
+    private deleteSpeed: number;
+    private pauseTime: number;
+    private currentIndex: number = 0;
+    private isDeleting: boolean = false;
+    private timeoutId: number | null = null;
+    private frameAnimationId: number | null = null;
+    private frameStartTime = 0;
+    private frameDuration = 0;
+    private frameCharacters: string[] = [];
+    private readonly useFrameTyping: boolean;
+    private readonly signature: string;
+    private hasStarted = false;
+
+    constructor(element: HTMLElement, autoStart = true) {
+      this.element = element;
+      this.useFrameTyping = element.classList.contains("banner-post-ai-summary__typewriter");
+      this.signature = getTypewriterSignature(element);
+      const textData = element.dataset.text || "";
+
+      // 尝试解析为JSON数组，如果失败则作为单个字符串处理
+      try {
+        const parsed = JSON.parse(textData);
+        this.texts = Array.isArray(parsed) ? parsed : [textData];
+      } catch {
+        this.texts = [textData];
+      }
+
+      this.speed = parseInt(element.dataset.speed || "100");
+      this.deleteSpeed = parseInt(element.dataset.deleteSpeed || "50");
+      this.pauseTime = parseInt(element.dataset.pauseTime || "2000");
+
+      // 如果有多条文本且未启用打字机效果，随机显示一条
+      if (this.texts.length > 1 && !this.isTypewriterEnabled()) {
+        this.showRandomText();
+      } else if (autoStart) {
+        this.start();
+      }
+    }
+
+    public isFor(signature: string) {
+      return this.signature === signature;
+    }
+
+    private isTypewriterEnabled(): boolean {
+      // 检查是否有打字机相关的数据属性
+      return (
+        this.element.dataset.speed !== undefined ||
+        this.element.dataset.deleteSpeed !== undefined ||
+        this.element.dataset.pauseTime !== undefined
+      );
+    }
+
+    private showRandomText() {
+      const randomIndex = Math.floor(Math.random() * this.texts.length);
+      this.element.textContent = this.texts[randomIndex];
+    }
+
+    public start() {
+      if (this.hasStarted) return;
+      this.hasStarted = true;
+
+      if (this.texts.length === 0) return;
+      if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+        this.element.textContent = this.getCurrentText();
+        return;
+      }
+      if (this.useFrameTyping && this.texts.length === 1) {
+        this.startFrameTyping();
+        return;
+      }
+      this.type();
+    }
+
+    private startFrameTyping() {
+      this.frameCharacters = this.segmentText(this.getCurrentText());
+      if (this.frameCharacters.length === 0) return;
+
+      const speed = Number.isFinite(this.speed) && this.speed > 0 ? this.speed : 4;
+      // 文章摘要需要让逐字效果可感知；同时限制总时长，避免长摘要拖慢阅读。
+      this.frameDuration = Math.min(
+        2600,
+        Math.max(900, this.frameCharacters.length * speed),
+      );
+      this.frameStartTime = performance.now();
+      this.frameAnimationId = window.requestAnimationFrame(this.renderFrame);
+    }
+
+    private renderFrame = (timestamp: number) => {
+      const progress = Math.min(
+        1,
+        Math.max(0, (timestamp - this.frameStartTime) / this.frameDuration),
+      );
+      const visibleCount = Math.floor(progress * this.frameCharacters.length);
+      this.element.textContent = this.frameCharacters.slice(0, visibleCount).join("");
+
+      if (visibleCount < this.frameCharacters.length) {
+        this.frameAnimationId = window.requestAnimationFrame(this.renderFrame);
+      } else {
+        this.frameAnimationId = null;
+      }
+    };
+
+    private getCurrentText(): string {
+      return this.texts[this.currentTextIndex] || "";
+    }
+
+    private type() {
+      const currentText = this.getCurrentText();
+      const segments = this.segmentText(currentText);
+
+      if (this.isDeleting) {
+        // 删除字符
+        if (this.currentIndex > 0) {
+          this.currentIndex--;
+          this.element.textContent = segments
+            .slice(0, this.currentIndex)
+            .join("");
+
+          this.timeoutId = window.setTimeout(
+            () => this.type(),
+            this.deleteSpeed
+          );
+        } else {
+          // 删除完成，切换到下一条文本
+          this.isDeleting = false;
+          this.currentTextIndex =
+            (this.currentTextIndex + 1) % this.texts.length;
+          this.timeoutId = window.setTimeout(() => this.type(), this.speed);
+        }
+      } else {
+        if (this.currentIndex < segments.length) {
+          this.currentIndex++;
+          this.element.textContent = segments
+            .slice(0, this.currentIndex)
+            .join("");
+
+          this.timeoutId = window.setTimeout(() => this.type(), this.speed);
+        } else {
+          // 打字完成，暂停后开始删除（如果有多条文本）
+          if (this.texts.length > 1) {
+            this.isDeleting = true;
+            this.timeoutId = window.setTimeout(
+              () => this.type(),
+              this.pauseTime
+            );
+          }
+          // 如果只有一条文本，保持显示不删除
+        }
+      }
+    }
+
+    public destroy() {
+      if (this.timeoutId !== null) {
+        clearTimeout(this.timeoutId);
+        this.timeoutId = null;
+      }
+      if (this.frameAnimationId !== null) {
+        window.cancelAnimationFrame(this.frameAnimationId);
+        this.frameAnimationId = null;
+      }
+    }
+
+    private segmentText(text: string): string[] {
+      const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+      return Array.from(segmenter.segment(text), s => s.segment);
+    }
+
+  }
+
+  function getTypewriterSignature(element: HTMLElement) {
+    return JSON.stringify([
+      element.dataset.text || "",
+      element.dataset.speed || "",
+      element.dataset.deleteSpeed || "",
+      element.dataset.pauseTime || "",
+    ]);
+  }
+
+  const articleSummaryClass = "banner-post-ai-summary__typewriter";
+  const pageReadyDelay = 240;
+  let articleSummaryStartTimer: number | null = null;
+
+  function initTypewriterElements(articleSummariesOnly = false) {
+    const selector = articleSummariesOnly
+      ? `.typewriter.${articleSummaryClass}`
+      : ".typewriter";
+    const typewriterElements = document.querySelectorAll(selector);
+    typewriterElements.forEach((element) => {
+      const el = element as HTMLElement & { __typewriterInstance?: TypewriterEffect };
+      const signature = getTypewriterSignature(el);
+      const isArticleSummary = el.classList.contains(articleSummaryClass);
+      // 文章摘要会随 Swup 生命周期重复触发初始化；保留首页原有打字机行为，
+      // 只避免同一篇文章的摘要被重新清空并从第一个字开始。
+      if (
+        isArticleSummary &&
+        el.__typewriterInstance?.isFor(signature)
+      ) return;
+      el.__typewriterInstance?.destroy();
+      el.textContent = "";
+      // 文章摘要等页面切换结束、首帧已经绘制后再开始；首页继续沿用原来的即时启动。
+      el.__typewriterInstance = new TypewriterEffect(el, !isArticleSummary);
+    });
+  }
+
+  function startArticleSummaries() {
+    initTypewriterElements(true);
+    document.querySelectorAll(`.typewriter.${articleSummaryClass}`).forEach((element) => {
+      const el = element as HTMLElement & { __typewriterInstance?: TypewriterEffect };
+      el.__typewriterInstance?.start();
+    });
+  }
+
+  function scheduleArticleSummaryStart() {
+    if (articleSummaryStartTimer !== null) {
+      window.clearTimeout(articleSummaryStartTimer);
+    }
+
+    articleSummaryStartTimer = window.setTimeout(() => {
+      articleSummaryStartTimer = null;
+      // 等待页面切换后的两帧，让文章界面先完成布局和首帧绘制。
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(startArticleSummaries);
+      });
+    }, pageReadyDelay);
+  }
+
+  // 初始化所有打字机效果
+  function runInitWithDelay() {
+    initTypewriterElements();
+    // 兼容 banner 显隐晚于内容替换的场景
+    setTimeout(initTypewriterElements, 220);
+  }
+
+  function handlePageView() {
+    runInitWithDelay();
+    scheduleArticleSummaryStart();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", runInitWithDelay);
+    window.addEventListener("load", scheduleArticleSummaryStart, { once: true });
+  } else {
+    runInitWithDelay();
+    scheduleArticleSummaryStart();
+  }
+
+  // 支持页面切换时重新初始化（兼容不同 swup 事件名）
+  document.addEventListener("swup:contentReplaced", runInitWithDelay);
+  document.addEventListener("swup:content:replace", runInitWithDelay);
+  document.addEventListener("swup:page:view", handlePageView);
+  document.addEventListener("swup:visit:end", scheduleArticleSummaryStart);
+  document.addEventListener("firefly:page-ready", scheduleArticleSummaryStart);
+  document.addEventListener("astro:page-load", handlePageView);
+
+  // swup hooks（若可用）
+  let swupHooksBound = false;
+  function bindSwupHooks() {
+    if (swupHooksBound || !window.swup?.hooks) return;
+    swupHooksBound = true;
+    window.swup.hooks.on("content:replace", runInitWithDelay);
+    window.swup.hooks.on("page:view", handlePageView);
+    window.swup.hooks.on("visit:end", scheduleArticleSummaryStart);
+  }
+
+  bindSwupHooks();
+  document.addEventListener("swup:enable", bindSwupHooks);
+</script>
+
+<style>
+  .typewriter {
+    position: relative;
+  }
+
+  .typewriter::after {
+    content: "|";
+    animation: blink 1s infinite;
+    margin-left: 2px;
+  }
+
+  @keyframes blink {
+    0%,
+    50% {
+      opacity: 1;
+    }
+    51%,
+    100% {
+      opacity: 0;
+    }
+  }
+</style>

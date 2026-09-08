@@ -1,0 +1,253 @@
+---
+import { Icon } from "astro-icon/components";
+import animalsImage from "@/assets/images/footer-animals.webp";
+import { profileConfig, siteConfig } from "@/config";
+import { url } from "@/utils/url-utils";
+
+import "@/styles/footer.css";
+
+const currentYear = new Date().getFullYear();
+const startAt = new Date(`${siteConfig.siteStartDate}T00:00:00+08:00`);
+const elapsedSeconds = Math.max(
+	0,
+	Math.floor((Date.now() - startAt.getTime()) / 1000),
+);
+const initialDays = Math.floor(elapsedSeconds / 86400);
+const initialHours = Math.floor((elapsedSeconds % 86400) / 3600);
+const initialMinutes = Math.floor((elapsedSeconds % 3600) / 60);
+const initialSeconds = elapsedSeconds % 60;
+
+const socials = [
+	{
+		name: "博客",
+		icon: "material-symbols:home-outline",
+		url: "/",
+		external: false,
+	},
+	{
+		name: "GitHub",
+		icon: "simple-icons:github",
+		url:
+			profileConfig.links.find((item) => item.name === "GitHub")?.url ??
+			"https://github.com/Jarvis0227",
+		external: true,
+	},
+	{
+		name: "Bilibili",
+		icon: "fa7-brands:bilibili",
+		url:
+			profileConfig.links.find((item) => item.name === "Bilibili")?.url ??
+			"https://space.bilibili.com/473321504",
+		external: true,
+	},
+];
+
+const techStack = [
+	{ label: "Astro", tone: "violet", icon: "simple-icons:astro" },
+	{ label: "Tailwind CSS", tone: "cyan", icon: "simple-icons:tailwindcss" },
+	{
+		label: "Waline",
+		tone: "orange",
+		icon: "material-symbols:forum-outline-rounded",
+	},
+	{ label: "QEdge", tone: "blue", icon: "material-symbols:cloud-outline" },
+	{ label: "Umami", tone: "green", icon: "simple-icons:umami" },
+];
+---
+
+<div class="site-footer-stage" data-pagefind-ignore="all">
+	<section class="site-footer-kept-layers" aria-label="页脚装饰与技术栈">
+		<div class="site-footer-animals" aria-label="一排可爱的动物装饰">
+			<img src={animalsImage.src} alt="一排可爱的动物装饰" width="2170" height="305" loading="lazy" />
+		</div>
+
+		<div class="site-footer-stack" aria-label="本站使用的技术">
+			{techStack.map((item) => (
+				<span class={`site-footer-stack__badge site-footer-stack__badge--${item.tone}`}>
+					<Icon name={item.icon} aria-hidden="true" />
+					<span>{item.label}</span>
+				</span>
+			))}
+			<span class="site-footer-stack__badge site-footer-stack__badge--quiet">© {currentYear} / BY-NC-SA</span>
+		</div>
+
+	</section>
+
+	<footer id="site-footer" class="site-footer transition" aria-label="网站页脚">
+		<div class="site-footer__inner-border" aria-hidden="true"></div>
+
+		<div class="site-footer__decor" aria-hidden="true">
+			<div class="site-footer__planet site-footer__planet--left"><span></span></div>
+			<div class="site-footer__planet site-footer__planet--right"></div>
+
+			<svg class="site-footer__waves" viewBox="0 0 2048 430" preserveAspectRatio="none">
+				<defs>
+					<linearGradient id="site-footer-wave-left" x1="0" y1="0" x2="1" y2="0">
+						<stop offset="0" stop-color="#ffffff" stop-opacity="0.88"></stop>
+						<stop offset="0.58" stop-color="#8bbcff" stop-opacity="0.64"></stop>
+						<stop offset="1" stop-color="#2c86f5" stop-opacity="0"></stop>
+					</linearGradient>
+					<linearGradient id="site-footer-wave-right" x1="1" y1="0" x2="0" y2="0">
+						<stop offset="0" stop-color="#ffffff" stop-opacity="0.9"></stop>
+						<stop offset="0.58" stop-color="#8bbcff" stop-opacity="0.62"></stop>
+						<stop offset="1" stop-color="#2c86f5" stop-opacity="0"></stop>
+					</linearGradient>
+					<radialGradient id="site-footer-node" cx="50%" cy="50%" r="50%">
+						<stop offset="0" stop-color="#ffffff"></stop>
+						<stop offset="0.35" stop-color="#9fd3ff"></stop>
+						<stop offset="1" stop-color="#2f8df7" stop-opacity="0"></stop>
+					</radialGradient>
+				</defs>
+
+				<g fill="none" stroke="url(#site-footer-wave-left)" stroke-width="1.6">
+					<path d="M-30 170 C 154 170, 190 316, 356 321 C 500 326, 545 230, 684 245 C 776 255, 817 320, 938 338"></path>
+					<path d="M-28 202 C 126 205, 192 347, 355 351 C 500 356, 563 264, 702 279 C 790 288, 836 340, 944 354"></path>
+					<path d="M-22 237 C 122 242, 201 374, 360 378 C 514 382, 584 303, 718 315 C 805 323, 852 360, 952 370"></path>
+					<path d="M-14 274 C 121 279, 217 399, 375 403 C 526 406, 601 342, 735 349 C 824 354, 870 378, 960 385"></path>
+					<path d="M-4 310 C 136 314, 236 416, 393 420 C 545 423, 617 377, 752 381 C 839 383, 888 392, 972 397"></path>
+				</g>
+
+				<g fill="none" stroke="url(#site-footer-wave-right)" stroke-width="1.6">
+					<path d="M2078 126 C 1882 128, 1818 305, 1655 318 C 1507 330, 1456 246, 1314 258 C 1214 266, 1170 329, 1062 342"></path>
+					<path d="M2075 160 C 1889 166, 1826 337, 1654 346 C 1502 354, 1439 277, 1303 291 C 1210 301, 1157 345, 1055 358"></path>
+					<path d="M2070 197 C 1893 204, 1828 365, 1651 372 C 1500 378, 1421 312, 1287 326 C 1195 336, 1144 364, 1048 373"></path>
+					<path d="M2064 237 C 1890 244, 1823 390, 1644 396 C 1491 401, 1406 349, 1275 359 C 1182 366, 1129 381, 1038 387"></path>
+					<path d="M2058 280 C 1882 286, 1806 413, 1627 419 C 1475 423, 1394 382, 1260 389 C 1171 394, 1118 398, 1028 402"></path>
+				</g>
+
+				<g opacity="0.96">
+					<circle cx="164" cy="315" r="4.5" fill="url(#site-footer-node)"></circle>
+					<circle cx="428" cy="383" r="6" fill="url(#site-footer-node)"></circle>
+					<circle cx="548" cy="352" r="3.5" fill="url(#site-footer-node)"></circle>
+					<circle cx="1588" cy="364" r="5.5" fill="url(#site-footer-node)"></circle>
+					<circle cx="1838" cy="307" r="4" fill="url(#site-footer-node)"></circle>
+					<circle cx="1944" cy="260" r="3" fill="url(#site-footer-node)"></circle>
+				</g>
+			</svg>
+
+			<span class="site-footer__star site-footer__star--one"></span>
+			<span class="site-footer__star site-footer__star--two"></span>
+			<span class="site-footer__star site-footer__star--three"></span>
+			<span class="site-footer__star site-footer__star--four"></span>
+			<span class="site-footer__star site-footer__star--five"></span>
+		</div>
+
+		<div class="site-footer__content">
+			<nav class="site-footer__nav" aria-label="页脚快捷导航">
+				{socials.map((social) => (
+					<a
+						class="site-footer__nav-link"
+						href={social.url}
+						target={social.external ? "_blank" : undefined}
+						rel={social.external ? "noreferrer" : undefined}
+					>
+						<Icon name={social.icon} aria-hidden="true" />
+						<span>{social.name}</span>
+					</a>
+				))}
+			</nav>
+
+			<div class="site-footer__runtime" aria-label="网站运行时间">
+				<div class="site-footer__clock" aria-hidden="true">
+					<span class="site-footer__clock-orbit"></span>
+					<svg viewBox="0 0 100 100">
+						<circle cx="50" cy="50" r="39"></circle>
+						<path d="M50 27v25l17 10"></path>
+						<circle cx="50" cy="52" r="4.5"></circle>
+					</svg>
+				</div>
+				<time data-runtime datetime={siteConfig.siteStartDate}>
+					本站已运行 <strong>{initialDays}</strong> 天 <strong>{initialHours}</strong> 小时 <strong>{initialMinutes}</strong> 分 <strong>{initialSeconds}</strong> 秒
+				</time>
+				<span class="site-footer__runtime-sparkle" aria-hidden="true">✦</span>
+			</div>
+
+			<div class="site-footer__records" aria-label="网站备案信息">
+				<a href="https://icp.gov.moe/?keyword=20260788" target="_blank" rel="noreferrer">
+					<svg class="site-footer__shield" viewBox="0 0 36 40" aria-hidden="true">
+						<path d="M18 1.5 33 7v12.1c0 9.4-6.3 15.8-15 19.4C9.3 34.9 3 28.5 3 19.1V7z"></path>
+						<path class="site-footer__shield-mark" d="m10.2 19.7 5.1 5.1 10.8-12"></path>
+					</svg>
+					<span>萌ICP备20260788号</span>
+				</a>
+			</div>
+
+			<div class="site-footer__traffic" aria-label="网站访问统计">
+				<span class="site-footer__traffic-item">
+					<span>今日访客：</span>
+					<strong data-umami-stat="todayVisitors" aria-live="polite">加载中</strong>
+				</span>
+				<i aria-hidden="true">|</i>
+				<span class="site-footer__traffic-item">
+					<span>今日访问：</span>
+					<strong data-umami-stat="todayPageviews" aria-live="polite">加载中</strong>
+				</span>
+				<i aria-hidden="true">|</i>
+				<span class="site-footer__traffic-item">
+					<span>本站访客：</span>
+					<strong data-umami-stat="visitors" aria-live="polite">加载中</strong>
+				</span>
+				<i aria-hidden="true">|</i>
+				<span class="site-footer__traffic-item">
+					<span>本站访问：</span>
+					<strong data-umami-stat="pageviews" aria-live="polite">加载中</strong>
+				</span>
+			</div>
+
+			<div class="site-footer__divider" aria-hidden="true">
+				<span></span>
+				<i>✦</i>
+				<span></span>
+			</div>
+
+			<div class="site-footer__meta">
+				<span>© {currentYear} {profileConfig.name}. All Rights Reserved.</span>
+				<span class="site-footer__meta-separator" aria-hidden="true"></span>
+				<a href={url("rss.xml")}>
+					<Icon name="material-symbols:rss-feed-rounded" aria-hidden="true" />
+					<span>RSS</span>
+				</a>
+				<span class="site-footer__meta-separator" aria-hidden="true"></span>
+				<a href={url("sitemap-index.xml")}>
+					<svg viewBox="0 0 32 32" aria-hidden="true">
+						<rect x="13" y="2.5" width="6" height="6" rx="1.5"></rect>
+						<rect x="3" y="23.5" width="6" height="6" rx="1.5"></rect>
+						<rect x="13" y="23.5" width="6" height="6" rx="1.5"></rect>
+						<rect x="23" y="23.5" width="6" height="6" rx="1.5"></rect>
+						<path d="M16 8.5v7M6 23.5v-5h20v5M16 15.5v8"></path>
+					</svg>
+					<span>Sitemap</span>
+				</a>
+			</div>
+
+			<div class="site-footer__powered">
+				<span class="site-footer__powered-dots" aria-hidden="true">• • •</span>
+				<span class="site-footer__powered-star" aria-hidden="true">✦</span>
+				<span>Powered by</span>
+				<a href="https://astro.build" target="_blank" rel="noreferrer">Astro</a>
+				<span>&amp;</span>
+				<span class="site-footer__powered-name">Aemeath {siteConfig.themeVersion || "V1.1.1"}</span>
+				<span class="site-footer__powered-star" aria-hidden="true">✦</span>
+				<span class="site-footer__powered-dots" aria-hidden="true">• • •</span>
+			</div>
+		</div>
+	</footer>
+</div>
+
+<script is:inline define:vars={{ startAt: startAt.getTime() }}>
+	const renderFooterRuntime = () => {
+		const runtime = document.querySelector("[data-runtime]");
+		if (!runtime) return;
+
+		const seconds = Math.max(0, Math.floor((Date.now() - startAt) / 1000));
+		const days = Math.floor(seconds / 86400);
+		const hours = Math.floor((seconds % 86400) / 3600);
+		const minutes = Math.floor((seconds % 3600) / 60);
+		const secs = seconds % 60;
+		runtime.innerHTML = `本站已运行 <strong>${days}</strong> 天 <strong>${hours}</strong> 小时 <strong>${minutes}</strong> 分 <strong>${secs}</strong> 秒`;
+	};
+
+	if (window.__siteFooterRuntimeInterval) window.clearInterval(window.__siteFooterRuntimeInterval);
+	renderFooterRuntime();
+	window.__siteFooterRuntimeInterval = window.setInterval(renderFooterRuntime, 1000);
+</script>

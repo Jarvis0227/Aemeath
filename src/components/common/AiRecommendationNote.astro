@@ -1,0 +1,303 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+	text: string;
+	segments?: Array<{
+		text: string;
+		tone?: "default" | "accent";
+		href?: string;
+	}>;
+	class?: string;
+}
+
+const { text, segments = [{ text }], class: className = "" } = Astro.props;
+const serializedSegments = JSON.stringify(segments);
+---
+
+<div
+	class:list={["banner-post-ai-summary", "ai-recommendation-note", className]}
+	role="note"
+	aria-label="AI推荐，由 ChatGPT Sol 5.6 Max 提供"
+>
+	<div class="banner-post-ai-summary__label">
+		<Icon is:inline name="material-symbols:auto-awesome-rounded" class="text-[1.05em]" />
+		<span>AI推荐</span>
+		<span class="banner-post-ai-summary__provider">由 ChatGPT Sol 5.6 Max 提供</span>
+	</div>
+	<p aria-live="polite" aria-label={text}>
+		<span
+			class="ai-recommendation-typewriter"
+			data-segments={serializedSegments}
+			data-speed="32"
+			data-max-duration="5200"
+			aria-hidden="true"
+			style="visibility: hidden;"
+		>
+			{
+				segments.map((segment, index) =>
+					segment.href ? (
+						<a
+							href={segment.href}
+							target="_blank"
+							rel="noopener noreferrer"
+							class:list={[segment.tone === "accent" && "ai-recommendation-typewriter__accent"]}
+							data-ai-segment={index}
+						>
+							{segment.text}
+						</a>
+					) : (
+						<span
+							class:list={[segment.tone === "accent" && "ai-recommendation-typewriter__accent"]}
+							data-ai-segment={index}
+						>
+							{segment.text}
+						</span>
+					),
+				)
+			}
+		</span>
+		<noscript>{text}</noscript>
+	</p>
+</div>
+
+<script>
+	class AiRecommendationTypewriter {
+		private element: HTMLElement;
+		private segments: Array<{
+			text: string;
+			tone?: "default" | "accent";
+			href?: string;
+		}>;
+		private segmentElements: HTMLElement[] = [];
+		private segmentCharacters: string[][] = [];
+		private totalCharacters = 0;
+		private renderedCharacters = -1;
+		private duration = 0;
+		private startTime = 0;
+		private animationFrameId: number | null = null;
+		private fallbackTimeoutId: number | null = null;
+		private completed = false;
+		private readonly serializedSegments: string;
+
+		constructor(element: HTMLElement) {
+			this.element = element;
+			this.serializedSegments = element.dataset.segments || "[]";
+			try {
+				this.segments = JSON.parse(this.serializedSegments);
+			} catch {
+				this.segments = [];
+			}
+
+			this.segmentElements = Array.from(
+				this.element.querySelectorAll<HTMLElement>("[data-ai-segment]"),
+			);
+			this.segmentCharacters = this.segments.map((segment) =>
+				this.splitCharacters(segment.text),
+			);
+			this.totalCharacters = this.segmentCharacters.reduce(
+				(total, characters) => total + characters.length,
+				0,
+			);
+
+			const speed = Number.parseFloat(this.element.dataset.speed || "32");
+			const maxDuration = Number.parseFloat(this.element.dataset.maxDuration || "5200");
+			const requestedDuration = this.totalCharacters * (Number.isFinite(speed) ? speed : 32);
+			this.duration = Math.min(
+				Number.isFinite(maxDuration) ? maxDuration : 5200,
+				Math.max(900, requestedDuration),
+			);
+
+			if (this.segmentElements.length !== this.segments.length || this.totalCharacters === 0) {
+				this.complete();
+				return;
+			}
+
+			this.segmentElements.forEach((part) => {
+				part.textContent = "";
+			});
+			this.element.style.removeProperty("visibility");
+			this.element.dataset.typewriterReady = "true";
+			this.element.dataset.typing = "true";
+			this.startTime = performance.now();
+			document.addEventListener("visibilitychange", this.handleVisibilityChange);
+			this.animationFrameId = window.requestAnimationFrame(this.handleFrame);
+			this.fallbackTimeoutId = window.setTimeout(
+				() => this.complete(),
+				this.duration + 1500,
+			);
+		}
+
+		isFor(segments: string) {
+			return this.serializedSegments === segments;
+		}
+
+		resume() {
+			if (this.completed) return;
+			this.renderAt(performance.now());
+			if (!this.completed && this.animationFrameId === null) {
+				this.animationFrameId = window.requestAnimationFrame(this.handleFrame);
+			}
+		}
+
+		private splitCharacters(text: string) {
+			if (typeof Intl.Segmenter === "function") {
+				return Array.from(
+					new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text),
+				).map((item) => item.segment);
+			}
+			return Array.from(text);
+		}
+
+		private handleFrame = (timestamp: number) => {
+			this.animationFrameId = null;
+			this.renderAt(timestamp);
+			if (!this.completed) {
+				this.animationFrameId = window.requestAnimationFrame(this.handleFrame);
+			}
+		};
+
+		private handleVisibilityChange = () => {
+			if (document.visibilityState === "visible") this.resume();
+		};
+
+		private renderAt(timestamp: number) {
+			const progress = Math.min(1, Math.max(0, (timestamp - this.startTime) / this.duration));
+			const targetCharacters = Math.min(
+				this.totalCharacters,
+				Math.floor(progress * this.totalCharacters),
+			);
+
+			if (targetCharacters === this.renderedCharacters) return;
+			this.renderedCharacters = targetCharacters;
+
+			let remaining = targetCharacters;
+			this.segmentElements.forEach((part, index) => {
+				const characters = this.segmentCharacters[index] || [];
+				const visibleCount = Math.min(characters.length, Math.max(0, remaining));
+				part.textContent = characters.slice(0, visibleCount).join("");
+				remaining -= characters.length;
+			});
+
+			if (targetCharacters >= this.totalCharacters) this.complete();
+		}
+
+		private complete() {
+			this.segmentElements.forEach((part, index) => {
+				part.textContent = this.segments[index]?.text || "";
+			});
+			this.renderedCharacters = this.totalCharacters;
+			this.completed = true;
+			this.element.dataset.typewriterComplete = "true";
+			delete this.element.dataset.typing;
+			if (this.animationFrameId !== null) {
+				window.cancelAnimationFrame(this.animationFrameId);
+				this.animationFrameId = null;
+			}
+			if (this.fallbackTimeoutId !== null) {
+				window.clearTimeout(this.fallbackTimeoutId);
+				this.fallbackTimeoutId = null;
+			}
+			document.removeEventListener("visibilitychange", this.handleVisibilityChange);
+		}
+
+		destroy() {
+			if (this.animationFrameId !== null) window.cancelAnimationFrame(this.animationFrameId);
+			if (this.fallbackTimeoutId !== null) window.clearTimeout(this.fallbackTimeoutId);
+			document.removeEventListener("visibilitychange", this.handleVisibilityChange);
+		}
+	}
+
+	function initAiRecommendationTypewriters() {
+		document.querySelectorAll<HTMLElement>(".ai-recommendation-typewriter").forEach((element) => {
+			const existing = (element as HTMLElement & { __aiRecommendationTypewriter?: AiRecommendationTypewriter })
+				.__aiRecommendationTypewriter;
+			const serializedSegments = element.dataset.segments || "[]";
+			if (existing?.isFor(serializedSegments)) {
+				existing.resume();
+				return;
+			}
+			existing?.destroy();
+			(element as HTMLElement & { __aiRecommendationTypewriter?: AiRecommendationTypewriter })
+				.__aiRecommendationTypewriter = new AiRecommendationTypewriter(element);
+		});
+	}
+
+	function runAiRecommendationTypewriters() {
+		initAiRecommendationTypewriters();
+	}
+
+	type AiRecommendationRuntimeWindow = Window & {
+		__fireflyAiRecommendationInit?: () => void;
+		__fireflyAiRecommendationEventsBound?: boolean;
+	};
+
+	const runtimeWindow = window as AiRecommendationRuntimeWindow;
+	runtimeWindow.__fireflyAiRecommendationInit = runAiRecommendationTypewriters;
+
+	if (!runtimeWindow.__fireflyAiRecommendationEventsBound) {
+		const runLatestInitializer = () => runtimeWindow.__fireflyAiRecommendationInit?.();
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", runLatestInitializer, { once: true });
+		}
+		document.addEventListener("swup:contentReplaced", runLatestInitializer);
+		document.addEventListener("swup:content:replace", runLatestInitializer);
+		document.addEventListener("swup:page:view", runLatestInitializer);
+		runtimeWindow.__fireflyAiRecommendationEventsBound = true;
+	}
+
+	if (document.readyState !== "loading") runAiRecommendationTypewriters();
+</script>
+
+<style is:global>
+	.ai-recommendation-typewriter {
+		position: relative;
+	}
+
+	/* 友链推荐需要展示完整的推荐理由，不沿用文章摘要的三行截断。 */
+	.banner-post-ai-summary.ai-recommendation-note p {
+		min-height: 0;
+		max-height: none;
+		overflow: visible;
+		white-space: pre-line;
+	}
+
+	.ai-recommendation-typewriter::after {
+		margin-left: 2px;
+		content: "|";
+		animation: ai-recommendation-caret 1s infinite;
+	}
+
+	.ai-recommendation-typewriter__accent {
+		color: #f7cf61;
+		font-weight: 750;
+		text-shadow: 0 0 0.7rem rgba(247, 207, 97, 0.35);
+	}
+
+	a.ai-recommendation-typewriter__accent {
+		text-decoration: none;
+		text-underline-offset: 0.18em;
+	}
+
+	a.ai-recommendation-typewriter__accent:hover {
+		color: #ffe9a2;
+		text-decoration: underline;
+	}
+
+	a.ai-recommendation-typewriter__accent:focus-visible {
+		border-radius: 0.25rem;
+		outline: 2px solid rgba(255, 233, 162, 0.9);
+		outline-offset: 2px;
+	}
+
+	@keyframes ai-recommendation-caret {
+		0%,
+		50% {
+			opacity: 1;
+		}
+		51%,
+		100% {
+			opacity: 0;
+		}
+	}
+</style>

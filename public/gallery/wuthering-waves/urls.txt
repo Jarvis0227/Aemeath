@@ -1,0 +1,26 @@
+# Wuthering Waves 图片均引用站内现有高清原图，避免重复占用服务器空间。
+/assets/images/wallpaper/wallpaper-01.webp
+/assets/images/wallpaper/wallpaper-25.webp
+/assets/images/wallpaper/wallpaper-26.webp
+/assets/images/wallpaper/wallpaper-27.webp
+/assets/images/wallpaper/wallpaper-28.webp
+/assets/images/wallpaper/wallpaper-29.webp
+/assets/images/wallpaper/wallpaper-30.webp
+/assets/images/wallpaper/wallpaper-32.webp
+/assets/images/wallpaper/wallpaper-34.webp
+/assets/images/wallpaper/wallpaper-35.webp
+/assets/images/wallpaper/wallpaper-36.webp
+/assets/images/wallpaper/wallpaper-37.webp
+/assets/images/wallpaper/wallpaper-38.webp
+/assets/images/wallpaper/wallpaper-39.webp
+/assets/images/wallpaper/wallpaper-40.webp
+/assets/images/wallpaper/wallpaper-41.webp
+/assets/images/wallpaper/wallpaper-42.webp
+/assets/images/wallpaper/wallpaper-43.webp
+/assets/images/wallpaper/wallpaper-44.webp
+/assets/images/wallpaper/wallpaper-45.webp
+/assets/images/wallpaper/wallpaper-46.webp
+/assets/images/wallpaper/wallpaper-47.webp
+/assets/images/wallpaper/wallpaper-mobile-01.webp
+/assets/images/wallpaper/wallpaper-mobile-02.webp
+/assets/images/wallpaper/wallpaper-mobile-03.webp

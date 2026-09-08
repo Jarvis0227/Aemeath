@@ -1,0 +1,21 @@
+{
+	"waline_db_path": "/opt/waline/data/waline.sqlite",
+	"state_db_path": "/var/lib/waline-ai-reviewer/state.sqlite",
+	"waline_base_url": "http://127.0.0.1:8360",
+	"site_origin": "https://rainzt.cn",
+	"site_root_path": "/www/wwwroot/firefly",
+	"friend_path": "/friends/",
+	"bot_nick": "小爱客服",
+	"bot_mail": "zhaozitan050227@gmail.com",
+	"bot_link": "https://rainzt.cn/friends/",
+	"ai_endpoint": "https://api.siliconflow.cn/v1/chat/completions",
+	"ai_model": "Pro/moonshotai/Kimi-K2.6",
+	"ai_key_file": "/var/lib/waline-ai-reviewer/siliconflow.key",
+	"runtime_settings_path": "/var/lib/waline-ai-reviewer/runtime.json",
+	"smtp_config_path": "/etc/waline-ai-reviewer/smtp.json",
+	"poll_seconds": 5,
+	"post_interval_seconds": 11,
+	"page_context_chars": 7000,
+	"comment_chars": 1200,
+	"max_attempts": 3
+}

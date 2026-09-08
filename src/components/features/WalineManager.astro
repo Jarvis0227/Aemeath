@@ -1,0 +1,1511 @@
+---
+import "@waline/client/style";
+---
+
+<script>
+	import { init } from "@waline/client";
+
+	(() => {
+		const rootSelector = "[data-waline-root]";
+		const localPreviewHosts = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+		const isLocalPreview =
+			localPreviewHosts.has(window.location.hostname.toLowerCase()) || window.location.protocol === "file:";
+
+		const hideLocalPageviewCounters = () => {
+			if (!isLocalPreview) return;
+			document.documentElement.dataset.analyticsMode = "local";
+			document.querySelectorAll<HTMLElement>(".waline-pageview-count").forEach((element) => {
+				element.parentElement?.setAttribute("hidden", "true");
+			});
+		};
+
+		let activeInstance: ReturnType<typeof init> | undefined;
+		let activeRoot: HTMLElement | undefined;
+		let avatarPreviewCleanup: (() => void) | undefined;
+		let pickerPositionCleanup: (() => void) | undefined;
+		let emojiFallbackCleanup: (() => void) | undefined;
+		let commentPresentationCleanup: (() => void) | undefined;
+		let ownedCommentFilterCleanup: (() => void) | undefined;
+		let replyCollapseCleanup: (() => void) | undefined;
+		let commentHintCleanup: (() => void) | undefined;
+		let initQueued = false;
+
+		type WalineRole = "ai" | "owner" | "admin" | "recommended";
+
+		const roleLabels: Record<WalineRole, { label: string; title: string }> = {
+			ai: { label: "AI", title: "由小爱客服自动回复" },
+			owner: { label: "本站主理人", title: "本站主理人" },
+			admin: { label: "管理员", title: "本站管理员" },
+			recommended: {
+				label: "推荐友链",
+				title: "根据评论者填写的网站地址自动识别为本站推荐友链",
+			},
+		};
+
+		const composerRoleLabels: Record<WalineRole, { label: string; title: string }> = {
+			ai: { label: "小爱客服 · AI 回复", title: "当前以小爱客服身份回复" },
+			owner: { label: "本站主理人 · 正在评论", title: "当前以本站主理人身份评论" },
+			admin: { label: "管理员 · 正在评论", title: "当前以本站管理员身份评论" },
+			recommended: {
+				label: "推荐友链 · 已识别",
+				title: "已根据填写的网站地址识别为本站推荐友链",
+			},
+		};
+
+		type WalineStoredUser = {
+			display_name?: unknown;
+			objectId?: unknown;
+			token?: unknown;
+			type?: unknown;
+			url?: unknown;
+		};
+
+		type WalineUserSnapshot = {
+			displayName: string;
+			objectId: number;
+			type: "administrator" | "guest";
+			url: string;
+		};
+
+		type EmojiManifest = {
+			prefix?: string;
+			type?: string;
+			items?: string[];
+		};
+
+		const getQQAvatarUrl = (value: string) => {
+			const match = value.trim().match(/^([1-9]\d{4,11})@qq\.com$/i);
+			return match
+				? `https://q1.qlogo.cn/headimg_dl?dst_uin=${match[1]}&spec=100`
+				: "";
+		};
+
+		const setupAvatarPreview = (root: HTMLElement) => {
+			let scheduled = false;
+			let frameId: number | undefined;
+
+			const updatePreview = () => {
+				scheduled = false;
+
+				const comment = root.querySelector<HTMLElement>(".wl-comment");
+				const mailInput = root.querySelector<HTMLInputElement>('input[name="mail"]');
+				if (!comment || !mailInput) return;
+
+				let preview = comment.querySelector<HTMLElement>("[data-waline-avatar-preview]");
+				if (!preview) {
+					preview = document.createElement("div");
+					preview.className = "wl-avatar waline-avatar-preview";
+					preview.dataset.walineAvatarPreview = "true";
+					preview.setAttribute("aria-hidden", "true");
+
+					const image = document.createElement("img");
+					image.alt = "";
+					image.decoding = "async";
+					image.referrerPolicy = "no-referrer";
+					preview.append(image);
+					comment.prepend(preview);
+				}
+
+				const image = preview.querySelector<HTMLImageElement>("img");
+				if (!image) return;
+
+				const avatarUrl = getQQAvatarUrl(mailInput.value);
+				if (!avatarUrl) {
+					preview.classList.remove("is-visible", "is-loading");
+					delete preview.dataset.avatarSrc;
+					image.removeAttribute("src");
+					return;
+				}
+
+				if (preview.dataset.avatarSrc === avatarUrl) {
+					if (image.complete && image.naturalWidth > 0) {
+						preview.classList.remove("is-loading");
+						preview.classList.add("is-visible");
+					}
+					return;
+				}
+
+				preview.dataset.avatarSrc = avatarUrl;
+				preview.classList.remove("is-visible");
+				preview.classList.add("is-loading");
+				image.onload = () => {
+					if (preview?.dataset.avatarSrc !== avatarUrl) return;
+					preview.classList.remove("is-loading");
+					preview.classList.add("is-visible");
+				};
+				image.onerror = () => {
+					if (preview?.dataset.avatarSrc !== avatarUrl) return;
+					preview.classList.remove("is-visible", "is-loading");
+					delete preview.dataset.avatarSrc;
+					image.removeAttribute("src");
+				};
+				image.src = avatarUrl;
+
+				if (image.complete && image.naturalWidth > 0) image.onload?.(new Event("load"));
+			};
+
+			const schedulePreviewUpdate = () => {
+				if (scheduled) return;
+				scheduled = true;
+				frameId = requestAnimationFrame(updatePreview);
+			};
+
+			const onMailChange = (event: Event) => {
+				const target = event.target;
+				if (target instanceof HTMLInputElement && target.name === "mail") {
+					schedulePreviewUpdate();
+				}
+			};
+
+			root.addEventListener("input", onMailChange);
+			root.addEventListener("change", onMailChange);
+
+			const observer = new MutationObserver(schedulePreviewUpdate);
+			observer.observe(root, { childList: true, subtree: true });
+			schedulePreviewUpdate();
+
+			return () => {
+				observer.disconnect();
+				root.removeEventListener("input", onMailChange);
+				root.removeEventListener("change", onMailChange);
+				if (frameId !== undefined) cancelAnimationFrame(frameId);
+			};
+		};
+
+		const setupPickerPositioning = (root: HTMLElement) => {
+			let frameId: number | undefined;
+
+			const pickerSelector = ".wl-emoji-popup, .wl-gif-popup";
+			const openUpwardClass = "waline-picker-open-upward";
+			const edgeGap = 12;
+
+			const syncPickerPosition = () => {
+				frameId = undefined;
+				const commentCard = root.closest<HTMLElement>("#post-comments");
+				const cardBottom = commentCard?.getBoundingClientRect().bottom ?? Number.POSITIVE_INFINITY;
+
+				root.querySelectorAll<HTMLElement>(pickerSelector).forEach((picker) => {
+					if (!picker.classList.contains("display")) {
+						picker.classList.remove(openUpwardClass);
+						return;
+					}
+
+					// Measure the native downward layout first. The class is restored before the next paint,
+					// so users never see it jump between directions.
+					picker.classList.remove(openUpwardClass);
+					const pickerRect = picker.getBoundingClientRect();
+					const pickerAnchor = picker.parentElement?.getBoundingClientRect();
+					const constrainedBottom = Math.min(window.innerHeight - edgeGap, cardBottom - edgeGap);
+					const wouldOverflow = pickerRect.bottom > constrainedBottom;
+					const upwardTop = pickerAnchor ? pickerAnchor.top - edgeGap - pickerRect.height : pickerRect.top;
+
+					if (wouldOverflow && upwardTop >= edgeGap) {
+						picker.classList.add(openUpwardClass);
+					}
+				});
+			};
+
+			const schedulePickerPosition = () => {
+				if (frameId !== undefined) return;
+				frameId = requestAnimationFrame(syncPickerPosition);
+			};
+
+			root.addEventListener("click", schedulePickerPosition);
+			window.addEventListener("resize", schedulePickerPosition, { passive: true });
+			document.addEventListener("scroll", schedulePickerPosition, { capture: true, passive: true });
+			schedulePickerPosition();
+
+			return () => {
+				root.removeEventListener("click", schedulePickerPosition);
+				window.removeEventListener("resize", schedulePickerPosition);
+				document.removeEventListener("scroll", schedulePickerPosition, true);
+				if (frameId !== undefined) cancelAnimationFrame(frameId);
+			};
+		};
+
+		/*
+		 * Waline normally resolves shortcode emojis itself. New comments can occasionally arrive
+		 * before the remote emoji map has finished loading, which leaves tokens such as
+		 * :bb_sunglasses: visible in the rendered comment. Keep a small, DOM-safe fallback
+		 * that only transforms unresolved configured shortcodes inside comment bodies.
+		 */
+		const setupEmojiFallback = (root: HTMLElement, emojiSources: unknown) => {
+			const sources = Array.isArray(emojiSources)
+				? emojiSources.filter((source): source is string => typeof source === "string")
+				: [];
+			const emojiMap = new Map<string, string>();
+			let frameId: number | undefined;
+			let disposed = false;
+
+			const normalizeSource = (source: string) => source.replace(/\/+$/u, "");
+
+			const appendEmojiImage = (fragment: DocumentFragment, shortcode: string, source: string) => {
+				const image = document.createElement("img");
+				image.className = "wl-emoji";
+				image.src = source;
+				image.alt = shortcode;
+				image.loading = "lazy";
+				image.decoding = "async";
+				image.referrerPolicy = "no-referrer";
+				fragment.append(image);
+			};
+
+			const renderUnresolvedShortcodes = () => {
+				frameId = undefined;
+				if (!emojiMap.size) return;
+
+				root.querySelectorAll<HTMLElement>(".wl-content").forEach((content) => {
+					const textNodes: Text[] = [];
+					const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+						acceptNode: (node) => {
+							if (!node.textContent?.includes(":")) return NodeFilter.FILTER_REJECT;
+							const parent = node.parentElement;
+							return parent?.closest("pre, code, a, .wl-emoji")
+								? NodeFilter.FILTER_REJECT
+								: NodeFilter.FILTER_ACCEPT;
+						},
+					});
+
+					while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
+
+					textNodes.forEach((node) => {
+						const text = node.textContent || "";
+						const pattern = /:([a-z0-9_]+):/giu;
+						let match: RegExpExecArray | null;
+						let cursor = 0;
+						let changed = false;
+						const fragment = document.createDocumentFragment();
+
+						while ((match = pattern.exec(text))) {
+							const imageSource = emojiMap.get(match[1]);
+							if (!imageSource) continue;
+
+							let prefix = text.slice(cursor, match.index);
+							// Earlier auto-reply text accidentally placed a semicolon directly before
+							// a shortcode. Omit only that unambiguous separator when we resolve it.
+							if (/[;；]$/u.test(prefix)) prefix = prefix.slice(0, -1);
+							if (prefix) fragment.append(document.createTextNode(prefix));
+							appendEmojiImage(fragment, match[1], imageSource);
+							cursor = match.index + match[0].length;
+							changed = true;
+						}
+
+						if (!changed) return;
+						const suffix = text.slice(cursor);
+						if (suffix) fragment.append(document.createTextNode(suffix));
+						node.replaceWith(fragment);
+					});
+				});
+			};
+
+			const scheduleRender = () => {
+				if (frameId !== undefined || disposed) return;
+				frameId = requestAnimationFrame(renderUnresolvedShortcodes);
+			};
+
+			const observer = new MutationObserver(scheduleRender);
+			observer.observe(root, { childList: true, subtree: true, characterData: true });
+
+			void Promise.allSettled(
+				sources.map(async (source) => {
+					const folder = normalizeSource(source);
+					const response = await fetch(`${folder}/info.json`, { cache: "force-cache" });
+					if (!response.ok) throw new Error(`Failed to load Waline emoji manifest: ${folder}`);
+
+					const manifest = (await response.json()) as EmojiManifest;
+					const prefix = manifest.prefix || "";
+					const extension = manifest.type || "png";
+					manifest.items?.forEach((name) => {
+						emojiMap.set(`${prefix}${name}`, `${folder}/${prefix}${name}.${extension}`);
+					});
+				}),
+			).then(scheduleRender);
+
+			scheduleRender();
+			return () => {
+				disposed = true;
+				observer.disconnect();
+				if (frameId !== undefined) cancelAnimationFrame(frameId);
+			};
+		};
+
+		const normalizeSiteUrl = (value: string) => {
+			let input = value.trim();
+			if (!input) return "";
+
+			if (input.startsWith("//")) {
+				input = `https:${input}`;
+			} else if (!/^[a-z][a-z\d+.-]*:\/\//iu.test(input)) {
+				input = `https://${input}`;
+			}
+
+			try {
+				const parsed = new URL(input);
+				if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
+
+				const hostname = parsed.hostname
+					.toLowerCase()
+					.replace(/\.$/u, "")
+					.replace(/^www\./u, "");
+				if (!hostname) return "";
+
+				const isDefaultPort =
+					(parsed.protocol === "http:" && parsed.port === "80") ||
+					(parsed.protocol === "https:" && parsed.port === "443");
+				const port = parsed.port && !isDefaultPort ? `:${parsed.port}` : "";
+				const pathname = parsed.pathname
+					.replace(/\/{2,}/gu, "/")
+					.replace(/\/+$/u, "")
+					.toLowerCase();
+
+				return `${hostname}${port}${pathname}`;
+			} catch {
+				return "";
+			}
+		};
+
+		const getRecommendedSiteUrls = (root: HTMLElement) => {
+			try {
+				const values = JSON.parse(root.dataset.walineRecommendedLinks || "[]");
+				return Array.isArray(values)
+					? values.filter((value): value is string => typeof value === "string")
+					: [];
+			} catch (error) {
+				console.error("[Waline] Failed to parse recommended friend links.", error);
+				return [];
+			}
+		};
+
+		const getConfiguredUserIds = (value: string | undefined) => {
+			try {
+				const ids = JSON.parse(value || "[]");
+				return new Set(
+					Array.isArray(ids)
+						? ids.filter((id): id is number => Number.isInteger(id) && id > 0)
+						: [],
+				);
+			} catch {
+				return new Set<number>();
+			}
+		};
+
+		const setupReplyCollapse = (root: HTMLElement) => {
+			const eventController = new AbortController();
+			let frameId: number | undefined;
+			let disposed = false;
+
+			const sync = () => {
+				frameId = undefined;
+				if (disposed) return;
+
+				root.querySelectorAll<HTMLElement>(".wl-quote").forEach((quote) => {
+					const replies = Array.from(quote.children).filter(
+						(child): child is HTMLElement =>
+							child instanceof HTMLElement && child.classList.contains("wl-card-item"),
+					);
+					const toggle = quote.querySelector<HTMLButtonElement>(
+						":scope > [data-waline-reply-toggle]",
+					);
+
+					if (replies.length <= 1) {
+						replies.forEach((reply) => {
+							reply.classList.remove("waline-reply-hidden");
+							reply.removeAttribute("aria-hidden");
+						});
+						toggle?.remove();
+						delete quote.dataset.walineReplyCollapse;
+						delete quote.dataset.walineReplyExpanded;
+						return;
+					}
+
+					const expanded = quote.dataset.walineReplyExpanded === "true";
+					const hiddenReplies = replies.slice(1);
+					hiddenReplies.forEach((reply) => {
+						reply.classList.toggle("waline-reply-hidden", !expanded);
+						reply.toggleAttribute("aria-hidden", !expanded);
+					});
+					quote.dataset.walineReplyCollapse = "true";
+
+					const button = toggle || document.createElement("button");
+					button.type = "button";
+					button.className = "waline-reply-toggle";
+					button.dataset.walineReplyToggle = "true";
+					button.dataset.walineReplyExpanded = String(expanded);
+					button.setAttribute("aria-expanded", String(expanded));
+					button.textContent = expanded
+						? "收起回复"
+						: `展开其余 ${hiddenReplies.length} 条回复`;
+					button.title = expanded ? "收起回复" : "展开其余回复";
+
+					const firstReply = replies[0];
+					if (firstReply && firstReply.nextElementSibling !== button) {
+						firstReply.insertAdjacentElement("afterend", button);
+					}
+				});
+			};
+
+			const schedule = () => {
+				if (frameId !== undefined || disposed) return;
+				frameId = requestAnimationFrame(sync);
+			};
+
+			const onToggle = (event: Event) => {
+				const target = event.target;
+				if (!(target instanceof Element)) return;
+				const button = target.closest<HTMLButtonElement>("[data-waline-reply-toggle]");
+				if (!button) return;
+
+				event.preventDefault();
+				const quote = button.parentElement;
+				if (!quote) return;
+				quote.dataset.walineReplyExpanded = String(
+					quote.dataset.walineReplyExpanded !== "true",
+				);
+				schedule();
+			};
+
+			root.addEventListener("click", onToggle, {
+				signal: eventController.signal,
+			});
+			const observer = new MutationObserver(schedule);
+			observer.observe(root, { childList: true, subtree: true });
+			schedule();
+
+			return () => {
+				disposed = true;
+				eventController.abort();
+				observer.disconnect();
+				if (frameId !== undefined) cancelAnimationFrame(frameId);
+				root.querySelectorAll<HTMLElement>("[data-waline-reply-toggle]").forEach((button) => {
+					button.remove();
+				});
+				root.querySelectorAll<HTMLElement>(".waline-reply-hidden").forEach((reply) => {
+					reply.classList.remove("waline-reply-hidden");
+					reply.removeAttribute("aria-hidden");
+				});
+			};
+		};
+
+		const ownedCommentMailStorageKey = "firefly-waline-owned-mail-hashes";
+		const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
+
+		const normalizeCommentEmail = (value: string) => value.trim().toLowerCase();
+
+		/* Waline exposes the MD5 fingerprint of a comment email, never the email itself. */
+		const md5 = (value: string) => {
+			const bytes = new TextEncoder().encode(value);
+			const bitLength = bytes.length * 8;
+			const wordCount = (((bytes.length + 9 + 63) >> 6) << 4);
+			const words = new Uint32Array(wordCount);
+
+			bytes.forEach((byte, index) => {
+				words[index >> 2] |= byte << ((index & 3) * 8);
+			});
+			words[bytes.length >> 2] |= 0x80 << ((bytes.length & 3) * 8);
+			words[wordCount - 2] = bitLength >>> 0;
+			words[wordCount - 1] = Math.floor(bitLength / 0x100000000) >>> 0;
+
+			const shiftAmounts = [
+				7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+				5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+				4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+				6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21,
+			];
+			const constants = Array.from({ length: 64 }, (_, index) =>
+				Math.floor(Math.abs(Math.sin(index + 1)) * 0x100000000) >>> 0,
+			);
+			const rotateLeft = (number: number, amount: number) =>
+				(number << amount) | (number >>> (32 - amount));
+			const toHex = (number: number) =>
+				Array.from({ length: 4 }, (_, index) =>
+					((number >>> (index * 8)) & 0xff).toString(16).padStart(2, "0"),
+				).join("");
+
+			let a = 0x67452301;
+			let b = 0xefcdab89;
+			let c = 0x98badcfe;
+			let d = 0x10325476;
+
+			for (let offset = 0; offset < words.length; offset += 16) {
+				const blockA = a;
+				const blockB = b;
+				const blockC = c;
+				const blockD = d;
+
+				for (let index = 0; index < 64; index += 1) {
+					let functionValue: number;
+					let wordIndex: number;
+
+					if (index < 16) {
+						functionValue = (b & c) | (~b & d);
+						wordIndex = index;
+					} else if (index < 32) {
+						functionValue = (d & b) | (~d & c);
+						wordIndex = (5 * index + 1) % 16;
+					} else if (index < 48) {
+						functionValue = b ^ c ^ d;
+						wordIndex = (3 * index + 5) % 16;
+					} else {
+						functionValue = c ^ (b | ~d);
+						wordIndex = (7 * index) % 16;
+					}
+
+					const nextA = d;
+					const sum = (a + functionValue + constants[index] + words[offset + wordIndex]) >>> 0;
+					d = c;
+					c = b;
+					b = (b + rotateLeft(sum, shiftAmounts[index])) >>> 0;
+					a = nextA;
+				}
+
+				a = (a + blockA) >>> 0;
+				b = (b + blockB) >>> 0;
+				c = (c + blockC) >>> 0;
+				d = (d + blockD) >>> 0;
+			}
+
+			return `${toHex(a)}${toHex(b)}${toHex(c)}${toHex(d)}`;
+		};
+
+		const isCommentEmail = (value: string) => emailPattern.test(normalizeCommentEmail(value));
+
+		const readOwnedCommentMailHashes = () => {
+			const hashes = new Set<string>();
+			try {
+				const stored = JSON.parse(localStorage.getItem(ownedCommentMailStorageKey) || "[]");
+				if (Array.isArray(stored)) {
+					stored
+						.filter(
+							(hash): hash is string =>
+								typeof hash === "string" && (/^[a-f\d]{32}$/iu.test(hash) || /^qq:\d+$/u.test(hash)),
+						)
+						.forEach((hash) => hashes.add(hash.toLowerCase()));
+				}
+			} catch {
+				// Private browsing and malformed local state should not disable comments.
+			}
+			return hashes;
+		};
+
+		const rememberCommentEmail = (value: string) => {
+			const email = normalizeCommentEmail(value);
+			if (!isCommentEmail(email)) return "";
+
+			const hash = md5(email);
+			const hashes = readOwnedCommentMailHashes();
+			const candidates = new Set([hash]);
+			const rawEmail = value.trim();
+			if (rawEmail && rawEmail !== email) candidates.add(md5(rawEmail));
+			const [localPart, domain] = email.split("@");
+			if (localPart && /^(?:qq|foxmail)\.com$/u.test(domain) && /^\d+$/u.test(localPart)) {
+				candidates.add(`qq:${localPart}`);
+			}
+			candidates.forEach((candidate) => hashes.add(candidate));
+			try {
+				localStorage.setItem(ownedCommentMailStorageKey, JSON.stringify([...hashes]));
+			} catch {
+				// Keep the current session usable if persistent storage is blocked.
+			}
+			return hash;
+		};
+
+		const rememberStoredWalineEmails = () => {
+			const values: string[] = [];
+			try {
+				const meta = JSON.parse(localStorage.getItem("WALINE_USER_META") || "{}");
+				if (typeof meta?.mail === "string") values.push(meta.mail);
+			} catch {
+				// Ignore inaccessible or malformed Waline metadata.
+			}
+			try {
+				const user = JSON.parse(localStorage.getItem("WALINE_USER") || "null");
+				if (typeof user?.email === "string") values.push(user.email);
+			} catch {
+				// Ignore inaccessible or malformed Waline user state.
+			}
+			values.forEach(rememberCommentEmail);
+		};
+
+		const setupOwnedCommentFilter = (root: HTMLElement, rawConfig: unknown) => {
+			const metaHead = root.querySelector<HTMLElement>(":scope .wl-meta-head");
+			if (!metaHead || !(rawConfig && typeof rawConfig === "object")) return () => {};
+
+			const config = rawConfig as {
+				serverURL?: unknown;
+				path?: unknown;
+				lang?: unknown;
+			};
+			const serverURL = typeof config.serverURL === "string" ? config.serverURL.replace(/\/$/u, "") : "";
+			const path = typeof config.path === "string" ? config.path : "";
+			if (!serverURL || !path) return () => {};
+
+			rememberStoredWalineEmails();
+			const controller = new AbortController();
+			const wrapper = document.createElement("div");
+			wrapper.className = "firefly-comment-filter";
+			wrapper.dataset.walineCommentFilter = "true";
+
+			const toggle = document.createElement("button");
+			toggle.type = "button";
+			toggle.className = "firefly-comment-filter-toggle";
+			toggle.setAttribute("aria-pressed", "false");
+			toggle.title = "使用你曾填写过的邮箱筛选评论";
+			const icon = document.createElement("span");
+			icon.className = "firefly-comment-filter-icon";
+			icon.setAttribute("aria-hidden", "true");
+			const label = document.createElement("span");
+			label.className = "firefly-comment-filter-label";
+			toggle.append(icon, label);
+
+			const status = document.createElement("span");
+			status.className = "firefly-comment-filter-status";
+			status.setAttribute("role", "status");
+			status.setAttribute("aria-live", "polite");
+
+			const panel = document.createElement("div");
+			panel.className = "firefly-comment-filter-panel";
+			panel.hidden = true;
+			const panelText = document.createElement("p");
+			panelText.textContent = "输入你以前评论时用过的邮箱，便可找回属于你的评论。只记录邮箱指纹，不会显示在评论区。";
+			const form = document.createElement("form");
+			form.className = "firefly-comment-filter-form";
+			const emailInput = document.createElement("input");
+			emailInput.type = "email";
+			emailInput.required = true;
+			emailInput.autocomplete = "email";
+			emailInput.placeholder = "曾使用过的邮箱";
+			emailInput.className = "firefly-comment-filter-input";
+			const confirmButton = document.createElement("button");
+			confirmButton.type = "submit";
+			confirmButton.className = "firefly-comment-filter-confirm";
+			confirmButton.textContent = "确认";
+			const cancelButton = document.createElement("button");
+			cancelButton.type = "button";
+			cancelButton.className = "firefly-comment-filter-cancel";
+			cancelButton.textContent = "取消";
+			form.append(emailInput, confirmButton, cancelButton);
+			panel.append(panelText, form);
+			wrapper.append(toggle, status, panel);
+
+			const sortList = metaHead.querySelector<HTMLElement>(":scope > .wl-sort");
+			if (sortList) metaHead.insertBefore(wrapper, sortList);
+			else metaHead.append(wrapper);
+
+			let active = false;
+			let loading = false;
+			let loaded = false;
+			let commentMailHashes = new Map<string, Set<string>>();
+			let frameId: number | undefined;
+
+			const setPanelVisible = (visible: boolean) => {
+				panel.hidden = !visible;
+				if (visible) {
+					const currentMail = root.querySelector<HTMLInputElement>('input[name="mail"]')?.value || "";
+					emailInput.value = currentMail;
+					requestAnimationFrame(() => emailInput.focus());
+				}
+			};
+
+			const getCommentItems = () => Array.from(root.querySelectorAll<HTMLElement>(".wl-card-item"));
+
+			const applyFilter = () => {
+				frameId = undefined;
+				const items = getCommentItems();
+				if (!active || !loaded) {
+					items.forEach((item) => {
+						item.hidden = false;
+						delete item.dataset.walineOwnedComment;
+					});
+					return;
+				}
+
+				const hashes = readOwnedCommentMailHashes();
+				const visibleIds = new Set<string>();
+				const matchingIds = new Set<string>();
+				items.forEach((item) => {
+					const id = item.id;
+					const identities = commentMailHashes.get(id);
+					const isMatch = Boolean(identities && [...identities].some((identity) => hashes.has(identity)));
+					if (id && isMatch) {
+						matchingIds.add(id);
+						visibleIds.add(id);
+						let parent = item.parentElement?.closest<HTMLElement>(".wl-card-item");
+						while (parent) {
+							visibleIds.add(parent.id);
+							parent = parent.parentElement?.closest<HTMLElement>(".wl-card-item");
+						}
+					}
+				});
+
+				items.forEach((item) => {
+					const isVisible = visibleIds.has(item.id);
+					item.hidden = !isVisible;
+					item.dataset.walineOwnedComment = matchingIds.has(item.id) ? "true" : "context";
+				});
+				status.textContent = matchingIds.size
+					? `已显示 ${matchingIds.size} 条自己的评论`
+					: "当前页面没有找到匹配的评论";
+				if (!matchingIds.size && panel.hidden) setPanelVisible(true);
+			};
+
+			const scheduleApply = () => {
+				if (frameId !== undefined) return;
+				frameId = requestAnimationFrame(applyFilter);
+			};
+
+			const fetchCommentMailHashes = async () => {
+				if (loading) return;
+				loading = true;
+				loaded = false;
+				status.textContent = "正在查找你的评论…";
+				try {
+					const hashes = new Map<string, Set<string>>();
+					let page = 1;
+					let totalPages = 1;
+					while (page <= totalPages && page <= 20) {
+						const query = new URLSearchParams({
+							path,
+							page: String(page),
+							pageSize: "100",
+							lang: typeof config.lang === "string" ? config.lang : "zh-CN",
+							sortBy: "insertedAt_desc",
+						});
+						const response = await fetch(`${serverURL}/api/comment?${query.toString()}`, {
+							headers: { Accept: "application/json" },
+							signal: controller.signal,
+						});
+						if (!response.ok) throw new Error(`Comment metadata request failed: ${response.status}`);
+						const payload = (await response.json()) as {
+							data?: unknown;
+							totalPages?: unknown;
+						};
+						const rawData = payload.data;
+						const pageData = (rawData && typeof rawData === "object" && !Array.isArray(rawData)
+							? rawData
+							: payload) as { data?: unknown; totalPages?: unknown };
+						const comments =
+							rawData && Array.isArray(rawData)
+								? rawData
+								: pageData && typeof pageData === "object" && Array.isArray(pageData.data)
+									? pageData.data
+									: [];
+						const collect = (comment: unknown) => {
+							if (!comment || typeof comment !== "object") return;
+							const record = comment as {
+								objectId?: unknown;
+								mail?: unknown;
+								email?: unknown;
+								avatar?: unknown;
+								children?: unknown;
+							};
+							if (typeof record.objectId === "number" || typeof record.objectId === "string") {
+								const identities = new Set<string>();
+								const addEmail = (value: unknown) => {
+									if (typeof value !== "string" || !isCommentEmail(value)) return;
+									const email = normalizeCommentEmail(value);
+									identities.add(md5(email));
+									const [localPart, domain] = email.split("@");
+									if (localPart && /^(?:qq|foxmail)\.com$/u.test(domain) && /^\d+$/u.test(localPart)) {
+										identities.add(`qq:${localPart}`);
+									}
+								};
+								addEmail(record.mail);
+								addEmail(record.email);
+								if (typeof record.avatar === "string") {
+									for (const match of record.avatar.matchAll(/[a-f\d]{32}/giu)) {
+										identities.add(match[0].toLowerCase());
+									}
+									try {
+										const avatarUrl = new URL(record.avatar);
+										["nk", "dst_uin", "uin"].forEach((key) => {
+											const qqNumber = avatarUrl.searchParams.get(key)?.trim() || "";
+											if (/^\d+$/u.test(qqNumber)) identities.add(`qq:${qqNumber}`);
+										});
+									} catch {
+										// Ignore malformed avatar URLs.
+									}
+								}
+								if (identities.size) hashes.set(String(record.objectId), identities);
+							}
+							if (Array.isArray(record.children)) record.children.forEach(collect);
+						};
+						comments.forEach(collect);
+						totalPages = pageData && typeof pageData === "object" && Number.isFinite(Number(pageData.totalPages))
+							? Number(pageData.totalPages)
+							: page;
+						page += 1;
+					}
+					commentMailHashes = hashes;
+					loaded = true;
+					scheduleApply();
+				} catch (error) {
+					if ((error as Error).name !== "AbortError") {
+						status.textContent = "暂时无法读取评论归属，请稍后重试";
+						console.error("[Waline] Failed to load comment email fingerprints.", error);
+					}
+				} finally {
+					loading = false;
+				}
+			};
+
+			const syncLabel = () => {
+				label.textContent = active ? "显示全部评论" : "只看自己的评论";
+				toggle.setAttribute("aria-pressed", String(active));
+				toggle.dataset.active = String(active);
+				if (!active) {
+					status.textContent = readOwnedCommentMailHashes().size
+						? "已记住你的评论邮箱"
+						: "使用曾填写过的邮箱筛选";
+				}
+			};
+
+			const handleMailInput = (event: Event) => {
+				const target = event.target;
+				if (target instanceof HTMLInputElement && target.name === "mail") {
+					rememberCommentEmail(target.value);
+					if (active) scheduleApply();
+				}
+			};
+
+			const handleToggle = () => {
+				rememberStoredWalineEmails();
+				const currentMail = root.querySelector<HTMLInputElement>('input[name="mail"]')?.value || "";
+				rememberCommentEmail(currentMail);
+				if (!active && !readOwnedCommentMailHashes().size) {
+					setPanelVisible(true);
+					status.textContent = "先输入一个你以前使用过的邮箱";
+					return;
+				}
+				active = !active;
+				setPanelVisible(false);
+				syncLabel();
+				if (active) void fetchCommentMailHashes();
+				else scheduleApply();
+			};
+
+			const handleSubmit = (event: Event) => {
+				event.preventDefault();
+				const hash = rememberCommentEmail(emailInput.value);
+				if (!hash) {
+					emailInput.setCustomValidity("请输入有效的邮箱地址");
+					emailInput.reportValidity();
+					return;
+				}
+				emailInput.setCustomValidity("");
+				setPanelVisible(false);
+				active = true;
+				syncLabel();
+				void fetchCommentMailHashes();
+			};
+
+			toggle.addEventListener("click", handleToggle, { signal: controller.signal });
+			form.addEventListener("submit", handleSubmit, { signal: controller.signal });
+			cancelButton.addEventListener("click", () => setPanelVisible(false), {
+				signal: controller.signal,
+			});
+			root.addEventListener("input", handleMailInput, { signal: controller.signal });
+			root.addEventListener("change", handleMailInput, { signal: controller.signal });
+			window.addEventListener("storage", syncLabel, { signal: controller.signal });
+			const observer = new MutationObserver(scheduleApply);
+			observer.observe(root, { childList: true, subtree: true });
+			syncLabel();
+
+			return () => {
+				controller.abort();
+				observer.disconnect();
+				if (frameId !== undefined) cancelAnimationFrame(frameId);
+				wrapper.remove();
+			};
+		};
+
+		const setupCommentHint = (root: HTMLElement) => {
+			const rawPath = root.dataset.walinePath || "";
+			const path = rawPath.split(/[?#]/u)[0].replace(/\/+$/u, "") || "/";
+			if (path !== "/friends") return () => {};
+
+			let hint: HTMLElement | undefined;
+			let frameId: number | undefined;
+			let disposed = false;
+
+			const createHint = () => {
+				const element = document.createElement("aside");
+				element.className = "waline-link-tip";
+				element.dataset.walineCommentHint = "true";
+				element.setAttribute("role", "note");
+				element.setAttribute("aria-label", "友链信息提示");
+
+				const icon = document.createElement("span");
+				icon.className = "waline-link-tip-icon";
+				icon.setAttribute("aria-hidden", "true");
+
+				const body = document.createElement("div");
+				body.className = "waline-link-tip-body";
+				const title = document.createElement("strong");
+				title.className = "waline-link-tip-title";
+				title.textContent = "友链信息提示";
+
+				const text = document.createElement("p");
+				text.className = "waline-link-tip-text";
+				text.append(
+					document.createTextNode("需要更改友链信息时，请使用 "),
+					(() => {
+						const action = document.createElement("span");
+						action.className = "waline-link-tip-action";
+						action.textContent = "只看自己的评论";
+						return action;
+					})(),
+					document.createTextNode(" 快速定位原申请，再在原评论下回复补充即可，无需重复提交。"),
+				);
+
+				body.append(title, text);
+				element.append(icon, body);
+				return element;
+			};
+
+			const mount = () => {
+				frameId = undefined;
+				if (disposed) return;
+
+				const metaHead = root.querySelector<HTMLElement>(":scope .wl-meta-head");
+				if (!metaHead) return;
+				hint ??= createHint();
+				if (hint.previousElementSibling !== metaHead) {
+					metaHead.insertAdjacentElement("afterend", hint);
+				}
+			};
+
+			const schedule = () => {
+				if (frameId !== undefined || disposed) return;
+				frameId = requestAnimationFrame(mount);
+			};
+
+			const observer = new MutationObserver(schedule);
+			observer.observe(root, { childList: true, subtree: true });
+			schedule();
+
+			return () => {
+				disposed = true;
+				observer.disconnect();
+				if (frameId !== undefined) cancelAnimationFrame(frameId);
+				hint?.remove();
+			};
+		};
+
+		const setupCommentPresentation = (root: HTMLElement) => {
+			const aiNick = "小爱客服";
+			const disclaimerLead = "本信息由Ai自动理解后调用";
+			const avatarSrc = "/favicon/chaoc-tingyu-avatar-512.png?v=20260907";
+			const adminUrl = "https://rainzt.cn/ai-comment-admin/";
+			const adminEntrySelector = '[data-waline-ai-admin-entry="true"]';
+			const ownSiteUrl = normalizeSiteUrl(root.dataset.walineSiteUrl || "");
+			const recommendedSiteUrls = new Set(
+				getRecommendedSiteUrls(root).map(normalizeSiteUrl).filter(Boolean),
+			);
+			const ownerUserIds = getConfiguredUserIds(root.dataset.walineOwnerUserIds);
+			const aiUserIds = getConfiguredUserIds(root.dataset.walineAiUserIds);
+			const eventController = new AbortController();
+			let frameId: number | undefined;
+			let disposed = false;
+
+			const getNickUrl = (nick: HTMLElement | null) =>
+				nick instanceof HTMLAnchorElement
+					? normalizeSiteUrl(nick.getAttribute("href") || nick.href)
+					: "";
+
+			const hasOwnerLabel = (head: HTMLElement | null) =>
+				Boolean(
+					head &&
+						Array.from(head.querySelectorAll<HTMLElement>(":scope > .wl-badge:not(.wl-role-badge)"))
+							.some((badge) => badge.textContent?.trim() === "本站主理人"),
+				);
+
+			// This cache is used only for a local visual cue. Server-side Waline permissions remain
+			// authoritative, and no token or email is copied into the rendered DOM.
+			const getStoredWalineUser = (loginNick: string): WalineUserSnapshot | null => {
+				const stores: Storage[] = [];
+				try {
+					stores.push(sessionStorage);
+				} catch {
+					// Storage can be unavailable in privacy-restricted browsing contexts.
+				}
+				try {
+					stores.push(localStorage);
+				} catch {
+					// Keep the native editor usable even when persistent storage is disabled.
+				}
+
+				const snapshots: WalineUserSnapshot[] = [];
+				stores.forEach((store) => {
+					try {
+						const raw = store.getItem("WALINE_USER");
+						if (!raw || raw === "null") return;
+
+						const user = JSON.parse(raw) as WalineStoredUser;
+						if (
+							!user ||
+							typeof user !== "object" ||
+							typeof user.token !== "string" ||
+							!user.token ||
+							typeof user.display_name !== "string" ||
+							typeof user.objectId !== "number" ||
+							!Number.isInteger(user.objectId) ||
+							(user.type !== "administrator" && user.type !== "guest")
+						) {
+							return;
+						}
+
+						snapshots.push({
+							displayName: user.display_name.trim(),
+							objectId: user.objectId,
+							type: user.type,
+							url: typeof user.url === "string" ? user.url : "",
+						});
+					} catch {
+						// Ignore malformed or inaccessible Waline cache entries.
+					}
+				});
+
+				return snapshots.find((user) => user.displayName === loginNick) || null;
+			};
+
+			const getComposerRole = (comment: HTMLElement): WalineRole | null => {
+				const loginInfo = comment.querySelector<HTMLElement>(":scope > .wl-login-info");
+				if (loginInfo) {
+					const loginNick = Array.from(
+						loginInfo.querySelectorAll<HTMLElement>(":scope > .wl-login-nick"),
+					)
+						.map((element) => element.textContent?.trim() || "")
+						.find(Boolean);
+					const user = loginNick ? getStoredWalineUser(loginNick) : null;
+					if (!user) return null;
+
+					const userUrl = normalizeSiteUrl(user.url);
+					if (user.type === "administrator") {
+						if (aiUserIds.has(user.objectId)) return "ai";
+						if (ownerUserIds.has(user.objectId)) return "owner";
+						return "admin";
+					}
+
+					return userUrl && recommendedSiteUrls.has(userUrl) ? "recommended" : null;
+				}
+
+				const linkInput = comment.querySelector<HTMLInputElement>(
+					':scope > .wl-panel input[name="link"]',
+				);
+				const linkUrl = normalizeSiteUrl(linkInput?.value || "");
+				return linkUrl && recommendedSiteUrls.has(linkUrl) ? "recommended" : null;
+			};
+
+			const syncComposerIdentity = (comment: HTMLElement, role: WalineRole | null) => {
+				const panel = comment.querySelector<HTMLElement>(":scope > .wl-panel");
+				if (!panel) return;
+
+				if (role) {
+					comment.dataset.walineComposerRole = role;
+				} else {
+					delete comment.dataset.walineComposerRole;
+				}
+
+				let identity = panel.querySelector<HTMLElement>(
+					":scope > [data-waline-composer-identity]",
+				);
+				if (!role) {
+					identity?.remove();
+					return;
+				}
+
+				if (!identity) {
+					identity = document.createElement("div");
+					identity.className = "wl-composer-identity";
+					identity.dataset.walineComposerIdentity = "true";
+					identity.setAttribute("role", "status");
+					identity.setAttribute("aria-live", "polite");
+				}
+
+				if (identity.dataset.walineComposerRole !== role) {
+					const icon = document.createElement("span");
+					icon.className = "wl-composer-identity-icon";
+					icon.setAttribute("aria-hidden", "true");
+
+					const label = document.createElement("span");
+					label.className = "wl-composer-identity-label";
+					label.textContent = composerRoleLabels[role].label;
+					identity.replaceChildren(icon, label);
+					identity.dataset.walineComposerRole = role;
+					identity.title = composerRoleLabels[role].title;
+				}
+
+				const header = panel.querySelector<HTMLElement>(":scope > .wl-header");
+				if (header) {
+					if (identity.previousElementSibling !== header) {
+						header.insertAdjacentElement("afterend", identity);
+					}
+				} else if (panel.firstElementChild !== identity) {
+					panel.prepend(identity);
+				}
+			};
+
+			const syncRoleBadge = (
+				head: HTMLElement | null,
+				nick: HTMLElement | null,
+				role: WalineRole | null,
+			) => {
+				if (!head) return;
+
+				const customBadges = Array.from(
+					head.querySelectorAll<HTMLElement>(
+						":scope > [data-waline-role-badge], :scope > [data-waline-ai-badge]",
+					),
+				);
+				if (!nick || !role) {
+					customBadges.forEach((badge) => badge.remove());
+					return;
+				}
+
+				const badge = customBadges.shift() || document.createElement("span");
+				customBadges.forEach((extraBadge) => extraBadge.remove());
+
+				const { label, title } = roleLabels[role];
+				badge.className = `wl-badge wl-role-badge${role === "ai" ? " wl-ai-badge" : ""}`;
+				badge.dataset.walineRoleBadge = role;
+				if (role === "ai") {
+					badge.dataset.walineAiBadge = "true";
+				} else {
+					delete badge.dataset.walineAiBadge;
+				}
+				if (badge.textContent !== label) badge.textContent = label;
+				badge.title = title;
+
+				if (!badge.isConnected || badge.parentElement !== head) {
+					nick.insertAdjacentElement("afterend", badge);
+				}
+			};
+
+			const syncNativeOwnerLabel = (head: HTMLElement | null, role: WalineRole | null) => {
+				head
+					?.querySelectorAll<HTMLElement>(":scope > .wl-badge:not(.wl-role-badge)")
+					.forEach((badge) => {
+						badge.toggleAttribute(
+							"data-waline-native-owner-label",
+							role === "owner" && badge.textContent?.trim() === "本站主理人",
+						);
+					});
+			};
+
+			const clearAiEntry = (nick: HTMLElement | null, content: HTMLElement | null) => {
+				if (nick?.dataset.walineAiAdminEntry === "true") {
+					delete nick.dataset.walineAiAdminEntry;
+					nick.removeAttribute("tabindex");
+					nick.removeAttribute("title");
+					nick.removeAttribute("aria-label");
+					if (!(nick instanceof HTMLAnchorElement) && nick.getAttribute("role") === "link") {
+						nick.removeAttribute("role");
+					}
+				}
+				content
+					?.querySelectorAll<HTMLElement>(".wl-ai-disclaimer")
+					.forEach((element) => element.classList.remove("wl-ai-disclaimer"));
+			};
+
+			const getAdminEntry = (target: EventTarget | null) =>
+				target instanceof Element
+					? target.closest<HTMLElement>(adminEntrySelector)
+					: null;
+
+			root.addEventListener(
+				"click",
+				(event) => {
+					if (getAdminEntry(event.target)) event.preventDefault();
+				},
+				{ signal: eventController.signal },
+			);
+			root.addEventListener(
+				"dblclick",
+				(event) => {
+					if (!getAdminEntry(event.target)) return;
+					event.preventDefault();
+					window.location.assign(adminUrl);
+				},
+				{ signal: eventController.signal },
+			);
+			root.addEventListener(
+				"keydown",
+				(event) => {
+					if (event.key !== "Enter" || !getAdminEntry(event.target)) return;
+					event.preventDefault();
+					window.location.assign(adminUrl);
+				},
+				{ signal: eventController.signal },
+			);
+
+			const decorate = () => {
+				frameId = undefined;
+				if (disposed) return;
+
+				root.querySelectorAll<HTMLElement>(".wl-card-item").forEach((item) => {
+					const head = item.querySelector<HTMLElement>(":scope > .wl-card > .wl-head");
+					const nick = head?.querySelector<HTMLElement>(":scope > .wl-nick") || null;
+					const meta = item.querySelector<HTMLElement>(":scope > .wl-card > .wl-meta");
+					const message = item.querySelector<HTMLElement>(
+						":scope > .wl-card > .wl-content",
+					);
+					const content = item.querySelector<HTMLElement>(
+						":scope > .wl-card > .wl-content > div",
+					);
+					const nickUrl = getNickUrl(nick);
+					const isAi =
+						nick?.textContent?.trim() === aiNick &&
+						Boolean(content?.textContent?.includes(disclaimerLead));
+					const isAdmin = Boolean(
+						item.querySelector(":scope > .wl-user > .administrator-icon"),
+					);
+
+					let role: WalineRole | null = null;
+					if (isAi) {
+						role = "ai";
+					} else if (
+						isAdmin &&
+						((ownSiteUrl && nickUrl === ownSiteUrl) || hasOwnerLabel(head))
+					) {
+						role = "owner";
+					} else if (isAdmin) {
+						role = "admin";
+					} else if (nickUrl && recommendedSiteUrls.has(nickUrl)) {
+						role = "recommended";
+					}
+
+					const isThreadStarter = item.parentElement?.classList.contains("wl-cards") === true;
+					const messageSide =
+						role === "ai" || (role === "owner" && !isThreadStarter) ? "right" : "left";
+					item.dataset.walineSide = messageSide;
+					item.dataset.walineThreadStarter = String(isThreadStarter);
+
+					if (message && !message.querySelector(":scope > [data-waline-bubble-tail]")) {
+						const tail = document.createElement("span");
+						tail.className = "wl-bubble-tail";
+						tail.dataset.walineBubbleTail = "true";
+						tail.setAttribute("aria-hidden", "true");
+						message.prepend(tail);
+					}
+
+					if (role) {
+						item.dataset.walineRole = role;
+					} else {
+						delete item.dataset.walineRole;
+					}
+					item.classList.toggle("wl-ai-comment", role === "ai");
+					syncRoleBadge(head, nick, role);
+					syncNativeOwnerLabel(head, role);
+					if (head && meta) {
+						const time = head.querySelector<HTMLElement>(":scope > .wl-time");
+						if (time && meta.previousElementSibling !== time) {
+							time.insertAdjacentElement("afterend", meta);
+						} else if (!time && meta.parentElement !== head) {
+							head.append(meta);
+						}
+					}
+
+					if (role !== "ai" || !nick || !content) {
+						clearAiEntry(nick, content);
+						return;
+					}
+
+					const replyTarget = item.querySelector<HTMLAnchorElement>(
+						":scope > .wl-card > .wl-content > .wl-reply-to > a",
+					);
+					const legacyBodyMention = content.querySelector<HTMLAnchorElement>(
+						":scope > p:first-child > a:first-child",
+					);
+					if (
+						replyTarget &&
+						legacyBodyMention &&
+						replyTarget.getAttribute("href") === legacyBodyMention.getAttribute("href") &&
+						replyTarget.textContent?.trim() === legacyBodyMention.textContent?.trim()
+					) {
+						const separator = legacyBodyMention.nextSibling;
+						if (separator instanceof Text) {
+							separator.textContent = separator.textContent?.replace(/^\s*[:：]\s*/u, "") ?? "";
+						}
+						legacyBodyMention.remove();
+					}
+
+					const user = item.querySelector<HTMLElement>(":scope > .wl-user");
+					let avatar = user?.querySelector<HTMLImageElement>(".wl-user-avatar");
+					if (user && !avatar) {
+						avatar = document.createElement("img");
+						avatar.className = "wl-user-avatar";
+						avatar.alt = "小爱客服的 AI 头像";
+						user.prepend(avatar);
+					}
+					if (avatar && avatar.dataset.xiaoaiAvatar !== "true") {
+						avatar.src = avatarSrc;
+						avatar.removeAttribute("srcset");
+						avatar.loading = "lazy";
+						avatar.decoding = "async";
+						avatar.referrerPolicy = "no-referrer";
+						avatar.dataset.xiaoaiAvatar = "true";
+					}
+
+					nick.dataset.walineAiAdminEntry = "true";
+					nick.tabIndex = 0;
+					nick.title = "双击进入小爱客服后台";
+					nick.setAttribute("aria-label", "小爱客服，双击或按 Enter 进入管理后台");
+					if (!(nick instanceof HTMLAnchorElement)) nick.setAttribute("role", "link");
+
+					const disclaimer = Array.from(content.querySelectorAll<HTMLElement>("p, small, div"))
+						.find((element) => element.textContent?.trim().startsWith(disclaimerLead));
+					if (disclaimer) disclaimer.classList.add("wl-ai-disclaimer");
+				});
+
+				root.querySelectorAll<HTMLElement>(".wl-comment").forEach((comment) => {
+					syncComposerIdentity(comment, getComposerRole(comment));
+				});
+			};
+
+			const schedule = () => {
+				if (frameId !== undefined || disposed) return;
+				frameId = requestAnimationFrame(decorate);
+			};
+
+			const scheduleComposerLinkSync = (event: Event) => {
+				const target = event.target;
+				if (target instanceof HTMLInputElement && target.name === "link") schedule();
+			};
+			root.addEventListener("input", scheduleComposerLinkSync, {
+				signal: eventController.signal,
+			});
+			root.addEventListener("change", scheduleComposerLinkSync, {
+				signal: eventController.signal,
+			});
+			window.addEventListener("storage", schedule, { signal: eventController.signal });
+			window.addEventListener(
+				"message",
+				(event) => {
+					if (event.data?.type === "profile") schedule();
+				},
+				{ signal: eventController.signal },
+			);
+
+			const observer = new MutationObserver(schedule);
+			observer.observe(root, { childList: true, subtree: true, characterData: true });
+			schedule();
+
+			return () => {
+				disposed = true;
+				eventController.abort();
+				observer.disconnect();
+				if (frameId !== undefined) cancelAnimationFrame(frameId);
+				root.querySelectorAll<HTMLElement>(".wl-comment").forEach((comment) => {
+					delete comment.dataset.walineComposerRole;
+					comment
+						.querySelectorAll<HTMLElement>("[data-waline-composer-identity]")
+						.forEach((identity) => identity.remove());
+				});
+				root.querySelectorAll<HTMLElement>(".wl-card-item").forEach((item) => {
+					delete item.dataset.walineSide;
+					delete item.dataset.walineThreadStarter;
+					item
+						.querySelectorAll<HTMLElement>("[data-waline-bubble-tail]")
+						.forEach((tail) => tail.remove());
+				});
+			};
+		};
+
+		const getConfig = (root: HTMLElement) => {
+			try {
+				return JSON.parse(root.dataset.walineConfig || "{}");
+			} catch (error) {
+				console.error("[Waline] Failed to parse the comment configuration.", error);
+				return null;
+			}
+		};
+
+		const teardownWaline = () => {
+			if (activeRoot) delete activeRoot.dataset.walineReady;
+			try {
+				activeInstance?.destroy?.();
+			} catch (error) {
+				console.error("[Waline] Failed to destroy the previous comment client.", error);
+			}
+			activeInstance = undefined;
+
+			avatarPreviewCleanup?.();
+			avatarPreviewCleanup = undefined;
+			pickerPositionCleanup?.();
+			pickerPositionCleanup = undefined;
+			emojiFallbackCleanup?.();
+			emojiFallbackCleanup = undefined;
+			replyCollapseCleanup?.();
+			replyCollapseCleanup = undefined;
+			ownedCommentFilterCleanup?.();
+			ownedCommentFilterCleanup = undefined;
+			commentHintCleanup?.();
+			commentHintCleanup = undefined;
+			commentPresentationCleanup?.();
+			commentPresentationCleanup = undefined;
+			activeRoot = undefined;
+		};
+
+		const initWaline = () => {
+			hideLocalPageviewCounters();
+			const root = document.querySelector<HTMLElement>(rootSelector);
+			if (!root) {
+				teardownWaline();
+				return;
+			}
+			if (root === activeRoot && root.dataset.walineReady === "true") return;
+
+			teardownWaline();
+			delete root.dataset.walineReady;
+
+			const config = getConfig(root);
+			if (!config?.serverURL) return;
+
+			root.dataset.walineReady = "true";
+			try {
+				// Disable Waline's built-in image button. Its default uploader embeds files as
+				// Base64 in the comment body, which can exceed the configured word limit even
+				// for very small screenshots.
+				const runtimeConfig = isLocalPreview ? { ...config, pageview: false } : config;
+				activeInstance = init({ ...runtimeConfig, imageUploader: false, el: root });
+				activeRoot = root;
+				avatarPreviewCleanup = setupAvatarPreview(root);
+				pickerPositionCleanup = setupPickerPositioning(root);
+				emojiFallbackCleanup = setupEmojiFallback(root, config.emoji);
+				replyCollapseCleanup = setupReplyCollapse(root);
+				commentPresentationCleanup = setupCommentPresentation(root);
+				ownedCommentFilterCleanup = setupOwnedCommentFilter(root, config);
+				commentHintCleanup = setupCommentHint(root);
+			} catch (error) {
+				delete root.dataset.walineReady;
+				teardownWaline();
+				console.error("[Waline] Failed to load the comment client.", error);
+			}
+		};
+
+		const scheduleWalineInit = () => {
+			if (initQueued) return;
+			initQueued = true;
+			requestAnimationFrame(() => {
+				initQueued = false;
+				initWaline();
+			});
+		};
+
+		const observeSwupContainer = () => {
+			const container = document.querySelector("#swup-container");
+			if (!container) return;
+
+			new MutationObserver(scheduleWalineInit).observe(container, {
+				childList: true,
+				subtree: true,
+			});
+		};
+
+		scheduleWalineInit();
+		observeSwupContainer();
+		document.addEventListener("astro:page-load", scheduleWalineInit);
+		document.addEventListener("swup:contentReplaced", scheduleWalineInit);
+		document.addEventListener("swup:page:view", scheduleWalineInit);
+	})();
+</script>

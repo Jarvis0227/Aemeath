@@ -1,0 +1,131 @@
+---
+import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import type { WidgetComponentConfig } from "@/types/config";
+
+interface Props {
+	class?: string;
+	style?: string;
+	widgetConfig?: WidgetComponentConfig;
+}
+
+const { class: className, style } = Astro.props;
+---
+
+<WidgetLayout
+	id="quote-of-the-day"
+	name="今日一言"
+	class={className}
+	style={style}
+>
+	<daily-quote>
+		<blockquote>
+			<span class="quote-mark" aria-hidden="true">“</span>
+			<span class="quote-text">慢一点，也是在向前走。</span>
+			<span class="quote-mark" aria-hidden="true">”</span>
+		</blockquote>
+		<cite class="quote-author">—— Rain</cite>
+	</daily-quote>
+</WidgetLayout>
+
+<style>
+	daily-quote {
+		display: block;
+		padding: 0.2rem 0.25rem 0.1rem;
+	}
+
+	blockquote {
+		margin: 0;
+		color: var(--content-regular);
+		font-size: 0.9rem;
+		font-style: italic;
+		line-height: 1.75;
+		transition: color 180ms ease;
+	}
+
+	daily-quote:hover blockquote {
+		color: var(--primary);
+	}
+
+	.quote-mark {
+		margin: 0 0.12rem;
+		color: var(--primary);
+		font-family: Georgia, "Times New Roman", serif;
+		font-size: 1.45rem;
+		font-style: normal;
+		line-height: 0;
+		opacity: 0.55;
+		vertical-align: -0.12em;
+	}
+
+	.quote-author {
+		display: block;
+		margin-top: 0.55rem;
+		color: var(--content-meta);
+		font-size: 0.75rem;
+		font-style: normal;
+		text-align: right;
+	}
+</style>
+
+<script>
+	const quotes = [
+		["千里之行，始于足下。", "《道德经》"],
+		["知人者智，自知者明。", "《道德经》"],
+		["慎终如始，则无败事。", "《道德经》"],
+		["学而不思则罔，思而不学则殆。", "《论语》"],
+		["知者不惑，仁者不忧，勇者不惧。", "《论语》"],
+		["不患人之不己知，患不知人也。", "《论语》"],
+		["不积跬步，无以至千里。", "《荀子·劝学》"],
+		["锲而不舍，金石可镂。", "《荀子·劝学》"],
+		["纸上得来终觉浅，绝知此事要躬行。", "陆游"],
+		["路漫漫其修远兮，吾将上下而求索。", "屈原"],
+	] as const;
+
+	class DailyQuote extends HTMLElement {
+		private midnightTimer?: number;
+
+		connectedCallback() {
+			this.showTodayQuote();
+			this.scheduleMidnightRefresh();
+		}
+
+		disconnectedCallback() {
+			if (this.midnightTimer) window.clearTimeout(this.midnightTimer);
+		}
+
+		private showTodayQuote() {
+			const now = new Date();
+			const dayNumber = Math.floor(
+				Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) /
+					86_400_000,
+			);
+			const quoteIndex = dayNumber % quotes.length;
+			const [text, author] = quotes[quoteIndex];
+			const textElement = this.querySelector<HTMLElement>(".quote-text");
+			const authorElement =
+				this.querySelector<HTMLElement>(".quote-author");
+
+			if (textElement) textElement.textContent = text;
+			if (authorElement) authorElement.textContent = `—— ${author}`;
+		}
+
+		private scheduleMidnightRefresh() {
+			const now = new Date();
+			const nextMidnight = new Date(
+				now.getFullYear(),
+				now.getMonth(),
+				now.getDate() + 1,
+			);
+			const delay = nextMidnight.getTime() - now.getTime() + 100;
+
+			this.midnightTimer = window.setTimeout(() => {
+				this.showTodayQuote();
+				this.scheduleMidnightRefresh();
+			}, delay);
+		}
+	}
+
+	if (!customElements.get("daily-quote")) {
+		customElements.define("daily-quote", DailyQuote);
+	}
+</script>

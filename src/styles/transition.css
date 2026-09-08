@@ -1,0 +1,132 @@
+/* ==========================================================================
+   Page Transition Animations (Swup) & Global Animations
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Swup Page Transitions
+   -------------------------------------------------------------------------- */
+
+/* Main Content Transition */
+.transition-main {
+    transition: 
+        opacity 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        transform 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Leaving Animation */
+.transition-leaving {
+    transition:
+        transform 120ms cubic-bezier(0.55, 0.055, 0.675, 0.19),
+        opacity 120ms cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+
+/* State: Changing (Swup) */
+html.is-changing .transition-main {
+    transition: 
+        opacity 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        transform 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+html.is-leaving .transition-main {
+    transition: 
+        opacity 120ms cubic-bezier(0.55, 0.055, 0.675, 0.19),
+        transform 120ms cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+
+/* State: Animating (Entering) */
+html.is-animating .transition-main {
+    opacity: 0;
+    transform: translateY(2rem);
+}
+
+/* State: Leaving */
+html.is-animating.is-leaving .transition-leaving {
+    transform: translateY(-2rem);
+    opacity: 0;
+}
+
+/* Swup Fade Fallback */
+html.is-changing .transition-swup-fade {
+    transition: all 120ms ease-out;
+}
+
+html.is-animating .transition-swup-fade {
+    opacity: 0;
+    transform: translateY(1rem);
+}
+
+/* --------------------------------------------------------------------------
+   2. Keyframes
+   -------------------------------------------------------------------------- */
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(2rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   3. Onload Animations
+   -------------------------------------------------------------------------- */
+
+.onload-animation {
+    opacity: 0;
+    animation: fade-in-up 120ms ease-out forwards;
+}
+
+/* 渐进式动画延迟 */
+.onload-animation:nth-child(1) { animation-delay: 0ms; }
+.onload-animation:nth-child(2) { animation-delay: 30ms; }
+.onload-animation:nth-child(3) { animation-delay: 60ms; }
+.onload-animation:nth-child(4) { animation-delay: 90ms; }
+.onload-animation:nth-child(5) { animation-delay: 120ms; }
+
+/* --------------------------------------------------------------------------
+   4. Reading Progress Bar
+   -------------------------------------------------------------------------- */
+
+#progress-track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    z-index: 60;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: 0;
+    background: transparent;
+}
+
+#progress-bar {
+    --scroll-progress: 0;
+
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: scaleX(var(--scroll-progress));
+    transform-origin: 0 50%;
+    will-change: transform;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #00b8ff 0%, #4e8dff 46%, #9a73ff 72%, #ff78b0 100%);
+    box-shadow: 0 1px 10px rgb(57 158 255 / 0.62);
+    transition: transform 80ms linear;
+}
+
+@media (max-width: 720px) {
+    #progress-track {
+        height: 3px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #progress-bar {
+        transition: none;
+    }
+}

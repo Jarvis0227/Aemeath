@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>小爱客服 · AI 回复管理</title>
+	<style>
+		:root { color-scheme: light; --blue: #246bdb; --blue-deep: #173f84; --blue-soft: #eaf3ff; --yellow: #fff3be; --ink: #17304f; --muted: #607591; --line: #dce7f5; --paper: #f8fbff; --white: #fff; --danger: #b83b46; --success: #1d7657; }
+		* { box-sizing: border-box; }
+		html { scroll-behavior: smooth; }
+		body { margin: 0; min-height: 100vh; color: var(--ink); background: var(--paper); font-family: "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif; line-height: 1.55; }
+		::selection { color: var(--blue-deep); background: #ffe790; }
+		button, input, select { font: inherit; }
+		button, input, select { accent-color: var(--blue); }
+		button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #9bc3ff; outline-offset: 2px; }
+		.shell { min-height: 100vh; display: grid; grid-template-columns: minmax(250px, 29vw) 1fr; }
+		.identity { position: sticky; top: 0; height: 100vh; overflow: hidden; padding: clamp(28px, 5vw, 72px); color: white; background: #1f65cd; display: flex; flex-direction: column; justify-content: space-between; }
+		.identity::after { content: ""; position: absolute; width: 390px; height: 390px; right: -210px; bottom: -120px; border: 74px solid rgba(255,255,255,.12); border-radius: 50%; }
+		.brand { position: relative; z-index: 1; }
+		.brand img { width: clamp(96px, 12vw, 154px); aspect-ratio: 1; object-fit: cover; border-radius: 34px; background: var(--yellow); box-shadow: 0 24px 60px rgba(0,0,0,.28); }
+		.brand h1 { margin: 28px 0 8px; max-width: 8ch; font-size: clamp(2rem, 4vw, 4.5rem); line-height: .98; letter-spacing: -.035em; }
+		.brand p { margin: 0; max-width: 28ch; color: #dceaff; }
+		.identity-foot { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; color: #e8f2ff; font-size: .88rem; }
+		.pulse { width: 9px; height: 9px; border-radius: 50%; background: #ffe078; box-shadow: 0 0 0 7px rgba(255,224,120,.17); }
+		.workspace { width: min(980px, 100%); margin: 0 auto; padding: clamp(28px, 5vw, 72px) clamp(20px, 5vw, 74px) 70px; }
+		.topline { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding-bottom: 34px; }
+		.topline h2 { margin: 0 0 7px; font-size: clamp(1.65rem, 3vw, 2.55rem); line-height: 1.1; letter-spacing: -.025em; }
+		.topline p { margin: 0; color: var(--muted); }
+		.logout { border: 0; background: transparent; color: var(--blue-deep); padding: 9px 0; font-weight: 700; text-decoration: underline; text-decoration-color: #a8c8f3; text-underline-offset: 5px; cursor: pointer; }
+		.notice { margin: 0 0 28px; padding: 13px 16px; color: #574b1c; background: var(--yellow); border-radius: 14px; font-weight: 650; }
+		.notice.error { color: #7d2730; background: #ffe6e8; }
+		.section { display: grid; grid-template-columns: minmax(160px, .62fr) minmax(0, 1.38fr); gap: clamp(24px, 6vw, 74px); padding: 40px 0; border-top: 1px solid var(--line); }
+		.section-copy h3 { margin: 0 0 8px; font-size: 1.15rem; }
+		.section-copy p { margin: 0; color: var(--muted); font-size: .92rem; }
+		.form { display: grid; gap: 19px; }
+		.fields-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+		label { display: grid; gap: 7px; color: var(--blue-deep); font-weight: 700; font-size: .91rem; }
+		input[type="password"], input[type="number"], select, textarea { width: 100%; min-height: 46px; border: 1px solid #bdd0e8; border-radius: 12px; padding: 10px 13px; color: var(--ink); background: var(--white); transition: border-color .18s ease-out, box-shadow .18s ease-out; }
+		textarea { min-height: 132px; resize: vertical; line-height: 1.65; }
+		input:hover, select:hover, textarea:hover { border-color: #7ca8e4; }
+		input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-soft); outline: none; }
+		.toggle { display: flex; align-items: center; gap: 11px; min-height: 46px; color: var(--ink); }
+		.toggle input { width: 20px; height: 20px; }
+		.hint { margin: -8px 0 0; color: var(--muted); font-size: .82rem; }
+		.status-line { display: flex; align-items: center; gap: 10px; min-height: 46px; color: var(--muted); }
+		.status-line strong { color: var(--success); }
+		.actions { display: flex; flex-wrap: wrap; gap: 11px; align-items: center; }
+		.button { min-height: 44px; border: 0; border-radius: 12px; padding: 10px 18px; color: white; background: var(--blue); font-weight: 750; cursor: pointer; box-shadow: 0 10px 24px rgba(0,0,0,.14); transition: transform .18s cubic-bezier(.2,.8,.2,1), background .18s ease-out; }
+		.button:hover { background: #1859bd; transform: translateY(-1px); }
+		.button:active { transform: translateY(0); }
+		.button.secondary { color: var(--blue-deep); background: var(--blue-soft); box-shadow: none; }
+		.security-note { margin-top: 26px; padding: 18px 20px; background: #eef6ff; border-radius: 14px; color: #45617f; font-size: .86rem; }
+		.reply-note { margin: 0; padding: 13px 15px; border: 1px solid #d7e6f6; border-radius: 12px; background: #f5faff; color: #45617f; font-size: .84rem; line-height: 1.65; }
+		.reply-tools { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+		.emoji-tools { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+		.tool-label { color: var(--muted); font-size: .79rem; font-weight: 700; }
+		.emoji-button { min-width: 36px; min-height: 34px; padding: 5px 8px; border: 1px solid #c8dbef; border-radius: 10px; color: var(--ink); background: #f7fbff; cursor: pointer; transition: transform .18s cubic-bezier(.2,.8,.2,1), border-color .18s ease-out, background .18s ease-out, box-shadow .18s ease-out; }
+		.emoji-button:hover { border-color: #86b8e8; background: #edf7ff; box-shadow: 0 5px 14px rgba(0,0,0,.12); transform: translateY(-1px); }
+		.emoji-button:active { transform: translateY(0); box-shadow: none; }
+		.reply-tools .button.secondary { min-height: 38px; padding: 8px 14px; white-space: nowrap; }
+		.reply-tools .button.secondary:disabled { cursor: wait; opacity: .72; }
+		.polish-note { margin: -9px 0 0; color: var(--muted); font-size: .8rem; }
+		.polish-status { min-height: 1.4em; margin: -8px 0 0; color: var(--muted); font-size: .8rem; }
+		.polish-status.busy { color: #397398; }
+		.polish-status.success { color: var(--success); }
+		.polish-status.error { color: var(--danger); }
+		.status-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+		.status-card { display: grid; gap: 4px; min-height: 118px; padding: 17px; border: 1px solid var(--line); border-radius: 15px; background: #fff; box-shadow: 0 9px 24px rgba(0, 0, 0, .06); }
+		.status-card.warning { border-color: #ecd994; background: #fffdf3; }
+		.status-card.danger { border-color: #f0c3c8; background: #fff8f8; }
+		.status-card.success { border-color: #bfe3d4; background: #f7fffb; }
+		.status-label, .status-detail, .table-sub, .metric span { color: var(--muted); font-size: .78rem; }
+		.status-card strong { color: var(--ink); font-size: 1.16rem; }
+		.status-detail { line-height: 1.45; overflow-wrap: anywhere; }
+		.inbox-toolbar { display: grid; grid-template-columns: minmax(160px, 1.4fr) repeat(2, minmax(120px, .7fr)) auto; gap: 10px; align-items: end; margin-bottom: 15px; }
+		.inbox-toolbar label { gap: 5px; font-size: .78rem; }
+		.inbox-toolbar input, .inbox-toolbar select { min-height: 42px; }
+		.inbox-toolbar .button { min-height: 42px; padding-inline: 15px; box-shadow: none; }
+		.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 15px; background: #fff; }
+		table { width: 100%; min-width: 690px; border-collapse: collapse; font-size: .84rem; }
+		th, td { padding: 12px 13px; border-bottom: 1px solid #edf2f8; text-align: left; vertical-align: top; }
+		th { color: var(--muted); background: #f7faff; font-size: .76rem; font-weight: 800; white-space: nowrap; }
+		tbody tr:last-child td { border-bottom: 0; }
+		.table-sub { display: block; margin-top: 2px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		.comment-excerpt, .event-content { display: block; max-width: 290px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		.pill { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 8px; border-radius: 99px; color: #526b85; background: #edf3f9; font-size: .75rem; font-weight: 800; white-space: nowrap; }
+		.pill-success { color: #176b4d; background: #e2f7ed; }
+		.pill-danger { color: #9a3340; background: #ffe5e8; }
+		.pill-muted { color: #6d7890; background: #f0f3f7; }
+		.table-action, .page-link { border: 0; color: var(--blue); background: transparent; font-weight: 800; cursor: pointer; text-decoration: none; white-space: nowrap; }
+		.table-action:hover, .page-link:hover { color: var(--blue-deep); text-decoration: underline; text-underline-offset: 3px; }
+		.empty-cell { padding: 28px; color: var(--muted); text-align: center; }
+		.inbox-notice { margin: 0 0 12px; color: var(--muted); font-size: .82rem; }
+		.pagination { display: flex; align-items: center; justify-content: flex-end; gap: 14px; min-height: 42px; color: var(--muted); font-size: .8rem; }
+		.pagination-note { margin-right: auto; }
+		.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+		.metric { display: grid; gap: 3px; padding: 14px; border-radius: 13px; background: #f4f8fd; }
+		.metric strong { font-size: 1.35rem; line-height: 1; }
+		.audit-heading { margin: 20px 0 9px; color: var(--blue-deep); font-size: .88rem; }
+		.template-tools { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+		.template-button { min-height: 32px; padding: 5px 10px; border: 1px solid #c8dbef; border-radius: 9px; color: #355b7b; background: #f7fbff; cursor: pointer; font-size: .78rem; }
+		.template-button:hover { border-color: #86b8e8; background: #edf7ff; }
+		.preview-shell { display: grid; gap: 8px; padding: 14px; border: 1px solid #cfe0f2; border-radius: 14px; background: #f8fbff; }
+		.preview-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--blue-deep); font-size: .82rem; font-weight: 800; }
+		.preview-head .button { min-height: 34px; padding: 6px 11px; box-shadow: none; font-size: .78rem; }
+		.final-preview { margin: 0; min-height: 82px; padding: 11px 12px; border-radius: 10px; color: #35516d; background: #fff; white-space: pre-wrap; font: inherit; font-size: .83rem; line-height: 1.65; }
+		.final-preview.stale { border: 1px dashed #e1b958; background: #fffdf4; }
+		.button:disabled { cursor: wait; opacity: .72; transform: none; }
+		@media (max-width: 780px) { .shell { display: block; } .identity { position: relative; height: auto; min-height: 290px; padding: 28px 24px; } .brand { display: grid; grid-template-columns: 84px 1fr; gap: 20px; align-items: center; } .brand img { width: 84px; border-radius: 24px; } .brand h1 { margin: 0 0 7px; max-width: none; font-size: 2.25rem; } .brand p { grid-column: 1 / -1; } .identity-foot { margin-top: 34px; } .workspace { padding-top: 34px; } .section { grid-template-columns: 1fr; gap: 20px; padding: 32px 0; } .inbox-toolbar { grid-template-columns: 1fr 1fr; } .inbox-toolbar label:first-child { grid-column: 1 / -1; } .inbox-toolbar .button { width: 100%; } }
+		@media (max-width: 520px) { .fields-2, .status-grid, .metric-grid { grid-template-columns: 1fr; } .topline { align-items: center; } .topline p { max-width: 22ch; } .brand h1 { font-size: 1.85rem; } .reply-tools { align-items: stretch; flex-direction: column; } .reply-tools .button.secondary { width: 100%; } .inbox-toolbar { grid-template-columns: 1fr; } .inbox-toolbar label:first-child { grid-column: auto; } .pagination { justify-content: space-between; } }
+		@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition-duration: .01ms !important; } }
+	</style>
+</head>
+<body>
+			<!--
+	THESIS: A focused service desk, not a generic metric-card dashboard.
+	OWN-WORLD: Clear blue operations rail, white work surface, pale-yellow human notes, rounded practical controls.
+		STORY: See whether Xiaoai is answering, tune the bounded runtime, send a deliberate reply when needed, rotate its credential, and leave safely.
+	FIRST VIEWPORT: Xiaoai anchors the blue rail while current controls begin immediately on the white canvas.
+	FORM: Operate mode, code-led fixed split console for a precisely specified admin surface.
+	FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+	-->
+	<div class="shell">
+		<aside class="identity">
+			<div class="brand">
+				<img src="/ai-comment-admin/assets/ai-xiaoai-avatar.png?v=20260907" alt="小爱客服头像" width="154" height="154">
+				<div><h1>小爱客服</h1><p>给博客评论区留一点温柔，也给每次自动回复留一道人工把关。</p></div>
+			</div>
+			<div class="identity-foot"><span class="pulse" aria-hidden="true"></span>本机安全控制台 · 127.0.0.1:8371</div>
+		</aside>
+		<main class="workspace">
+			<header class="topline">
+				<div><h2>AI 回复管理</h2><p>设置会在下一轮评论处理时生效。</p></div>
+				<form method="post" action="/ai-comment-admin/logout"><input type="hidden" name="csrf" value="$csrf"><button class="logout" type="submit">安全退出</button></form>
+			</header>
+			$notice_html
+			<section class="section">
+				<div class="section-copy"><h3>运行状态</h3><p>把评论库、AI 服务和自动回复进程放在同一处检查；异常会进入下面的审计记录。</p></div>
+				<div class="status-grid">$health_html</div>
+			</section>
+			<section class="section">
+				<div class="section-copy"><h3>评论收件箱</h3><p>搜索访客评论、筛选审核状态和回复状态，点击后可直接带入手动回复。</p></div>
+				<div>
+					<form class="inbox-toolbar" method="get" action="/ai-comment-admin/">
+						<label>搜索评论<input type="search" name="q" value="$inbox_query" maxlength="80" placeholder="昵称、内容或页面路径"></label>
+						<label>审核状态<select name="comment_status">$inbox_status_options</select></label>
+						<label>回复状态<select name="reply_state">$inbox_reply_options</select></label>
+						<button class="button" type="submit">筛选</button>
+					</form>
+					<p class="inbox-notice">$inbox_notice</p>
+					<div class="table-wrap"><table><thead><tr><th>评论</th><th>内容 / 页面</th><th>审核</th><th>回复</th><th>时间</th><th>操作</th></tr></thead><tbody>$inbox_html</tbody></table></div>
+					<nav class="pagination" aria-label="评论收件箱分页">$inbox_pagination</nav>
+				</div>
+			</section>
+			<section class="section">
+				<div class="section-copy"><h3>回复策略</h3><p>控制小爱是否工作、使用哪个模型，以及自动回复的路径、关键词、时段和每日上限。</p></div>
+				<form class="form" method="post" action="/ai-comment-admin/settings">
+					<input type="hidden" name="csrf" value="$csrf">
+					<label class="toggle"><input type="checkbox" name="enabled" value="1" $enabled_checked> 启用自动回复</label>
+					<label>模型<select name="model" required>$model_options</select></label>
+					<div class="fields-2">
+						<label class="toggle"><input type="checkbox" name="thinking" value="1" $thinking_checked> 开启思考模式</label>
+						<label>温度<input type="number" name="temperature" value="$temperature" min="0" max="1.5" step="0.05" required></label>
+					</div>
+					<p class="hint">温度范围 0–1.5。模型只能从服务端允许清单选择。</p>
+					<div class="fields-2">
+						<label>只允许这些路径<span class="field-note">每行一个；留空表示不限制</span><textarea name="allowed_paths" rows="3" placeholder="/friends/\n/guestbook/">$allowed_paths</textarea></label>
+						<label>屏蔽这些路径<span class="field-note">每行一个；优先于允许路径</span><textarea name="blocked_paths" rows="3" placeholder="/private/">$blocked_paths</textarea></label>
+					</div>
+					<label>忽略关键词<span class="field-note">评论包含任意关键词时不自动回复</span><textarea name="ignored_keywords" rows="3" placeholder="广告\n合作报价">$ignored_keywords</textarea></label>
+					<div class="fields-2">
+						<label>安静时段开始<input type="time" name="quiet_start" value="$quiet_start"><span class="field-note">和结束时间都填写才启用</span></label>
+						<label>安静时段结束<input type="time" name="quiet_end" value="$quiet_end"><span class="field-note">跨午夜也支持，例如 23:00–08:00</span></label>
+					</div>
+					<label>每日自动回复上限<input type="number" name="daily_limit" value="$daily_limit" min="0" max="10000" step="1"><span class="field-note">0 表示不限；只统计自动回复，不占用手动回复额度</span></label>
+					<div class="actions"><button class="button" type="submit">保存回复设置</button></div>
+				</form>
+			</section>
+			<section class="section">
+				<div class="section-copy"><h3>手动回复</h3><p>选择一条已审核评论，手动以小爱客服身份发布；公开显示会与自动回复使用相同的头像、标签和说明。</p></div>
+				<form class="form" id="manual-reply-form" data-manual-reply-form data-disclaimer="$manual_reply_disclaimer" method="post" action="/ai-comment-admin/reply">
+					<input type="hidden" name="csrf" value="$csrf">
+					<label>目标评论 ID<input type="number" name="comment_id" min="1" max="9223372036854775807" list="waline-comment-ids" inputmode="numeric" placeholder="例如 123" required></label>
+					<datalist id="waline-comment-ids">$comment_options</datalist>
+					<p class="hint">$comment_feed_notice</p>
+					<label>回复内容<textarea id="manual-reply-text" data-reply-textarea name="reply" maxlength="$manual_reply_max_chars" placeholder="输入你想让小爱客服回复的内容，支持 emoji 和颜文字" required></textarea></label>
+					<div class="reply-tools">
+						<div class="emoji-tools" aria-label="插入表情"><span class="tool-label">快速插入</span><button class="emoji-button" type="button" data-emoji="😊" aria-label="插入微笑表情">😊</button><button class="emoji-button" type="button" data-emoji="✨" aria-label="插入闪光表情">✨</button><button class="emoji-button" type="button" data-emoji="🌸" aria-label="插入樱花表情">🌸</button><button class="emoji-button" type="button" data-emoji="ヾ(≧∇≦*)ゝ" aria-label="插入开心颜文字">ヾ(≧∇≦*)ゝ</button></div>
+						<button class="button secondary" type="button" data-polish-button>KIMI AI 润色</button>
+					</div>
+					<div class="template-tools" aria-label="快捷回复模板"><span class="tool-label">快捷模板</span><button class="template-button" type="button" data-template="感谢你的留言，我已经收到啦～">收到留言</button><button class="template-button" type="button" data-template="谢谢你的分享，我会认真看看，也欢迎你继续来玩呀 😊">感谢分享</button><button class="template-button" type="button" data-template="这个问题我先记下了，感谢你的提醒，我会尽快确认后回复你。">问题跟进</button></div>
+					<p class="polish-note">润色使用 KIMI 即时模式，只整理语气，不会自动发布；emoji、颜文字和换行会尽量保留，润色后仍可继续编辑。</p>
+					<p class="polish-status" data-polish-status aria-live="polite"></p>
+					<p class="hint">最多 $manual_reply_max_chars 个字符，系统会自动保留统一的 AI 身份说明；不会修改原评论。</p>
+					<div class="preview-shell"><div class="preview-head"><span>发布前预览</span><button class="button secondary" type="button" data-preview-button>更新预览</button></div><pre class="final-preview stale" data-final-preview>填写回复后，发布前会在这里显示最终公开内容。</pre></div>
+					<p class="reply-note">发布后会作为目标评论的子评论出现在对应页面，页面上仍显示“小爱客服 · AI 回复”。请先确认评论 ID 与回复内容，再点击发布。</p>
+					<div class="actions"><button class="button" type="submit">以小爱客服身份回复</button></div>
+				</form>
+			</section>
+			<section class="section">
+				<div class="section-copy"><h3>用量与审计</h3><p>查看当天操作次数、AI 调用耗时和最近的成功、失败、规则跳过记录。</p></div>
+				<div><div>$usage_html</div><h4 class="audit-heading">最近操作</h4><div class="table-wrap"><table><thead><tr><th>时间</th><th>操作</th><th>结果</th><th>模型</th><th>内容 / 错误</th><th>耗时</th></tr></thead><tbody>$audit_html</tbody></table></div></div>
+			</section>
+			<section class="section">
+				<div class="section-copy"><h3>SiliconFlow 密钥</h3><p>新密钥会原子替换旧文件；页面和响应永远不会显示已有密钥。</p></div>
+				<div class="form">
+					<div class="status-line">当前状态：<strong>$key_state</strong></div>
+					<form class="form" method="post" action="/ai-comment-admin/key">
+						<input type="hidden" name="csrf" value="$csrf">
+						<label>新 API Key<input type="password" name="api_key" minlength="12" maxlength="512" autocomplete="new-password" required></label>
+						<div class="actions"><button class="button" type="submit">替换密钥</button></div>
+					</form>
+					<form method="post" action="/ai-comment-admin/test"><input type="hidden" name="csrf" value="$csrf"><button class="button secondary" type="submit">显式测试 SiliconFlow</button></form>
+				</div>
+			</section>
+			<section class="section">
+				<div class="section-copy"><h3>登录密码</h3><p>修改后会注销所有后台会话，需要使用新密码重新登录。</p></div>
+				<form class="form" method="post" action="/ai-comment-admin/password">
+					<input type="hidden" name="csrf" value="$csrf">
+					<label>当前密码<input type="password" name="current_password" autocomplete="current-password" required></label>
+					<div class="fields-2">
+						<label>新密码<input type="password" name="new_password" minlength="12" maxlength="1024" autocomplete="new-password" required></label>
+						<label>确认新密码<input type="password" name="confirm_password" minlength="12" maxlength="1024" autocomplete="new-password" required></label>
+					</div>
+					<div class="actions"><button class="button" type="submit">修改并退出</button></div>
+				</form>
+			</section>
+			<p class="security-note">控制台只监听本机地址。请通过启用 HTTPS 的反向代理访问；会话 Cookie 固定使用 HttpOnly、Secure 与 SameSite=Strict。</p>
+		</main>
+	</div>
+	<script>$dashboard_script</script>
+</body>
+</html>

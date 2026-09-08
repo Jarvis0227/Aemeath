@@ -1,0 +1,825 @@
+---
+import { Icon } from "astro-icon/components";
+import type { FriendLink } from "@/types/friendsConfig";
+
+interface Props {
+	items: FriendLink[];
+	routeMode?: boolean;
+}
+
+const { items, routeMode = false } = Astro.props;
+---
+
+<div
+	id="friends-portal"
+	class="friends-portal"
+	data-friends-portal
+	data-friends-portal-route={routeMode ? "true" : undefined}
+	hidden={!routeMode}
+	aria-hidden={routeMode ? "false" : "true"}
+	role="dialog"
+	aria-modal="true"
+	aria-labelledby="friends-portal-title"
+>
+	<div class="friends-portal-backdrop" data-portal-close></div>
+	<div class="friends-portal-transition" aria-hidden="true"></div>
+	<div class="friends-portal-shell" role="document">
+		<div class="friends-portal-caption-layer" aria-hidden="true">即将驶出朝朝听雨</div>
+		<div
+			class="friends-portal-frame"
+			data-portal-frame
+			tabindex="0"
+			aria-label="友链全屏漫游区域，长按 1.2 秒或空格键随机跳转一个友链"
+		>
+			<canvas class="friends-portal-canvas" data-portal-canvas aria-hidden="true"></canvas>
+			<div class="friends-portal-scanlines" aria-hidden="true"></div>
+			<div class="friends-portal-vignette" aria-hidden="true"></div>
+			<div class="friends-portal-center-mark" aria-hidden="true">
+				<span></span>
+				<i></i>
+			</div>
+			<div class="friends-portal-cursor" data-portal-cursor aria-hidden="true">长按跳转</div>
+			<div class="friends-portal-actions">
+				<button
+					type="button"
+					class="friends-portal-jump"
+					data-portal-jump
+					aria-label="长按 1.2 秒或空格键随机跳转友链"
+				>
+					<span data-portal-jump-label>长按跳转</span>
+				</button>
+				<button
+					type="button"
+					class="friends-portal-exit"
+					data-portal-close
+					aria-label={routeMode ? "返回友链列表" : "退出友链漫游"}
+				>
+					<span aria-hidden="true">Esc</span>
+					<span>{routeMode ? "返回友链" : "退出"}</span>
+				</button>
+			</div>
+			<div class="friends-portal-fallback" data-portal-fallback>
+				<strong>友链漫游暂时不可用</strong>
+				<span>你仍然可以从这里认识这些朋友：</span>
+				<div class="friends-portal-fallback-list">
+					{items.map((item) => (
+						<a href={item.siteurl} target="_blank" rel="noopener noreferrer">
+							<img src={item.imgurl} alt="" width="32" height="32" loading="lazy" />
+							<span>{item.title}</span>
+						</a>
+					))}
+				</div>
+			</div>
+
+			<div class="friends-portal-sources" aria-hidden="true">
+				{items.map((item) => (
+					<img
+						data-portal-source
+						data-portal-target={item.siteurl}
+						src={item.screenshot || item.imgurl}
+						alt=""
+						width="480"
+						height="270"
+						loading="lazy"
+						decoding="async"
+					/>
+				))}
+			</div>
+		</div>
+
+		<header class="friends-portal-header">
+			<div class="friends-portal-brand">
+				<span class="friends-portal-live-dot" aria-hidden="true"></span>
+				<div>
+					<h2 id="friends-portal-title">友链漫游舱</h2>
+					<p>每一面墙，都是一位正在写作的朋友。</p>
+				</div>
+			</div>
+			<button
+				type="button"
+				class="friends-portal-close"
+				data-portal-close
+				aria-label={routeMode ? "返回友链列表" : "退出友链漫游舱"}
+			>
+				<Icon is:inline name="material-symbols:close-rounded" aria-hidden="true" />
+				<span>{routeMode ? "返回友链" : "退出"}</span>
+			</button>
+		</header>
+
+		<footer class="friends-portal-footer">
+			<span class="friends-portal-hint">
+				<Icon is:inline name="material-symbols:touch-app-rounded" aria-hidden="true" />
+				移动鼠标看向不同方向，长按或按住空格键跳转
+			</span>
+			<span class="friends-portal-count">{items.length} 个友链已加入漫游</span>
+			<span class="friends-portal-mobile-note">手机端会保留普通友链卡片，桌面端体验更完整。</span>
+		</footer>
+	</div>
+</div>
+
+<script src="../../scripts/friends-magic-portal.ts"></script>
+
+<style is:global>
+	.friends-heading-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(13rem, 15.5rem);
+		align-items: center;
+		gap: clamp(1rem, 4vw, 3rem);
+	}
+
+	.friends-heading-copy {
+		min-width: 0;
+	}
+
+	.friends-magic-button {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.62rem;
+		justify-self: end;
+		width: max-content;
+		max-width: 100%;
+		min-width: 0;
+		padding: 0.3rem 0.15rem;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		box-shadow: none;
+		color: var(--primary);
+		text-align: left;
+		cursor: var(--cursor-pointer, pointer);
+		isolation: isolate;
+		overflow: visible;
+		transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1), color 260ms ease;
+	}
+
+	.friends-magic-button::before {
+		position: absolute;
+		inset: -0.45rem -0.72rem;
+		z-index: -1;
+		border-radius: inherit;
+		background:
+			radial-gradient(ellipse at 28% 44%, color-mix(in srgb, #c9e6ff 56%, transparent), transparent 58%),
+			radial-gradient(ellipse at 76% 58%, color-mix(in srgb, #ffd8e9 34%, transparent), transparent 60%);
+		content: "";
+		pointer-events: none;
+		opacity: 0;
+		transform: scale(0.82);
+		filter: blur(10px);
+		transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 320ms ease;
+	}
+
+	.friends-magic-button::after {
+		position: absolute;
+		inset: auto 2.6rem -0.08rem 2.7rem;
+		z-index: -1;
+		border-bottom: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
+		border-radius: inherit;
+		content: "";
+		pointer-events: none;
+		opacity: 0.34;
+		transform: scaleX(0.76);
+		transform-origin: center;
+		transition: opacity 260ms ease, transform 320ms ease;
+	}
+
+	.friends-magic-button:hover,
+	.friends-magic-button:focus-visible {
+		color: color-mix(in srgb, var(--primary) 84%, #6262a8);
+		transform: translateY(-1px);
+	}
+
+	.friends-magic-button:hover::before,
+	.friends-magic-button:focus-visible::before {
+		opacity: 0.84;
+		transform: scale(1);
+	}
+
+	.friends-magic-button:hover::after,
+	.friends-magic-button:focus-visible::after {
+		opacity: 0.66;
+		transform: scaleX(1);
+	}
+
+	.friends-magic-button:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 34%, transparent);
+		outline-offset: 4px;
+	}
+
+	.friends-magic-button-icon {
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: 2.32rem;
+		height: 2.32rem;
+		flex: 0 0 auto;
+		border: 1px solid color-mix(in srgb, var(--primary) 24%, rgb(255 255 255 / 86%));
+		border-radius: 999px;
+		background:
+			linear-gradient(145deg, rgb(255 255 255 / 78%), color-mix(in srgb, #d5ecff 42%, transparent)),
+			color-mix(in srgb, var(--card-bg) 72%, transparent);
+		color: var(--primary);
+		box-shadow:
+			0 0.3rem 0.75rem color-mix(in srgb, var(--primary) 16%, transparent),
+			inset 0 1px rgb(255 255 255 / 92%);
+		transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1), background 260ms ease;
+	}
+
+	.friends-magic-button-icon::before,
+	.friends-magic-button-icon::after {
+		position: absolute;
+		border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+		border-radius: inherit;
+		content: "";
+		pointer-events: none;
+		transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 260ms ease;
+	}
+
+	.friends-magic-button-icon::before {
+		inset: -0.18rem;
+		opacity: 0.42;
+	}
+
+	.friends-magic-button-icon::after {
+		inset: -0.36rem;
+		border-color: color-mix(in srgb, #ffd4e8 34%, transparent);
+		opacity: 0;
+		transform: scale(0.75);
+	}
+
+	.friends-magic-button:hover .friends-magic-button-icon,
+	.friends-magic-button:focus-visible .friends-magic-button-icon {
+		background:
+			linear-gradient(145deg, rgb(255 255 255 / 92%), color-mix(in srgb, #cde9ff 54%, transparent)),
+			color-mix(in srgb, var(--card-bg) 76%, transparent);
+		transform: rotate(-8deg) scale(1.07);
+	}
+
+	.friends-magic-button:hover .friends-magic-button-icon::before,
+	.friends-magic-button:focus-visible .friends-magic-button-icon::before {
+		opacity: 0.75;
+		transform: scale(1.08);
+	}
+
+	.friends-magic-button:hover .friends-magic-button-icon::after,
+	.friends-magic-button:focus-visible .friends-magic-button-icon::after {
+		opacity: 0.72;
+		transform: scale(1);
+	}
+
+	.friends-magic-button-copy {
+		display: grid;
+		gap: 0.12rem;
+		min-width: 0;
+		text-align: center;
+	}
+
+	.friends-magic-button-title {
+		font-size: 0.88rem;
+		font-weight: 760;
+		letter-spacing: -0.01em;
+		line-height: 1.2;
+		color: color-mix(in srgb, var(--primary) 78%, var(--text-color));
+	}
+
+	.friends-magic-button-note {
+		color: color-mix(in srgb, var(--primary) 54%, var(--text-color));
+		font-size: 0.68rem;
+		line-height: 1.3;
+		white-space: nowrap;
+	}
+
+	.friends-magic-button-arrow {
+		display: grid;
+		place-items: center;
+		width: 1.42rem;
+		height: 1.42rem;
+		flex: 0 0 auto;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, #ffb7d3 38%, rgb(255 255 255 / 78%));
+		background: linear-gradient(145deg, rgb(255 255 255 / 78%), color-mix(in srgb, #ffcce1 52%, transparent));
+		color: color-mix(in srgb, var(--primary) 76%, #ef85aa);
+		box-shadow: inset 0 1px rgb(255 255 255 / 88%);
+		transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), background 260ms ease;
+	}
+
+	.friends-magic-button-arrow :global(svg) {
+		width: 0.82rem;
+		height: 0.82rem;
+	}
+
+	.friends-magic-button:hover .friends-magic-button-arrow,
+	.friends-magic-button:focus-visible .friends-magic-button-arrow {
+		background: linear-gradient(145deg, rgb(255 255 255 / 94%), color-mix(in srgb, #ffc4de 66%, transparent));
+		transform: translateX(2px) scale(1.05);
+	}
+
+	.friends-portal-lock {
+		overflow: hidden !important;
+	}
+
+	/* 漫游舱覆盖全屏时，底层壁纸只需保留静态画面，避免它的 CSS 动画与 WebGL 同时抢帧。 */
+	html.friends-portal-lock #wallpaper-wrapper,
+	html.friends-portal-lock #wallpaper-wrapper *,
+	html.friends-portal-lock #header-waves,
+	html.friends-portal-lock #wallpaper-gradient,
+	html.friends-portal-lock #page-background-decoration {
+		animation-play-state: paused !important;
+	}
+
+	.friends-portal {
+		--portal-background: #fff;
+		--portal-foreground: #171a1d;
+		--portal-muted: rgb(23 26 29 / 62%);
+		--portal-scanline: rgb(0 0 0 / 3.5%);
+		--portal-scan-blend: multiply;
+		--portal-vignette: radial-gradient(ellipse at center, transparent 40%, rgb(0 0 0 / 18%) 100%);
+		--portal-control-border: rgb(20 24 27 / 22%);
+		--portal-control-border-hover: rgb(20 24 27 / 48%);
+		--portal-control-bg: rgb(255 255 255 / 82%);
+		--portal-control-progress: rgb(0 0 0 / 12%);
+		--portal-control-text: rgb(18 21 24 / 88%);
+		--portal-control-text-hover: #0f1113;
+		--portal-control-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 12%), inset 0 1px rgb(255 255 255 / 92%);
+		--portal-focus: rgb(18 23 27 / 70%);
+		--portal-fallback-bg: rgb(255 255 255 / 96%);
+		--portal-fallback-link: #181c20;
+		--portal-fallback-hover: rgb(0 0 0 / 6%);
+		--portal-caption: rgb(12 15 18 / 88%);
+		--portal-caption-shadow: 0 0 0.55rem rgb(255 255 255 / 72%), 0 0 1.8rem rgb(255 255 255 / 34%);
+		--portal-caption-scale: 1;
+		--portal-transition-background: #fff;
+		position: fixed;
+		z-index: 10000;
+		inset: 0;
+		background: var(--portal-background);
+		color: var(--portal-foreground);
+		isolation: isolate;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 360ms ease, background-color 280ms ease, color 280ms ease;
+	}
+
+	:root.dark .friends-portal {
+		--portal-background: #02050c;
+		--portal-foreground: #edf7ff;
+		--portal-muted: rgb(218 239 252 / 66%);
+		--portal-scanline: rgb(255 255 255 / 2.5%);
+		--portal-scan-blend: screen;
+		--portal-vignette: radial-gradient(ellipse at center, transparent 40%, rgb(0 0 0 / 62%) 100%);
+		--portal-control-border: rgb(255 255 255 / 28%);
+		--portal-control-border-hover: rgb(255 255 255 / 64%);
+		--portal-control-bg: rgb(0 0 0 / 42%);
+		--portal-control-progress: rgb(255 255 255 / 18%);
+		--portal-control-text: rgb(255 255 255 / 86%);
+		--portal-control-text-hover: #fff;
+		--portal-control-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 22%), inset 0 1px rgb(255 255 255 / 20%);
+		--portal-focus: rgb(166 230 255 / 80%);
+		--portal-fallback-bg: rgb(9 18 35 / 92%);
+		--portal-fallback-link: #dff5ff;
+		--portal-fallback-hover: rgb(157 221 255 / 12%);
+		--portal-caption: rgb(235 248 255 / 92%);
+		--portal-caption-shadow: 0 0 0.55rem rgb(0 0 0 / 72%), 0 0 1.8rem rgb(0 0 0 / 48%);
+		--portal-transition-background: #000;
+	}
+
+	.friends-portal.is-open {
+		opacity: 1;
+		pointer-events: auto;
+	}
+
+	.friends-portal[data-friends-portal-route] {
+		opacity: 1;
+		pointer-events: auto;
+	}
+
+	.friends-portal-backdrop {
+		position: absolute;
+		z-index: -1;
+		inset: 0;
+		background: var(--portal-background);
+		transition: background-color 280ms ease;
+	}
+
+	.friends-portal-transition {
+		position: absolute;
+		z-index: 20;
+		inset: 0;
+		background: var(--portal-transition-background);
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 680ms cubic-bezier(0.65, 0, 0.35, 1);
+	}
+
+	.friends-portal.is-jumping .friends-portal-transition {
+		pointer-events: auto;
+		opacity: 1;
+	}
+
+	.friends-portal-caption-layer {
+		position: absolute;
+		z-index: 0;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		padding: 1rem;
+		color: var(--portal-caption);
+		font-size: clamp(1.3rem, 3vw, 2.7rem);
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		line-height: 1.35;
+		text-align: center;
+		text-shadow: var(--portal-caption-shadow);
+		pointer-events: none;
+		white-space: nowrap;
+		transform: scale(var(--portal-caption-scale, 1));
+		transform-origin: center;
+		transition: transform 90ms linear;
+	}
+
+	.friends-portal.is-jumping .friends-portal-caption-layer {
+		/* Keep the complete exit message above both the gallery and its white
+		 * terminal veil, so the outside title remains readable until navigation. */
+		z-index: 21;
+	}
+
+	.friends-portal.is-holding .friends-portal-caption-layer,
+	.friends-portal.is-jumping .friends-portal-caption-layer {
+		will-change: transform;
+	}
+
+	.friends-portal-frame {
+		transition: transform 680ms cubic-bezier(0.65, 0, 0.35, 1), filter 680ms ease, opacity 90ms linear;
+	}
+
+	.friends-portal.is-jumping .friends-portal-frame {
+		filter: brightness(0.6) blur(1px);
+		transform: scale(1.012);
+	}
+
+	.friends-portal-shell {
+		position: absolute;
+		z-index: 1;
+		inset: 0;
+	}
+
+	.friends-portal-frame {
+		position: absolute;
+		z-index: 1;
+		inset: 0;
+		overflow: hidden;
+		isolation: isolate;
+		cursor: var(--cursor-default, default);
+		touch-action: none;
+		background: transparent;
+	}
+
+	.friends-portal-frame:focus-visible {
+		outline: none;
+	}
+
+	.friends-portal-canvas {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	.friends-portal-scanlines,
+	.friends-portal-vignette {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	.friends-portal-scanlines {
+		z-index: 2;
+		background: repeating-linear-gradient(0deg, var(--portal-scanline) 0, var(--portal-scanline) 1px, transparent 1px, transparent 4px);
+		mix-blend-mode: var(--portal-scan-blend);
+		opacity: 0.5;
+		transition: background-color 280ms ease;
+	}
+
+	.friends-portal-vignette {
+		z-index: 3;
+		background: var(--portal-vignette);
+		transition: background 280ms ease;
+	}
+
+	.friends-portal-center-mark {
+		display: none;
+	}
+
+	.friends-portal-center-mark span {
+		position: absolute;
+		inset: 0;
+		border: 1px solid rgb(151 226 255 / 48%);
+		border-radius: 50%;
+		box-shadow: 0 0 2rem rgb(64 196 255 / 20%), inset 0 0 2rem rgb(64 196 255 / 10%);
+		animation: friends-portal-center-pulse 3.4s ease-in-out infinite;
+	}
+
+	.friends-portal-center-mark i {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 0.45rem;
+		height: 0.45rem;
+		border-radius: 50%;
+		background: #d4f5ff;
+		box-shadow: 0 0 1rem #64d8ff;
+		transform: translate(-50%, -50%);
+	}
+
+	.friends-portal-header,
+	.friends-portal-footer {
+		position: absolute;
+		z-index: 7;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		left: 0;
+		width: 100%;
+		padding: clamp(0.85rem, 2vw, 1.35rem) clamp(1rem, 4vw, 3rem);
+		background: linear-gradient(180deg, rgb(2 5 12 / 88%), rgb(2 5 12 / 18%));
+		backdrop-filter: blur(8px);
+	}
+
+	.friends-portal-header {
+		top: 0;
+		padding: 0.9rem 1rem;
+		background: transparent;
+		border: 0;
+		backdrop-filter: none;
+		pointer-events: none;
+	}
+
+	.friends-portal-footer {
+		display: none;
+	}
+
+	.friends-portal-brand {
+		display: none;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.friends-portal-live-dot {
+		width: 0.7rem;
+		height: 0.7rem;
+		border-radius: 50%;
+		background: #8ee4ff;
+		box-shadow: 0 0 0 0.28rem rgb(142 228 255 / 14%), 0 0 1.1rem #58ceff;
+		animation: friends-portal-live-pulse 2.4s ease-in-out infinite;
+	}
+
+	.friends-portal-header h2 {
+		margin: 0;
+		font-size: clamp(1.05rem, 2vw, 1.45rem);
+		font-weight: 800;
+		letter-spacing: -0.025em;
+	}
+
+	.friends-portal-header p {
+		margin: 0.2rem 0 0;
+		color: var(--portal-muted);
+		font-size: 0.75rem;
+	}
+
+	.friends-portal-close {
+		position: absolute;
+		top: 0.85rem;
+		right: 1rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.55rem 0.8rem;
+		border: 1px solid var(--portal-control-border);
+		border-radius: 0.75rem;
+		background: var(--portal-control-bg);
+		color: var(--portal-control-text);
+		font-size: 0.78rem;
+		opacity: 0;
+		cursor: var(--cursor-pointer, pointer);
+		pointer-events: auto;
+		transition: background 180ms ease, border-color 180ms ease, transform 180ms ease, opacity 180ms ease;
+	}
+
+	.friends-portal-close:hover,
+	.friends-portal-close:focus-visible {
+		border-color: var(--portal-control-border-hover);
+		background: var(--portal-control-bg);
+		opacity: 1;
+		transform: translateY(-1px);
+	}
+
+	.friends-portal-close:focus-visible {
+		outline: 2px solid var(--portal-focus);
+		outline-offset: 3px;
+	}
+
+	.friends-portal-cursor {
+		display: none;
+	}
+
+	.friends-portal-actions {
+		position: absolute;
+		z-index: 8;
+		bottom: 1.35rem;
+		left: 50%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		transform: translateX(-50%);
+	}
+
+	.friends-portal-jump,
+	.friends-portal-exit {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.2rem;
+		padding: 0.45rem 0.9rem;
+		border: 1px solid var(--portal-control-border);
+		border-radius: 999px;
+		background: var(--portal-control-bg);
+		box-shadow: var(--portal-control-shadow);
+		color: var(--portal-control-text);
+		font-size: 0.76rem;
+		font-weight: 650;
+		letter-spacing: 0.02em;
+		cursor: var(--cursor-pointer, pointer);
+		user-select: none;
+		transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease;
+	}
+
+	.friends-portal-jump {
+		min-width: 5.2rem;
+		background:
+			linear-gradient(90deg, var(--portal-control-progress) var(--portal-hold-progress, 0%), transparent var(--portal-hold-progress, 0%)),
+			var(--portal-control-bg);
+	}
+
+	.friends-portal-jump:hover,
+	.friends-portal-jump:focus-visible,
+	.friends-portal-jump.is-holding,
+	.friends-portal-exit:hover,
+	.friends-portal-exit:focus-visible {
+		border-color: var(--portal-control-border-hover);
+		color: var(--portal-control-text-hover);
+		transform: translateY(-2px);
+	}
+
+	.friends-portal-jump:focus-visible {
+		outline: 2px solid var(--portal-focus);
+		outline-offset: 4px;
+	}
+
+	.friends-portal-fallback {
+		display: none;
+		position: absolute;
+		z-index: 7;
+		inset: 50% auto auto 50%;
+		width: min(92vw, 34rem);
+		padding: 1rem;
+		border: 1px solid var(--portal-control-border);
+		border-radius: 1rem;
+		background: var(--portal-fallback-bg);
+		transform: translate(-50%, -50%);
+	}
+
+	.friends-portal-fallback strong,
+	.friends-portal-fallback > span {
+		display: block;
+	}
+
+	.friends-portal-fallback > span {
+		margin-top: 0.35rem;
+		color: var(--portal-muted);
+		font-size: 0.78rem;
+	}
+
+	.friends-portal-fallback-list {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.45rem;
+		max-height: 20rem;
+		margin-top: 0.85rem;
+		overflow: auto;
+	}
+
+	.friends-portal-fallback-list a {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		min-width: 0;
+		padding: 0.35rem;
+		border-radius: 0.5rem;
+		color: var(--portal-fallback-link);
+		font-size: 0.72rem;
+		text-decoration: none;
+	}
+
+	.friends-portal-fallback-list a:hover {
+		background: var(--portal-fallback-hover);
+	}
+
+	.friends-portal-fallback-list img {
+		width: 2rem;
+		height: 2rem;
+		flex: 0 0 auto;
+		border-radius: 0.5rem;
+		object-fit: cover;
+	}
+
+	.friends-portal-sources {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.friends-portal-hint,
+	.friends-portal-count,
+	.friends-portal-mobile-note {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+
+	.friends-portal-hint {
+		color: #bdeaff;
+	}
+
+	.friends-portal-mobile-note {
+		margin-left: auto;
+		color: rgb(218 239 252 / 54%);
+	}
+
+	.friends-portal.is-fallback .friends-portal-fallback {
+		display: block;
+	}
+
+	@keyframes friends-portal-live-pulse {
+		0%,
+		100% {
+			box-shadow: 0 0 0 0.28rem rgb(142 228 255 / 14%), 0 0 1.1rem #58ceff;
+		}
+		50% {
+			box-shadow: 0 0 0 0.42rem rgb(142 228 255 / 4%), 0 0 1.7rem #58ceff;
+		}
+	}
+
+	@keyframes friends-portal-center-pulse {
+		0%,
+		100% {
+			opacity: 0.56;
+			transform: scale(0.9);
+		}
+		50% {
+			opacity: 1;
+			transform: scale(1.08);
+		}
+	}
+
+	@media (max-width: 767px) {
+		.friends-heading-row {
+			grid-template-columns: 1fr;
+			gap: 0.8rem;
+		}
+
+		.friends-magic-button {
+			width: 100%;
+			min-width: 0;
+			justify-self: stretch;
+			justify-content: center;
+		}
+
+		.friends-portal-close span {
+			display: none;
+		}
+
+		.friends-portal-actions {
+			bottom: 1rem;
+			max-width: calc(100% - 1.5rem);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.friends-portal,
+		.friends-portal-shell,
+		.friends-magic-button,
+		.friends-portal-transition,
+		.friends-portal-caption-layer,
+		.friends-portal-frame,
+		.friends-portal-center-mark span,
+		.friends-portal-live-dot {
+			animation: none;
+			transition-duration: 0.01ms;
+		}
+	}
+</style>

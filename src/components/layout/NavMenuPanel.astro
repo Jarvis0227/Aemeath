@@ -1,0 +1,176 @@
+---
+import type { NavBarLink } from "@/types/config";
+import { Icon } from "astro-icon/components";
+import { siteConfig } from "@/config";
+import { url } from "@/utils/url-utils";
+
+interface Props {
+	links: NavBarLink[];
+}
+
+const processedLinks = Astro.props.links;
+
+const normalizePath = (path: string) => {
+	let pathname = path.split(/[?#]/)[0] || "/";
+
+	if (/^https?:\/\//.test(pathname)) {
+		pathname = new URL(pathname).pathname;
+	}
+
+	if (!pathname.startsWith("/")) {
+		pathname = `/${pathname}`;
+	}
+
+	const baseUrl = import.meta.env.BASE_URL || "/";
+	const basePath = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+	if (basePath && basePath !== "/" && pathname.startsWith(basePath)) {
+		pathname = pathname.slice(basePath.length) || "/";
+	}
+
+	return pathname.length > 1 ? pathname.replace(/\/+$/g, "") : "/";
+};
+
+const currentPath = normalizePath(Astro.url.pathname);
+
+const isLinkActive = (item: NavBarLink) => {
+	if (item.external || !item.url || item.url === "#") return false;
+
+	const itemPath = normalizePath(item.url);
+	if (itemPath === "/") return currentPath === "/";
+	return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
+};
+
+const mobileGroups = processedLinks.map((link) => ({
+	...link,
+	children:
+		link.children && link.children.length > 0 ? link.children : undefined,
+	activePaths: [
+		link.url && link.url !== "#" && !link.external
+			? normalizePath(link.url)
+			: null,
+		...(link.children
+			?.filter((child) => !child.external && child.url && child.url !== "#")
+			.map((child) => normalizePath(child.url)) ?? []),
+	].filter((path): path is string => Boolean(path)),
+}));
+
+const getLinkIcon = (item: NavBarLink, fallback: string) =>
+	item.icon || fallback;
+---
+
+<div id="nav-menu-panel" class="mobile-nav float-panel-closed transition-all fixed" aria-hidden="true">
+	<button class="mobile-bg" type="button" aria-label="关闭导航菜单" data-mobile-menu-close></button>
+	<aside class="mobile-content" role="dialog" aria-modal="true" aria-label="网站导航" tabindex="-1">
+		<header class="mobile-nav-header">
+			<a class="mobile-nav-brand" href={url("/")} data-mobile-menu-close>
+				<img
+					src={url("/favicon/chaoc-tingyu-avatar-512.png")}
+					alt=""
+					class="mobile-nav-brand-icon h-7 w-7 rounded-md bg-white object-contain ring-1 ring-sky-100/80 dark:ring-white/20"
+				/>
+				<span>{siteConfig.navbar.title || siteConfig.title}</span>
+			</a>
+			<button class="mobile-nav-close" type="button" aria-label="关闭导航菜单" data-mobile-menu-close>
+				<Icon is:inline name="material-symbols:close-rounded" />
+			</button>
+		</header>
+
+		<p class="mobile-nav-eyebrow">MENU</p>
+		<nav class="mobile-links" aria-label="移动端主导航">
+			{mobileGroups.map((group) =>
+				group.children ? (
+					<section
+						class:list={[
+							"mobile-nav-group",
+							group.children.some((child) => isLinkActive(child)) &&
+								"mobile-nav-group-active",
+						]}
+						data-mobile-nav-item
+						data-active-paths={group.activePaths.join("|")}
+					>
+						<h2 class="mobile-group-title">
+							<span>{group.name}</span>
+						</h2>
+						<div class="mobile-group-links">
+							{group.children.map((child) => (
+								<a
+									href={child.external ? child.url : url(child.url)}
+									class:list={[
+										"mobile-link mobile-sub-link",
+										isLinkActive(child) && "mobile-nav-active",
+									]}
+									target={child.external ? "_blank" : null}
+					aria-current={isLinkActive(child) ? "page" : undefined}
+					data-mobile-nav-item
+					data-active-paths={!child.external ? normalizePath(child.url) : ""}
+				>
+					{child.external && child.iconImage ? (
+						<img src={child.iconImage} alt="" aria-hidden="true" class="mobile-nav-item-icon object-contain" loading="eager" decoding="async" />
+					) : (
+						<Icon is:inline name={getLinkIcon(child, "material-symbols:arrow-forward-rounded")} class="mobile-nav-item-icon" />
+					)}
+									<span class="mobile-nav-item-text">{child.name}</span>
+									{child.external && <Icon is:inline name="material-symbols:open-in-new-rounded" class="mobile-nav-external" />}
+								</a>
+							))}
+						</div>
+					</section>
+				) : (
+					<a
+						href={group.external ? group.url : url(group.url)}
+						class:list={[
+							"mobile-link",
+							isLinkActive(group) && "mobile-nav-active",
+						]}
+						target={group.external ? "_blank" : null}
+						aria-current={isLinkActive(group) ? "page" : undefined}
+						data-mobile-nav-item
+						data-active-paths={group.activePaths.join("|")}
+					>
+						{group.external && group.iconImage ? (
+							<img src={group.iconImage} alt="" aria-hidden="true" class="mobile-nav-item-icon object-contain" loading="eager" decoding="async" />
+						) : (
+							<Icon is:inline name={getLinkIcon(group, "material-symbols:arrow-forward-rounded")} class="mobile-nav-item-icon" />
+						)}
+						<span class="mobile-nav-item-text">{group.name}</span>
+						{group.external && <Icon is:inline name="material-symbols:open-in-new-rounded" class="mobile-nav-external" />}
+					</a>
+				)
+			)}
+		</nav>
+		<div class="mobile-footer">
+			<span class="mobile-prompt">Rainzt.cn · 开发、写作与记录</span>
+		</div>
+	</aside>
+</div>
+
+<script>
+	function closeMobileMenu() {
+		const setMenuOpen = (window as Window & {
+			__fireflySetMobileMenuOpen?: (open: boolean) => void;
+		}).__fireflySetMobileMenuOpen;
+		if (setMenuOpen) {
+			setMenuOpen(false);
+			return;
+		}
+
+		const menuPanel = document.getElementById("nav-menu-panel");
+		const menuBtn = document.getElementById("nav-menu-switch");
+		menuPanel?.classList.add("float-panel-closed");
+		menuPanel?.classList.remove("active");
+		menuPanel?.setAttribute("aria-hidden", "true");
+		menuBtn?.classList.remove("active");
+		menuBtn?.setAttribute("aria-expanded", "false");
+		document.body.style.overflow = "";
+	}
+
+	document.addEventListener("click", function(event) {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		if (target.closest(".mobile-link, [data-mobile-menu-close]")) closeMobileMenu();
+	});
+
+	document.addEventListener("keydown", function(event) {
+		if (event.key === "Escape") closeMobileMenu();
+	});
+</script>

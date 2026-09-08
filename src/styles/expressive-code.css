@@ -1,0 +1,155 @@
+.expressive-code {
+  .frame {
+    @apply shadow-none!;
+  }
+
+  .title {
+    font-family:
+      var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  /* Language Badge 样式适配主题色和亮暗色 */
+  /* 覆盖 expressive-code-language-badge 插件的默认样式 */
+  [data-language]::before {
+    color: var(--btn-content) !important;
+    background: var(--btn-regular-bg) !important;
+  }
+
+  /* 折叠按钮样式适配主题色和亮暗色 */
+  /* 只针对底部的toggle按钮，不改header-toggle */
+  .ec-collapse__toggle {
+    color: var(--btn-content) !important;
+    background-color: var(--btn-regular-bg) !important;
+    border-color: var(--line-color) !important;
+    opacity: var(--opacity-80) !important;
+
+    &:hover {
+      background-color: var(--btn-regular-bg-hover) !important;
+    }
+
+    &:active {
+      background-color: var(--btn-regular-bg-active) !important;
+    }
+  }
+
+  .ec-collapse__gradient {
+    --ec-collapse-bg-color: var(--ec-frm-edBg, var(--code-background));
+    height: 6.5rem;
+  }
+
+  .copy button {
+    border-radius: 0.55rem !important;
+    box-shadow: 0 5px 14px color-mix(in oklch, var(--primary) 18%, transparent);
+  }
+
+  .frame.ff-code-touch-active .copy button {
+    opacity: 1 !important;
+    transform: translateY(-1px);
+  }
+}
+
+/* Tabbed snippets keep the code frame intact while making alternatives easy to scan. */
+.custom-md .code-group {
+  margin: 1rem 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--primary) 17%, var(--line-color));
+  border-radius: 0.85rem;
+  background: color-mix(in oklch, var(--card-bg) 92%, var(--primary));
+  box-shadow: 0 0.65rem 1.7rem color-mix(in oklch, var(--primary) 10%, transparent);
+}
+
+.custom-md .code-group-tabs {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  padding: 0.45rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--primary) 13%, var(--line-color));
+  background: color-mix(in oklch, var(--primary) 8%, transparent);
+  scrollbar-width: none;
+}
+
+.custom-md .code-group-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.custom-md .code-group-tab {
+  flex: 0 0 auto;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  color: var(--text-color);
+  background: transparent;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.78rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.custom-md .code-group-tab:hover,
+.custom-md .code-group-tab:focus-visible {
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 11%, transparent);
+  outline: none;
+}
+
+.custom-md .code-group-tab[aria-selected="true"] {
+  color: var(--btn-content);
+  border-color: color-mix(in oklch, var(--primary) 34%, var(--line-color));
+  background: var(--btn-regular-bg);
+  box-shadow: 0 0.28rem 0.85rem color-mix(in oklch, var(--primary) 17%, transparent);
+}
+
+.custom-md .code-group-panel > .expressive-code {
+  margin: 0 !important;
+}
+
+.custom-md .code-group-panel:not([hidden]) {
+  animation: code-group-panel-in 180ms ease-out;
+}
+
+@keyframes code-group-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.2rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 透明模式下的代码块样式 */
+/*
+ * 仅处理外层容器背景，避免清空 ANSI token 的背景色。
+ * 之前的通配符规则会把行内背景也强制透明，导致 ANSI 背景色失效。
+ */
+body.wallpaper-transparent .expressive-code {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+body.wallpaper-transparent .expressive-code .frame pre,
+body.wallpaper-transparent .expressive-code .frame code,
+body.wallpaper-transparent .expressive-code .frame .code,
+body.wallpaper-transparent .expressive-code .frame .ec-code,
+body.wallpaper-transparent .expressive-code .frame .ec-code__inner {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+body.wallpaper-transparent .expressive-code .frame {
+  background-color: var(--card-bg-transparent) !important;
+  background: var(--card-bg-transparent) !important;
+}
+
+body.wallpaper-transparent .expressive-code .ec-collapse__gradient {
+  --ec-collapse-bg-color: var(--card-bg-transparent);
+}
+
+body.wallpaper-transparent .custom-md .code-group {
+  background: color-mix(in oklch, var(--card-bg-transparent) 88%, var(--primary));
+}

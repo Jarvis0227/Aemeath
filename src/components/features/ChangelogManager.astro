@@ -1,0 +1,98 @@
+<script is:inline data-swup-ignore-script>
+	(() => {
+		const initChangelogPage = () => {
+			const page = document.querySelector("[data-notice-root]");
+			if (!page || page.dataset.noticeReady === "true") return;
+
+			const latestNoticeVersion = page.dataset.latestNoticeVersion;
+			if (!latestNoticeVersion) return;
+
+			let noticeViews;
+			try {
+				noticeViews = JSON.parse(page.dataset.noticeViews || "{}");
+			} catch {
+				return;
+			}
+
+			page.dataset.noticeReady = "true";
+
+			const showNoticeVersion = (version, { scroll = true } = {}) => {
+				const meta = noticeViews[version] || noticeViews[latestNoticeVersion];
+				if (!meta) return;
+
+				page.querySelectorAll(".notice-view").forEach((view) => {
+					view.hidden = view.dataset.noticeVersion !== version;
+				});
+
+				const setText = (selector, text) => {
+					const element = page.querySelector(selector);
+					if (element) element.textContent = text;
+				};
+
+				setText("[data-notice-kicker]", meta.kicker);
+				setText("[data-notice-title]", meta.title);
+				setText("[data-notice-desc]", meta.desc);
+				setText("[data-notice-version]", meta.version);
+
+				const newBadge = page.querySelector("[data-notice-new-badge]");
+				if (newBadge) newBadge.hidden = version !== latestNoticeVersion;
+
+				page.querySelectorAll("[data-notice-button]").forEach((button) => {
+					button.classList.toggle("active", button.dataset.noticeButton === version);
+				});
+
+				page.querySelectorAll(".notice-nav a[data-section]").forEach((link) => {
+					const section = link.dataset.section;
+					const target = meta.sections[section] || meta.sections.summary;
+					const label = meta.labels[section] || link.textContent.trim();
+					link.href = `#${target}`;
+					const dot = link.querySelector("i") || document.createElement("i");
+					link.textContent = "";
+					link.appendChild(dot);
+					link.append(label);
+				});
+
+				if (scroll) {
+					page
+						.querySelector(`.notice-view[data-notice-version="${version}"]`)
+						?.scrollIntoView({ behavior: "smooth", block: "start" });
+				}
+			};
+
+			page.querySelectorAll("[data-notice-button]").forEach((button) => {
+				button.addEventListener("click", () => {
+					const version = button.dataset.noticeButton;
+					if (version) showNoticeVersion(version);
+				});
+			});
+
+			showNoticeVersion(latestNoticeVersion, { scroll: false });
+		};
+
+		let initQueued = false;
+		const scheduleChangelogInit = () => {
+			if (initQueued) return;
+			initQueued = true;
+			requestAnimationFrame(() => {
+				initQueued = false;
+				initChangelogPage();
+			});
+		};
+
+		const observeSwupContainer = () => {
+			const container = document.querySelector("#swup-container");
+			if (!container) return;
+
+			new MutationObserver(scheduleChangelogInit).observe(container, {
+				childList: true,
+				subtree: true,
+			});
+		};
+
+		scheduleChangelogInit();
+		observeSwupContainer();
+		document.addEventListener("astro:page-load", scheduleChangelogInit);
+		document.addEventListener("swup:contentReplaced", scheduleChangelogInit);
+		document.addEventListener("swup:page:view", scheduleChangelogInit);
+	})();
+</script>

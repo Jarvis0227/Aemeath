@@ -1,0 +1,126 @@
+---
+interface Props {
+	websiteId: string;
+	scriptUrl?: string;
+	replaysScriptUrl?: string;
+	trackOutboundLinks?: boolean;
+	collectWebVitals?: boolean;
+	localPreview?: boolean;
+	replays?: {
+		enabled?: boolean;
+		sampleRate?: number;
+		maskLevel?: "moderate" | "strict";
+		maxDuration?: number;
+		blockSelector?: string;
+	};
+}
+
+const {
+	websiteId,
+	scriptUrl,
+	replaysScriptUrl,
+	trackOutboundLinks = true,
+	collectWebVitals = false,
+	replays,
+	localPreview = false,
+} = Astro.props;
+
+const replaysEnabled = replays?.enabled ?? false;
+const replaysSampleRate = replays?.sampleRate ?? 0.15;
+const replaysMaskLevel = replays?.maskLevel ?? "moderate";
+const replaysMaxDuration = replays?.maxDuration ?? 300000;
+const replaysBlockSelector = replays?.blockSelector?.trim();
+---
+
+<script
+	is:inline
+	data-swup-ignore-script
+	define:vars={{
+		websiteId,
+		scriptUrl: scriptUrl || "",
+		replaysScriptUrl: replaysScriptUrl || "",
+		collectWebVitals,
+		replaysEnabled,
+		replaysSampleRate,
+		replaysMaskLevel,
+		replaysMaxDuration,
+		replaysBlockSelector: replaysBlockSelector || "",
+		localPreview,
+	}}
+>
+	;(() => {
+		const localPreviewHosts = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+		const isLocalHost = localPreviewHosts.has(window.location.hostname.toLowerCase()) || window.location.protocol === "file:";
+		if (localPreview || isLocalHost || !websiteId || !scriptUrl) return;
+
+		const loadAnalyticsScript = (src, attributes = {}) => {
+			if (!src) return;
+			const exists = [...document.querySelectorAll("script[data-firefly-analytics-src]")].some(
+				(script) => script.getAttribute("data-firefly-analytics-src") === src,
+			);
+			if (exists) return;
+
+			const script = document.createElement("script");
+			script.defer = true;
+			script.src = src;
+			script.dataset.fireflyAnalyticsSrc = src;
+			script.setAttribute("data-swup-ignore-script", "");
+			Object.entries(attributes).forEach(([name, value]) => {
+				if (value !== undefined && value !== null && value !== "") {
+					script.setAttribute(name, String(value));
+				}
+			});
+			document.head.append(script);
+		};
+
+		loadAnalyticsScript(scriptUrl, {
+			"data-website-id": websiteId,
+			"data-performance": collectWebVitals ? "true" : undefined,
+		});
+
+		if (replaysEnabled && replaysScriptUrl) {
+			loadAnalyticsScript(replaysScriptUrl, {
+				"data-website-id": websiteId,
+				"data-sample-rate": String(replaysSampleRate),
+				"data-mask-level": replaysMaskLevel,
+				"data-max-duration": String(replaysMaxDuration),
+				"data-block-selector": replaysBlockSelector,
+			});
+		}
+	})();
+</script>
+
+{
+	trackOutboundLinks && (
+		<script is:inline data-swup-ignore-script define:vars={{ localPreview }}>
+			;(() => {
+				const localPreviewHosts = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+				if (localPreview || localPreviewHosts.has(window.location.hostname.toLowerCase()) || window.location.protocol === "file:") return;
+
+				const name = 'outbound-link-click'
+
+				const applyOutboundTracking = () => {
+					document.querySelectorAll('a').forEach((a) => {
+						if (
+							a.host !== window.location.host &&
+							!a.getAttribute('data-umami-event')
+						) {
+							a.setAttribute('data-umami-event', name)
+							a.setAttribute('data-umami-event-url', a.href)
+						}
+					})
+				}
+
+				if (document.readyState === 'loading') {
+					document.addEventListener('DOMContentLoaded', applyOutboundTracking, {
+						once: true,
+					})
+				} else {
+					applyOutboundTracking()
+				}
+
+				document.addEventListener('astro:page-load', applyOutboundTracking)
+			})()
+		</script>
+	)
+}

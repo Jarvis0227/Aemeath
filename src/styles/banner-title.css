@@ -1,0 +1,227 @@
+/* 横幅文字阴影 - 更柔和的扩散效果 */
+.banner-title {
+    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+    /* 防止大字体标题溢出容器 */
+    overflow-wrap: break-word;
+    word-break: break-word;
+    /* 响应式字体大小：取用户配置值与视口宽度10%中的较小值，防止小屏幕溢出 */
+    font-size: var(--banner-title-size, 3rem);
+    font-size: min(var(--banner-title-size, 3rem), 10vw);
+    /* 独立字体设置，通过 fontConfig.bannerTitleFont 配置 */
+    font-family: var(--font-banner-title, inherit);
+}
+
+.banner-subtitle {
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+    /* 独立字体设置，通过 fontConfig.bannerSubtitleFont 配置 */
+    font-family: var(--font-banner-subtitle, inherit);
+}
+
+/* 横幅背景暗层透明度 - 通过配置文件 common.dimOpacity 控制，内联样式覆盖 */
+
+.banner-post-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
+}
+
+.banner-post-title-break {
+    white-space: pre-line;
+}
+
+.banner-page-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    line-height: 1.2;
+}
+
+/* .banner-page-title-icon {
+    font-size: 1.2em;
+    line-height: 1;
+    vertical-align: middle;
+    transform: translateY(0.08em);
+  } */
+
+.banner-page-title-text {
+    line-height: 1.2;
+    transition: opacity 0.25s ease;
+}
+
+.banner-post-meta-list {
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+}
+
+.banner-post-ai-summary {
+    width: min(31rem, 90vw);
+    margin-top: 0.25rem;
+    padding: 0.8rem 1rem 0.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 1rem;
+    background: rgba(104, 112, 125, 0.34);
+    box-shadow: 0 0.75rem 2rem rgba(12, 17, 28, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    -webkit-backdrop-filter: blur(12px) saturate(112%);
+    backdrop-filter: blur(12px) saturate(112%);
+    color: rgba(255, 255, 255, 0.94);
+    text-align: left;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.32);
+}
+
+.banner-post-ai-summary__label {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.35rem;
+    color: rgba(255, 255, 255, 0.98);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.banner-post-ai-summary__provider {
+    color: rgba(228, 242, 255, 0.72);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+.banner-post-ai-summary__label svg {
+    color: #cde7ff;
+    filter: drop-shadow(0 0 0.45rem rgba(164, 215, 255, 0.55));
+}
+
+.banner-post-ai-summary p {
+    margin: 0;
+    min-height: 3.3em;
+    max-height: 4.95em;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.88rem;
+    line-height: 1.65;
+}
+
+.banner-post-ai-summary__typewriter {
+    display: inline;
+}
+
+.mobile-post-ai-summary-shell {
+    display: none;
+}
+
+@media (max-width: 1023px) {
+    .banner-post-ai-summary {
+        display: none;
+    }
+
+    .mobile-post-ai-summary-shell {
+        display: block;
+        min-width: 0;
+        margin: 0 0 1rem;
+    }
+
+    .mobile-post-ai-summary {
+        display: block !important;
+        box-sizing: border-box;
+        min-width: 0;
+        width: 100%;
+        margin: 0;
+        border-color: color-mix(in srgb, var(--primary) 24%, var(--line-divider));
+        background: color-mix(in srgb, var(--primary) 8%, var(--card-bg));
+        box-shadow: 0 0.65rem 1.4rem color-mix(in srgb, var(--primary) 10%, transparent);
+        color: #243447;
+        text-shadow: none;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+
+    .mobile-post-ai-summary .banner-post-ai-summary__label {
+        color: #20344d;
+    }
+
+    .mobile-post-ai-summary .banner-post-ai-summary__provider {
+        color: rgba(44, 68, 94, 0.68);
+    }
+
+    .mobile-post-ai-summary .banner-post-ai-summary__label svg {
+        color: var(--primary);
+        filter: drop-shadow(0 0 0.45rem color-mix(in srgb, var(--primary) 45%, transparent));
+    }
+
+    .mobile-post-ai-summary p {
+        min-height: 0;
+        max-height: none;
+        overflow: visible;
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        color: rgba(36, 52, 71, 0.88);
+    }
+
+    .banner-post-ai-summary.friends-ai-recommendation--inline {
+        display: block !important;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+        border-color: color-mix(in srgb, var(--primary) 26%, var(--line-divider)) !important;
+        background: color-mix(in srgb, var(--card-bg) 90%, var(--primary) 10%) !important;
+        box-shadow: 0 0.75rem 1.5rem color-mix(in srgb, var(--primary) 10%, transparent) !important;
+        color: #243447 !important;
+        text-shadow: none !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+    }
+
+    .banner-post-ai-summary.friends-ai-recommendation--inline .banner-post-ai-summary__label {
+        color: #20344d !important;
+    }
+
+    .banner-post-ai-summary.friends-ai-recommendation--inline .banner-post-ai-summary__provider {
+        color: rgba(44, 68, 94, 0.68) !important;
+    }
+
+    .banner-post-ai-summary.friends-ai-recommendation--inline .banner-post-ai-summary__label svg {
+        color: var(--primary) !important;
+        filter: drop-shadow(0 0 0.45rem color-mix(in srgb, var(--primary) 45%, transparent));
+    }
+
+    .banner-post-ai-summary.friends-ai-recommendation--inline p {
+        min-height: 0;
+        max-height: none;
+        overflow: visible;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        color: rgba(36, 52, 71, 0.88) !important;
+    }
+
+    :root.dark .mobile-post-ai-summary,
+    :root.dark .banner-post-ai-summary.friends-ai-recommendation--inline {
+        border-color: color-mix(in srgb, var(--primary) 34%, var(--line-divider)) !important;
+        background: color-mix(in srgb, var(--card-bg) 82%, var(--primary) 18%) !important;
+        box-shadow: 0 0.75rem 1.5rem rgb(0 0 0 / 0.24) !important;
+        color: #edf5ff !important;
+    }
+
+    :root.dark .mobile-post-ai-summary .banner-post-ai-summary__label,
+    :root.dark .banner-post-ai-summary.friends-ai-recommendation--inline .banner-post-ai-summary__label {
+        color: #f5f8ff !important;
+    }
+
+    :root.dark .mobile-post-ai-summary .banner-post-ai-summary__provider,
+    :root.dark .banner-post-ai-summary.friends-ai-recommendation--inline .banner-post-ai-summary__provider {
+        color: rgba(216, 229, 243, 0.72) !important;
+    }
+
+    :root.dark .mobile-post-ai-summary p,
+    :root.dark .banner-post-ai-summary.friends-ai-recommendation--inline p {
+        color: rgba(235, 243, 251, 0.9) !important;
+    }
+
+    /* 移动端沿用打字机摘要，确保桌面端与手机端的阅读节奏一致。 */
+}

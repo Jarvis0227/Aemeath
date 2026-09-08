@@ -1,0 +1,420 @@
+---
+interface Props {
+	shareId: string;
+	shareApiBase: string;
+	historicalVisitors?: number;
+	historicalPageviews?: number;
+	localPreview?: boolean;
+}
+
+const {
+	shareId,
+	shareApiBase,
+	historicalVisitors = 0,
+	historicalPageviews = 0,
+	localPreview = false,
+} = Astro.props;
+---
+
+<script is:inline define:vars={{ shareId, shareApiBase, historicalVisitors, historicalPageviews, localPreview }}>
+	(() => {
+		const namespace = "__rainztUmamiMetrics";
+		const shareCacheKey = "rainzt:umami:share";
+		const metricsCacheKey = "rainzt:umami:metrics";
+		const statsCacheKey = "rainzt:umami:stats";
+		const friendClickCacheKey = "rainzt:umami:friend-clicks:v2";
+		const friendClickEventName = "friend-link-click";
+		const legacyFriendClickEventName = "outbound-link-click";
+		const friendClickPreviewStorageKey = "rainzt:umami:friend-click-preview";
+		const shareCacheTtl = 24 * 60 * 60 * 1000;
+		const metricsCacheTtl = 60 * 1000;
+		const apiBase = String(shareApiBase || "").replace(/\/+$/, "");
+		const historicalVisitorCount = Math.max(0, Math.floor(Number(historicalVisitors) || 0));
+		const historicalPageviewCount = Math.max(0, Math.floor(Number(historicalPageviews) || 0));
+		const localPreviewHosts = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+		const isLocalHost = localPreviewHosts.has(window.location.hostname.toLowerCase()) || window.location.protocol === "file:";
+		const isLocalAnalytics = localPreview || isLocalHost;
+
+		const markLocalPreview = () => {
+			document.documentElement.dataset.analyticsMode = "local";
+			document.querySelectorAll("[data-umami-pageviews], [data-umami-stat]").forEach((element) => {
+				element.textContent = "不统计";
+			});
+			document.querySelectorAll(".waline-pageview-count").forEach((element) => {
+				element.parentElement?.setAttribute("hidden", "true");
+			});
+		};
+
+		if (isLocalAnalytics) {
+			markLocalPreview();
+			const localPreviewObserver = new MutationObserver(() => {
+				if (!document.querySelector("[data-umami-pageviews], [data-umami-stat], [data-friend-clicks-value], .waline-pageview-count")) return;
+				markLocalPreview();
+				localPreviewObserver.disconnect();
+			});
+			localPreviewObserver.observe(document.documentElement, { childList: true, subtree: true });
+			if (document.readyState === "loading") {
+				document.addEventListener("DOMContentLoaded", markLocalPreview, { once: true });
+			}
+			document.addEventListener("astro:page-load", markLocalPreview);
+			document.addEventListener("swup:contentReplaced", markLocalPreview);
+		}
+
+		if (!shareId || !apiBase) return;
+
+		function readCache(key, tag, ttl) {
+			try {
+				const raw = localStorage.getItem(key);
+				if (!raw) return null;
+				const cached = JSON.parse(raw);
+				if (
+					cached?.tag === tag &&
+					typeof cached.timestamp === "number" &&
+					Date.now() - cached.timestamp < ttl
+				) {
+					return cached.value;
+				}
+			} catch {
+				// 本地缓存不可用时直接请求 Umami，不影响页面阅读。
+			}
+			return null;
+		}
+
+		function writeCache(key, tag, value) {
+			try {
+				localStorage.setItem(
+					key,
+					JSON.stringify({ tag, timestamp: Date.now(), value }),
+				);
+			} catch {
+				// Safari 无痕等场景可能禁用本地缓存，无需额外提示。
+			}
+		}
+
+		function normalizePath(value) {
+			const path = String(value || "").split(/[?#]/, 1)[0].replace(/\/+$/, "");
+			return (path || "/").toLowerCase();
+		}
+
+		function normalizeSiteUrl(value) {
+			return String(value || "")
+				.trim()
+				.replace(/\/+$/, "")
+				.toLowerCase();
+		}
+
+		const friendClickCountsBySite = new Map();
+		const localFriendClickCountsBySite = new Map();
+		let localFriendClickCountsLoaded = false;
+
+		function getLocalFriendClickCounts() {
+			if (localFriendClickCountsLoaded) return localFriendClickCountsBySite;
+			localFriendClickCountsLoaded = true;
+			if (!isLocalAnalytics) return localFriendClickCountsBySite;
+
+			try {
+				const cached = JSON.parse(sessionStorage.getItem(friendClickPreviewStorageKey) || "null");
+				if (cached && typeof cached === "object") {
+					Object.entries(cached).forEach(([site, value]) => {
+						const normalizedSite = normalizeSiteUrl(site);
+						const count = Math.max(0, Math.floor(Number(value) || 0));
+						if (normalizedSite && count > 0) localFriendClickCountsBySite.set(normalizedSite, count);
+					});
+				}
+			} catch {
+				// 本地预览存储不可用时仍保留当前页面内的即时计数。
+			}
+			return localFriendClickCountsBySite;
+		}
+
+		function saveLocalFriendClickCounts() {
+			try {
+				const values = Object.fromEntries(localFriendClickCountsBySite);
+				sessionStorage.setItem(friendClickPreviewStorageKey, JSON.stringify(values));
+			} catch {
+				// 本地预览存储不可用时不影响徽标即时更新。
+			}
+		}
+
+		function formatNumber(value) {
+			return new Intl.NumberFormat("zh-CN").format(Number(value) || 0);
+		}
+
+		async function getShare() {
+			const cached = readCache(shareCacheKey, shareId, shareCacheTtl);
+			if (cached) return cached;
+
+			const response = await fetch(`${apiBase}/api/share/${encodeURIComponent(shareId)}`);
+			if (!response.ok) throw new Error(`share ${response.status}`);
+			const result = await response.json();
+			if (!result?.websiteId || !result?.token) throw new Error("invalid share response");
+			writeCache(shareCacheKey, shareId, result);
+			return result;
+		}
+
+		async function getMetrics(share, forceRefresh = false) {
+			const cached = forceRefresh
+				? null
+				: readCache(metricsCacheKey, share.websiteId, metricsCacheTtl);
+			if (cached) return cached;
+
+			const url = new URL(`${apiBase}/api/websites/${share.websiteId}/metrics`);
+			url.searchParams.set("startAt", "0");
+			url.searchParams.set("endAt", String(Date.now()));
+			url.searchParams.set("type", "path");
+			url.searchParams.set("limit", "1000");
+
+			const response = await fetch(url, {
+				headers: {
+					"x-umami-share-token": share.token,
+					"x-umami-share-context": "1",
+				},
+			});
+			if (!response.ok) throw new Error(`metrics ${response.status}`);
+			const result = await response.json();
+			writeCache(metricsCacheKey, share.websiteId, result);
+			return result;
+		}
+
+		async function getStats(share, startAt, endAt, cacheScope, forceRefresh = false) {
+			const cacheKey = `${statsCacheKey}:${cacheScope}`;
+			const cached = forceRefresh
+				? null
+				: readCache(cacheKey, share.websiteId, metricsCacheTtl);
+			if (cached) return cached;
+
+			const url = new URL(`${apiBase}/api/websites/${share.websiteId}/stats`);
+			url.searchParams.set("startAt", String(startAt));
+			url.searchParams.set("endAt", String(endAt));
+
+			const response = await fetch(url, {
+				headers: {
+					"x-umami-share-token": share.token,
+					"x-umami-share-context": "1",
+				},
+			});
+			if (!response.ok) throw new Error(`stats ${response.status}`);
+			const result = await response.json();
+			writeCache(cacheKey, share.websiteId, result);
+			return result;
+		}
+
+		async function getEventDataValues(share, eventName, propertyName) {
+			const url = new URL(
+				`${apiBase}/api/websites/${share.websiteId}/event-data/values`,
+			);
+			url.searchParams.set("startAt", "0");
+			url.searchParams.set("endAt", String(Date.now()));
+			url.searchParams.set("event", eventName);
+			url.searchParams.set("propertyName", propertyName);
+			url.searchParams.set("limit", "1000");
+
+			const response = await fetch(url, {
+				headers: {
+					"x-umami-share-token": share.token,
+					"x-umami-share-context": "1",
+				},
+			});
+			if (!response.ok) throw new Error(`${eventName} values ${response.status}`);
+			return response.json();
+		}
+
+		async function getFriendClickCounts(share, forceRefresh = false) {
+			const cached = forceRefresh
+				? null
+				: readCache(friendClickCacheKey, share.websiteId, metricsCacheTtl);
+			if (cached) return cached;
+
+			const results = await Promise.allSettled([
+				getEventDataValues(share, friendClickEventName, "site"),
+				getEventDataValues(share, legacyFriendClickEventName, "url"),
+			]);
+			if (results.every((result) => result.status === "rejected")) {
+				throw results[0].reason || new Error("friend click counts unavailable");
+			}
+			const result = {
+				friendClicks: results[0].status === "fulfilled" ? results[0].value : [],
+				legacyOutboundClicks: results[1].status === "fulfilled" ? results[1].value : [],
+			};
+			writeCache(friendClickCacheKey, share.websiteId, result);
+			return result;
+		}
+
+		function getLocalDayStart(timestamp = Date.now()) {
+			const date = new Date(timestamp);
+			date.setHours(0, 0, 0, 0);
+			return date.getTime();
+		}
+
+		function renderPageViews(metrics) {
+			const rows = Array.isArray(metrics) ? metrics : metrics?.data || [];
+			const viewsByPath = new Map();
+			for (const row of rows) {
+				const path = normalizePath(row?.x);
+				viewsByPath.set(path, (viewsByPath.get(path) || 0) + (Number(row?.y) || 0));
+			}
+
+			document.querySelectorAll("[data-umami-pageviews]").forEach((element) => {
+				const value = viewsByPath.get(normalizePath(element.getAttribute("data-umami-pageviews"))) || 0;
+				element.textContent = formatNumber(value);
+			});
+		}
+
+		function renderSiteStats(stats, todayStats) {
+			document.querySelectorAll('[data-umami-stat="todayVisitors"]').forEach((element) => {
+				element.textContent = todayStats ? formatNumber(todayStats.visitors) : "加载中";
+			});
+			document.querySelectorAll('[data-umami-stat="todayPageviews"]').forEach((element) => {
+				element.textContent = todayStats ? formatNumber(todayStats.pageviews) : "加载中";
+			});
+			document.querySelectorAll('[data-umami-stat="visitors"]').forEach((element) => {
+				element.textContent = stats
+					? formatNumber((Number(stats.visitors) || 0) + historicalVisitorCount)
+					: "加载中";
+			});
+			document.querySelectorAll('[data-umami-stat="pageviews"]').forEach((element) => {
+				element.textContent = stats
+					? formatNumber((Number(stats.pageviews) || 0) + historicalPageviewCount)
+					: "加载中";
+			});
+		}
+
+		function renderFriendClickCounts(values) {
+			const countsBySite = new Map();
+			const addRows = (result) => {
+				const rows = Array.isArray(result) ? result : result?.data || [];
+				for (const row of rows) {
+					const site = normalizeSiteUrl(row?.value);
+					if (!site) continue;
+					countsBySite.set(site, (countsBySite.get(site) || 0) + (Number(row?.total) || 0));
+				}
+			};
+
+			addRows(values?.friendClicks);
+			addRows(values?.legacyOutboundClicks);
+			friendClickCountsBySite.clear();
+			countsBySite.forEach((count, site) => friendClickCountsBySite.set(site, count));
+
+			renderFriendClickBadges();
+		}
+
+		function renderFriendClickBadges() {
+			const localCounts = getLocalFriendClickCounts();
+			document.querySelectorAll("[data-friend-clicks-for]").forEach((element) => {
+				const site = normalizeSiteUrl(element.getAttribute("data-friend-clicks-for"));
+				const count = (friendClickCountsBySite.get(site) || 0) + (localCounts.get(site) || 0);
+				const valueElement = element.querySelector("[data-friend-clicks-value]");
+				if (valueElement) valueElement.textContent = formatNumber(count);
+				element.setAttribute("aria-label", `从本站点击 ${formatNumber(count)} 次`);
+			});
+		}
+
+		function handleLocalFriendClick(event) {
+			if (!isLocalAnalytics || !(event.target instanceof Element)) return;
+			const link = event.target.closest('a[data-umami-event="friend-link-click"][data-umami-event-site]');
+			if (!link) return;
+
+			const site = normalizeSiteUrl(link.getAttribute("data-umami-event-site"));
+			if (!site) return;
+			const localCounts = getLocalFriendClickCounts();
+			localCounts.set(site, (localCounts.get(site) || 0) + 1);
+			saveLocalFriendClickCounts();
+			renderFriendClickBadges();
+		}
+
+		function markUnavailable() {
+			document.querySelectorAll("[data-umami-pageviews]").forEach((element) => {
+				element.textContent = "加载中";
+			});
+			document.querySelectorAll('[data-umami-stat="visitors"]').forEach((element) => {
+				element.textContent = "加载中";
+			});
+			document.querySelectorAll('[data-umami-stat="pageviews"]').forEach((element) => {
+				element.textContent = "加载中";
+			});
+			document.querySelectorAll('[data-umami-stat="todayVisitors"], [data-umami-stat="todayPageviews"]').forEach((element) => {
+				element.textContent = "加载中";
+			});
+			document.querySelectorAll("[data-friend-clicks-value]").forEach((element) => {
+				element.textContent = "加载中";
+			});
+		}
+
+		async function refresh(forceRefresh = false) {
+			const needsViews = !isLocalAnalytics && Boolean(document.querySelector("[data-umami-pageviews]"));
+			const statElements = isLocalAnalytics ? [] : [...document.querySelectorAll("[data-umami-stat]")];
+			const needsStats = statElements.length > 0;
+			const needsTodayStats = statElements.some((element) =>
+				["todayVisitors", "todayPageviews"].includes(element.getAttribute("data-umami-stat")),
+			);
+			const needsFriendClickCounts = Boolean(document.querySelector("[data-friend-clicks-for]"));
+			if (!needsViews && !needsStats && !needsFriendClickCounts) return;
+
+			try {
+				const share = await getShare();
+				const now = Date.now();
+				const dayStart = getLocalDayStart(now);
+				const tasks = await Promise.allSettled([
+					needsViews ? getMetrics(share, forceRefresh) : Promise.resolve(null),
+					needsStats ? getStats(share, 0, now, "all", forceRefresh) : Promise.resolve(null),
+					needsTodayStats
+						? getStats(share, dayStart, now, `today:${dayStart}`, forceRefresh)
+						: Promise.resolve(null),
+					needsFriendClickCounts
+						? getFriendClickCounts(share, forceRefresh)
+						: Promise.resolve(null),
+				]);
+				const metrics = tasks[0].status === "fulfilled" ? tasks[0].value : null;
+				const stats = tasks[1].status === "fulfilled" ? tasks[1].value : null;
+				const todayStats = tasks[2].status === "fulfilled" ? tasks[2].value : null;
+				const friendClickCounts = tasks[3].status === "fulfilled" ? tasks[3].value : null;
+				if (metrics) renderPageViews(metrics);
+				if (needsStats) renderSiteStats(stats, todayStats);
+				if (friendClickCounts) renderFriendClickCounts(friendClickCounts);
+				if (!friendClickCounts && needsFriendClickCounts) {
+					document.querySelectorAll("[data-friend-clicks-value]").forEach((element) => {
+						element.textContent = "加载中";
+					});
+				}
+				if (!metrics && needsViews) {
+					document.querySelectorAll("[data-umami-pageviews]").forEach((element) => {
+						element.textContent = "加载中";
+					});
+				}
+			} catch {
+				markUnavailable();
+			}
+		}
+
+		if (window[namespace]) {
+			window[namespace]();
+			return;
+		}
+
+		if (isLocalAnalytics) {
+			document.addEventListener("click", handleLocalFriendClick, true);
+		}
+
+		let scheduled = false;
+		let delayedRefreshTimer;
+		const scheduleRefresh = () => {
+			if (scheduled) return;
+			scheduled = true;
+			requestAnimationFrame(() => {
+				scheduled = false;
+				refresh();
+			});
+			if (delayedRefreshTimer) window.clearTimeout(delayedRefreshTimer);
+			delayedRefreshTimer = window.setTimeout(() => refresh(true), 4000);
+		};
+
+		window[namespace] = scheduleRefresh;
+		document.addEventListener("astro:page-load", scheduleRefresh);
+		document.addEventListener("swup:contentReplaced", scheduleRefresh);
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", scheduleRefresh, { once: true });
+		} else {
+			scheduleRefresh();
+		}
+	})();
+</script>

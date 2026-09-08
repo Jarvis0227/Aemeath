@@ -1,0 +1,762 @@
+---
+import { Icon } from "astro-icon/components";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+type Tool = {
+	name: string;
+	description: string;
+	icon: string;
+	platforms: string[];
+	url: string;
+	isFree: boolean;
+	accent: string;
+	isMine?: boolean;
+};
+
+const myTools: Tool[] = [
+	{
+		name: "SKU 销量查询工作台",
+		description:
+			"填写热门变种序号图后，可一键查询其他变种图序号下全部品牌的销量情况，并精确到具体 SKU。",
+		icon: "material-symbols:query-stats-rounded",
+		platforms: ["Windows", "SKU 分析"],
+		url: "https://wwbna.lanzouv.com/b01d73r3de",
+		isFree: false,
+		accent: "#8b5cf6",
+		isMine: true,
+	},
+	{
+		name: "BigSeller 表格转 TikTok",
+		description:
+			"批量将 BigSeller 表格一键转换为 TikTok Shop 上架表格，减少重复整理和字段映射操作。",
+		icon: "material-symbols:swap-horiz-rounded",
+		platforms: ["Windows", "BigSeller", "TikTok Shop"],
+		url: "https://wwbna.lanzouv.com/b01d73qybc",
+		isFree: false,
+		accent: "#06b6d4",
+		isMine: true,
+	},
+	{
+		name: "批量图案替换工具",
+		description:
+			"制作完模板表格后，可通过图库一键制作，支持图库模式和子文件夹模式，适配自动上架项目。",
+		icon: "material-symbols:grid-view-rounded",
+		platforms: ["Windows"],
+		url: "https://wwbna.lanzouv.com/b01d72k9mb",
+		isFree: false,
+		accent: "#0ea5e9",
+		isMine: true,
+	},
+	{
+		name: "图片批量提取工具",
+		description:
+			"带 3 个适用的 PS JS 脚本，可把 PSD 套好的图片一键提取成适用于自动上架项目的素材。",
+		icon: "material-symbols:image-search-rounded",
+		platforms: ["Windows", "Photoshop"],
+		url: "https://wwbna.lanzouv.com/b01d72ka5a",
+		isFree: false,
+		accent: "#22c55e",
+		isMine: true,
+	},
+	{
+		name: "批量修改 Shopee 库存",
+		description: "根据 SKU 自动修改表格内库存，适合批量维护 Shopee 商品库存。",
+		icon: "material-symbols:inventory-2-rounded",
+		platforms: ["Windows", "Shopee"],
+		url: "https://wwbna.lanzouv.com/b01d72kaje",
+		isFree: false,
+		accent: "#f97316",
+		isMine: true,
+	},
+];
+
+const thirdPartyTools: Tool[] = [
+	{
+		name: "Tabby",
+		description:
+			"现代开源终端模拟器，支持 SSH、Telnet、本地 Shell，界面美观，插件丰富。",
+		icon: "material-symbols:terminal-rounded",
+		platforms: ["Windows", "Mac", "Linux"],
+		url: "https://tabby.sh",
+		isFree: true,
+		accent: "#38bdf8",
+	},
+	{
+		name: "ShareX",
+		description:
+			"Windows 下强力截图工具，支持截图、录屏、OCR、自动上传到图床。",
+		icon: "material-symbols:photo-camera-rounded",
+		platforms: ["Windows"],
+		url: "https://getsharex.com",
+		isFree: true,
+		accent: "#22c55e",
+	},
+	{
+		name: "Raycast",
+		description:
+			"Mac 平台高效率启动器，扩展生态完整，适合把常用操作收进键盘流。",
+		icon: "material-symbols:keyboard-command-key",
+		platforms: ["Mac"],
+		url: "https://raycast.com",
+		isFree: true,
+		accent: "#ef4444",
+	},
+	{
+		name: "Obsidian",
+		description:
+			"基于本地 Markdown 的知识管理工具，双向链接、图谱展示和插件生态都很顺手。",
+		icon: "material-symbols:book-2-rounded",
+		platforms: ["Windows", "Mac", "Linux"],
+		url: "https://obsidian.md",
+		isFree: true,
+		accent: "#8b5cf6",
+	},
+	{
+		name: "VS Code",
+		description:
+			"微软出品的开源代码编辑器，插件生态丰富，前端、后端、脚本都能覆盖。",
+		icon: "material-symbols:code-blocks-rounded",
+		platforms: ["Windows", "Mac", "Linux"],
+		url: "https://code.visualstudio.com",
+		isFree: true,
+		accent: "#3b82f6",
+	},
+	{
+		name: "Neovim",
+		description:
+			"Vim 的现代重构版本，终端里高度可定制的编辑器，越调越像自己的工作台。",
+		icon: "material-symbols:terminal-rounded",
+		platforms: ["Windows", "Mac", "Linux"],
+		url: "https://neovim.io",
+		isFree: true,
+		accent: "#10b981",
+	},
+	{
+		name: "Docker Desktop",
+		description: "容器化开发环境，快速部署各类服务，适合本地模拟生产依赖。",
+		icon: "simple-icons:docker",
+		platforms: ["Windows", "Mac", "Linux"],
+		url: "https://www.docker.com",
+		isFree: true,
+		accent: "#0ea5e9",
+	},
+	{
+		name: "Figma",
+		description:
+			"在线协作设计工具，原型、UI、交付和团队评审都能放在一个画布里完成。",
+		icon: "simple-icons:figma",
+		platforms: ["Web", "Mac", "Windows"],
+		url: "https://www.figma.com",
+		isFree: true,
+		accent: "#f97316",
+	},
+	{
+		name: "1Password",
+		description: "安全的密码管理器，跨平台同步，支持多因素认证和团队密钥管理。",
+		icon: "material-symbols:shield-lock-rounded",
+		platforms: ["Windows", "Mac", "Linux", "iOS", "Android"],
+		url: "https://1password.com",
+		isFree: false,
+		accent: "#2563eb",
+	},
+	{
+		name: "Notion",
+		description:
+			"All-in-One 工作空间，笔记、数据库、项目管理和资料沉淀都能塞进去。",
+		icon: "simple-icons:notion",
+		platforms: ["Windows", "Mac", "Web", "iOS", "Android"],
+		url: "https://www.notion.so",
+		isFree: true,
+		accent: "#64748b",
+	},
+	{
+		name: "Warp",
+		description:
+			"基于 Rust 的现代终端，命令块、协作和 AI 辅助让命令行更像工作流工具。",
+		icon: "material-symbols:auto-awesome-rounded",
+		platforms: ["Mac", "Linux"],
+		url: "https://www.warp.dev",
+		isFree: true,
+		accent: "#a855f7",
+	},
+	{
+		name: "Arc Browser",
+		description:
+			"重新组织浏览器体验，垂直标签、空间管理和分屏让浏览器更像工作系统。",
+		icon: "material-symbols:public",
+		platforms: ["Mac", "Windows", "iOS"],
+		url: "https://arc.net",
+		isFree: true,
+		accent: "#ec4899",
+	},
+];
+
+const toolSections = [
+	{
+		title: "本人项目",
+		description: "我自己整理和制作的跨境电商效率工具。",
+		tools: myTools,
+	},
+	{
+		title: "非本人项目",
+		description: "收藏备用的第三方工具。",
+		tools: thirdPartyTools,
+	},
+];
+
+const tools = [...myTools, ...thirdPartyTools];
+
+const getPlatformIcon = (platform: string) => {
+	const lower = platform.toLowerCase();
+	if (lower.includes("windows")) return "fa7-brands:windows";
+	if (lower.includes("mac") || lower.includes("ios")) return "fa7-brands:apple";
+	if (lower.includes("linux")) return "fa7-brands:linux";
+	if (lower.includes("android")) return "fa7-brands:android";
+	if (lower.includes("web")) return "material-symbols:public";
+	if (lower.includes("photoshop")) return "simple-icons:adobephotoshop";
+	if (lower.includes("shopee")) return "material-symbols:local-mall-rounded";
+	return "material-symbols:devices-rounded";
+};
+---
+
+<MainGridLayout title="工具" description="小众神器库">
+	<section class="tools-page">
+		<header class="tools-hero">
+			<div>
+				<div class="tools-kicker">
+					<Icon is:inline name="material-symbols:construction-rounded" />
+					<span>which awesome</span>
+				</div>
+				<h1>小众神器库</h1>
+				<p>
+					免费、极简、无广告、高效率，只保留真正值得放进日常工作流的工具。
+				</p>
+			</div>
+			<div class="tools-stats" aria-label="工具统计">
+				<div>
+					<strong>{tools.length}</strong>
+					<span>工具</span>
+				</div>
+				<div>
+					<strong>{myTools.length}</strong>
+					<span>本人项目</span>
+				</div>
+				<div>
+					<strong>{thirdPartyTools.length}</strong>
+					<span>非本人</span>
+				</div>
+			</div>
+		</header>
+
+		<div class="tools-sections">
+			{
+				toolSections.map((section) => (
+					<section class="tools-section" aria-labelledby={`${section.title}-heading`}>
+						<div class="tools-section-heading">
+							<div>
+								<h2 id={`${section.title}-heading`}>{section.title}</h2>
+								<p>{section.description}</p>
+							</div>
+							<span>{section.tools.length} 个</span>
+						</div>
+						<div class="tools-grid">
+							{section.tools.map((tool) => (
+								<a
+									class:list={["tool-card", { "tool-card-mine": tool.isMine }]}
+									href={tool.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									style={`--tool-accent: ${tool.accent}`}
+									aria-label={`访问 ${tool.name}`}
+								>
+									<Icon
+										is:inline
+										name={tool.icon}
+										class="tool-card-watermark"
+										aria-hidden="true"
+									/>
+									<div>
+										<div class="tool-card-top">
+											<div class="tool-icon">
+												<Icon is:inline name={tool.icon} />
+											</div>
+											<div class="tool-badge-row">
+												<span class="tool-badge">
+													{tool.isMine
+														? "本人项目"
+														: tool.isFree
+															? "免费开源"
+															: "付费软件"}
+												</span>
+												<Icon
+													is:inline
+													name="fa7-solid:arrow-up-right-from-square"
+													class="tool-external"
+												/>
+											</div>
+										</div>
+										<h3>{tool.name}</h3>
+										<p>{tool.description}</p>
+									</div>
+									<div class="tool-platforms">
+										{tool.platforms.map((platform) => (
+											<span>
+												<Icon is:inline name={getPlatformIcon(platform)} />
+												{platform}
+											</span>
+										))}
+									</div>
+								</a>
+							))}
+						</div>
+					</section>
+				))
+			}
+		</div>
+	</section>
+</MainGridLayout>
+
+<style>
+	.tools-page {
+		width: 100%;
+		position: relative;
+		z-index: 1;
+		--tools-text-90: rgb(0 0 0 / 0.9);
+		--tools-text-50: rgb(0 0 0 / 0.5);
+		--tools-text-30: rgb(0 0 0 / 0.3);
+	}
+
+	:global(:root.dark) .tools-page {
+		--tools-text-90: rgb(255 255 255 / 0.9);
+		--tools-text-50: rgb(255 255 255 / 0.5);
+		--tools-text-30: rgb(255 255 255 / 0.3);
+	}
+
+	.tools-hero {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 1.25rem;
+		align-items: end;
+		margin-bottom: 1.25rem;
+		padding: 1.5rem;
+		border-radius: var(--radius-large);
+		background: color-mix(in oklab, var(--card-bg) 80%, transparent);
+		border: 1px solid color-mix(in oklab, var(--line-divider) 75%, transparent);
+		backdrop-filter: blur(18px);
+	}
+
+	.tools-kicker {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		margin-bottom: 0.75rem;
+		padding: 0.35rem 0.65rem;
+		border-radius: 0.5rem;
+		color: var(--primary);
+		background: color-mix(in oklab, var(--primary) 12%, transparent);
+		font-size: 0.8rem;
+		font-weight: 700;
+	}
+
+	.tools-hero h1 {
+		margin: 0;
+		font-size: clamp(1.75rem, 3vw, 2.75rem);
+		line-height: 1.15;
+		font-weight: 800;
+		color: var(--tools-text-90);
+	}
+
+	.tools-hero p {
+		max-width: 42rem;
+		margin: 0.75rem 0 0;
+		color: var(--tools-text-50);
+		line-height: 1.75;
+	}
+
+	.tools-stats {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(4.25rem, 1fr));
+		gap: 0.55rem;
+		min-width: 16rem;
+	}
+
+	.tools-stats div {
+		padding: 0.75rem 0.85rem;
+		text-align: center;
+		border-radius: 0.6rem;
+		background: color-mix(in oklab, var(--card-bg) 65%, transparent);
+		border: 1px solid color-mix(in oklab, var(--line-divider) 65%, transparent);
+	}
+
+	.tools-stats strong {
+		display: block;
+		font-size: 1.35rem;
+		line-height: 1;
+		color: var(--tools-text-90);
+	}
+
+	.tools-stats span {
+		display: block;
+		margin-top: 0.35rem;
+		font-size: 0.75rem;
+		color: var(--tools-text-50);
+	}
+
+	.tools-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
+		gap: 1rem;
+	}
+
+	.tools-sections {
+		display: grid;
+		gap: 1.25rem;
+	}
+
+	.tools-section-heading {
+		display: flex;
+		align-items: end;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.8rem;
+		padding: 0 0.2rem;
+	}
+
+	.tools-section-heading h2 {
+		margin: 0;
+		font-size: 1.25rem;
+		line-height: 1.3;
+		color: var(--tools-text-90);
+		font-weight: 850;
+	}
+
+	.tools-section-heading p {
+		margin: 0.25rem 0 0;
+		color: var(--tools-text-50);
+		font-size: 0.88rem;
+		line-height: 1.6;
+	}
+
+	.tools-section-heading > span {
+		flex: 0 0 auto;
+		padding: 0.35rem 0.7rem;
+		border-radius: 999px;
+		color: var(--primary);
+		background: color-mix(in oklab, var(--primary) 12%, transparent);
+		font-size: 0.78rem;
+		font-weight: 800;
+	}
+
+	.tool-card {
+		min-height: 13.4rem;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: 1rem;
+		position: relative;
+		isolation: isolate;
+		overflow: hidden;
+		padding: 1.1rem;
+		border-radius: 1.05rem;
+		text-decoration: none;
+		color: inherit;
+		background:
+			linear-gradient(
+				145deg,
+				color-mix(in oklab, var(--card-bg) 96%, transparent),
+				color-mix(in oklab, var(--card-bg) 76%, transparent)
+			),
+			color-mix(in oklab, var(--card-bg) 72%, transparent);
+		border: 1px solid color-mix(in oklab, var(--line-divider) 82%, transparent);
+		backdrop-filter: blur(16px);
+		box-shadow:
+			0 0.7rem 1.7rem rgb(24 50 77 / 0.06),
+			inset 0 1px 0 rgb(255 255 255 / 0.58);
+		transition:
+			transform 0.32s cubic-bezier(0.2, 0.78, 0.2, 1),
+			background 0.32s ease,
+			border-color 0.32s ease,
+			box-shadow 0.32s ease;
+	}
+
+	.tool-card > * {
+		position: relative;
+		z-index: 1;
+	}
+
+	.tool-card-watermark {
+		position: absolute !important;
+		z-index: 0 !important;
+		top: 3.1rem;
+		right: 0.65rem;
+		width: 6rem;
+		height: 6rem;
+		padding: 1.05rem;
+		border: 1px solid color-mix(in oklab, var(--tool-accent) 18%, transparent);
+		border-radius: 1.55rem 1.55rem 0.45rem 1.55rem;
+		color: var(--tool-accent);
+		background: color-mix(in oklab, var(--tool-accent) 5%, transparent);
+		opacity: 0.16;
+		transform: rotate(-9deg);
+		filter: drop-shadow(0 0.65rem 0.8rem color-mix(in oklab, var(--tool-accent) 12%, transparent));
+		transition:
+			opacity 0.32s ease,
+			transform 0.48s cubic-bezier(0.2, 0.78, 0.2, 1),
+			filter 0.32s ease;
+	}
+
+	.tool-card::before {
+		content: "";
+		position: absolute;
+		z-index: 0;
+		inset: 0;
+		pointer-events: none;
+		background:
+			radial-gradient(
+				12rem 9rem at 105% -12%,
+				color-mix(in oklab, var(--tool-accent) 25%, transparent),
+				transparent 68%
+			),
+			linear-gradient(
+				120deg,
+				transparent 48%,
+				color-mix(in oklab, var(--tool-accent) 7%, transparent) 100%
+			);
+		opacity: 0.9;
+		transform: scale(1);
+		transform-origin: right top;
+		transition: transform 0.55s cubic-bezier(0.2, 0.78, 0.2, 1);
+	}
+
+	.tool-card::after {
+		content: "";
+		position: absolute;
+		z-index: 0;
+		right: -1.65rem;
+		bottom: -2.05rem;
+		width: 9rem;
+		height: 8.8rem;
+		pointer-events: none;
+		background-image: radial-gradient(
+			circle,
+			color-mix(in oklab, var(--tool-accent) 44%, transparent) 0.75px,
+			transparent 0.9px
+		);
+		background-size: 0.7rem 0.7rem;
+		mask-image: linear-gradient(135deg, transparent 0%, #000 48%, #000 100%);
+		opacity: 0.38;
+		transform: rotate(-8deg);
+		transition: opacity 0.32s ease, transform 0.55s cubic-bezier(0.2, 0.78, 0.2, 1);
+	}
+
+	.tool-card:hover {
+		transform: translate3d(0, -0.38rem, 0);
+		background: color-mix(in oklab, var(--card-bg) 96%, transparent);
+		border-color: color-mix(in oklab, var(--tool-accent) 58%, var(--line-divider));
+		box-shadow:
+			0 1.15rem 2.6rem color-mix(in oklab, var(--tool-accent) 20%, transparent),
+			inset 0 1px 0 rgb(255 255 255 / 0.72);
+	}
+
+	.tool-card:hover::before {
+		transform: scale(1.12) translate(-0.25rem, 0.15rem);
+	}
+
+	.tool-card:hover::after {
+		opacity: 0.66;
+		transform: rotate(-3deg) translate(-0.35rem, -0.25rem);
+	}
+
+	.tool-card:hover .tool-card-watermark {
+		opacity: 0.26;
+		transform: rotate(-3deg) translate(-0.25rem, -0.15rem);
+		filter: drop-shadow(0 0.85rem 1rem color-mix(in oklab, var(--tool-accent) 19%, transparent));
+	}
+
+	.tool-card-mine {
+		background:
+			linear-gradient(
+				145deg,
+				color-mix(in oklab, var(--tool-accent) 12%, var(--card-bg)),
+				color-mix(in oklab, var(--tool-accent) 4%, var(--card-bg))
+			),
+			var(--card-bg);
+		border-color: color-mix(in oklab, var(--tool-accent) 36%, var(--line-divider));
+	}
+
+	.tool-card-top {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		position: relative;
+		gap: 0.85rem;
+		margin-bottom: 1.05rem;
+	}
+
+	.tool-card-top::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		bottom: -0.58rem;
+		width: min(6.8rem, 44%);
+		height: 1px;
+		background: linear-gradient(
+			90deg,
+			var(--tool-accent),
+			color-mix(in oklab, var(--tool-accent) 10%, transparent)
+		);
+		opacity: 0.58;
+	}
+
+	.tool-icon {
+		width: 2.85rem;
+		height: 2.85rem;
+		display: grid;
+		place-items: center;
+		flex: 0 0 auto;
+		position: relative;
+		overflow: hidden;
+		border-radius: 0.85rem 0.85rem 0.85rem 0.3rem;
+		color: var(--tool-accent);
+		background:
+			linear-gradient(
+				135deg,
+				color-mix(in oklab, var(--tool-accent) 26%, var(--card-bg)),
+				color-mix(in oklab, var(--tool-accent) 8%, var(--card-bg))
+			),
+			var(--card-bg);
+		border: 1px solid color-mix(in oklab, var(--tool-accent) 34%, transparent);
+		box-shadow:
+			0 0.55rem 1.1rem color-mix(in oklab, var(--tool-accent) 14%, transparent),
+			inset 0 1px 0 rgb(255 255 255 / 0.52);
+		font-size: 1.35rem;
+		transition: transform 0.32s cubic-bezier(0.2, 0.78, 0.2, 1), box-shadow 0.32s ease;
+	}
+
+	.tool-icon::after {
+		content: "";
+		position: absolute;
+		inset: -30% 35% 42% -60%;
+		background: rgb(255 255 255 / 0.46);
+		transform: rotate(28deg);
+		pointer-events: none;
+	}
+
+	.tool-card:hover .tool-icon {
+		transform: translateY(-0.12rem) rotate(-4deg);
+		box-shadow:
+			0 0.75rem 1.3rem color-mix(in oklab, var(--tool-accent) 24%, transparent),
+			inset 0 1px 0 rgb(255 255 255 / 0.66);
+	}
+
+	.tool-badge-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.tool-badge {
+		padding: 0.3rem 0.55rem;
+		border-radius: 999px;
+		color: var(--tool-accent);
+		background: color-mix(in oklab, var(--tool-accent) 13%, transparent);
+		border: 1px solid color-mix(in oklab, var(--tool-accent) 24%, transparent);
+		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.38);
+		font-size: 0.72rem;
+		font-weight: 800;
+		white-space: nowrap;
+	}
+
+	.tool-external {
+		color: var(--tools-text-30);
+		font-size: 0.82rem;
+		transition: color 0.2s ease, transform 0.28s cubic-bezier(0.2, 0.78, 0.2, 1);
+	}
+
+	.tool-card:hover .tool-external {
+		color: var(--tool-accent);
+		transform: translate(0.12rem, -0.12rem);
+	}
+
+	.tool-card h3 {
+		margin: 0;
+		font-size: 1.08rem;
+		line-height: 1.35;
+		color: var(--tools-text-90);
+		font-weight: 850;
+		letter-spacing: -0.01em;
+	}
+
+	.tool-card p {
+		margin: 0.5rem 0 0;
+		color: var(--tools-text-50);
+		font-size: 0.9rem;
+		line-height: 1.7;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+		overflow: hidden;
+	}
+
+	.tool-platforms {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin-top: 0.1rem;
+		padding-top: 0.82rem;
+		border-top: 1px solid color-mix(in oklab, var(--line-divider) 58%, transparent);
+	}
+
+	.tool-platforms span {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		min-height: 1.7rem;
+		padding: 0.28rem 0.5rem;
+		border-radius: 999px;
+		color: var(--tools-text-50);
+		background: color-mix(in oklab, var(--card-bg) 72%, transparent);
+		border: 1px solid color-mix(in oklab, var(--line-divider) 58%, transparent);
+		font-size: 0.72rem;
+		font-weight: 700;
+		transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+	}
+
+	.tool-card:hover .tool-platforms span {
+		color: color-mix(in oklab, var(--tool-accent) 62%, var(--tools-text-90));
+		background: color-mix(in oklab, var(--tool-accent) 8%, var(--card-bg));
+		border-color: color-mix(in oklab, var(--tool-accent) 24%, var(--line-divider));
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.tool-card,
+		.tool-card::before,
+		.tool-card::after,
+		.tool-card-watermark,
+		.tool-icon,
+		.tool-external,
+		.tool-platforms span {
+			transition: none;
+		}
+	}
+
+	@media (max-width: 767px) {
+		.tools-hero {
+			grid-template-columns: 1fr;
+			padding: 1.1rem;
+		}
+
+		.tools-stats {
+			min-width: 0;
+			width: 100%;
+		}
+
+		.tools-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.tools-section-heading {
+			align-items: flex-start;
+		}
+	}
+</style>

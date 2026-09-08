@@ -1,0 +1,31 @@
+@media (hover: hover) and (pointer: fine) {
+	:root {
+		--cursor-default: url("/mouse/default.cur"), default;
+		--cursor-pointer: url("/mouse/pointer.cur"), pointer;
+	}
+
+	html,
+	body {
+		cursor: var(--cursor-default);
+	}
+
+	a,
+	button,
+	select,
+	label,
+	summary,
+	[role="button"],
+	[role="link"],
+	.cursor-pointer,
+	input[type="button"],
+	input[type="submit"],
+	input[type="reset"] {
+		cursor: var(--cursor-pointer);
+	}
+
+	input,
+	textarea,
+	[contenteditable="true"] {
+		cursor: text;
+	}
+}

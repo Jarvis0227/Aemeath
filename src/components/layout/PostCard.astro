@@ -1,0 +1,647 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { render } from "astro:content";
+import { Icon } from "astro-icon/components";
+import CoverImage from "@/components/common/CoverImage.astro";
+import PostMetadata from "@/components/layout/PostMeta.astro";
+import PostStats from "@/components/layout/PostStats.astro";
+import { siteConfig } from "@/config";
+import { getApiUrlList, processCoverImageSync } from "@/utils/image-utils";
+import { getFileDirFromPath } from "@/utils/url-utils";
+
+interface Props {
+	class?: string;
+	entry: CollectionEntry<"posts">;
+	title: string;
+	url: string;
+	published: Date;
+	updated?: Date;
+	tags: string[];
+	category: string | null;
+	image: string;
+	description: string;
+	draft: boolean;
+	pinned?: boolean;
+	password?: boolean;
+	style: string;
+	loading?: "lazy" | "eager";
+}
+const {
+	entry,
+	title,
+	url,
+	published,
+	updated,
+	tags,
+	category,
+	image,
+	description,
+	pinned,
+	password,
+	style,
+	loading = "lazy",
+} = Astro.props;
+const className = Astro.props.class;
+
+// 处理随机图：如果image为"api"，则从配置的API获取随机图
+const processedImage = processCoverImageSync(image, entry.id);
+const apiUrls = getApiUrlList(image, entry.id);
+const hasCover =
+	processedImage !== undefined &&
+	processedImage !== null &&
+	processedImage !== "";
+
+const decorSource = [title, category || "", ...tags].join(" ").toLowerCase();
+const decorRules = [
+	{
+		name: "quote",
+		keywords: ["每天留一句话"],
+	},
+	{
+		name: "code",
+		keywords: ["从零搭建 rainzt.cn"],
+	},
+	{
+		name: "blossom",
+		keywords: ["重新打开了自己的博客", "回到自己的博客", "个人创作"],
+	},
+	{
+		name: "paper-plane",
+		keywords: ["为什么还想敲下这些字", "为什么仍然写", "写作"],
+	},
+	{
+		name: "parcel",
+		keywords: [
+			"跨境电商",
+			"自动上架",
+			"bigseller",
+			"shopee",
+			"tiktok",
+			"sku",
+			"库存",
+			"订单",
+		],
+	},
+	{
+		name: "cursor",
+		keywords: ["鼠标", "光标", "cursor"],
+	},
+	{
+		name: "clock",
+		keywords: [
+			"时间进度",
+			"进度条",
+			"倒计时",
+			"日历",
+			"节假日",
+			"一年、一个月和一周",
+			"schedule",
+		],
+	},
+	{
+		name: "sun-cloud",
+		keywords: [
+			"时间问候",
+			"不同时间",
+			"实时时钟",
+			"早安",
+			"午安",
+			"晚安",
+			"greeting",
+		],
+	},
+	{
+		name: "quote",
+		keywords: ["今日一言", "每日一言", "句子", "quote"],
+	},
+	{
+		name: "chat",
+		keywords: [
+			"欢迎弹窗",
+			"欢迎语",
+			"第一次打开博客",
+			"认真说一句欢迎",
+			"toast",
+			"弹窗",
+		],
+	},
+	{
+		name: "orbit",
+		keywords: ["作品展示", "页面动画", "滚动动画", "动效", "animation"],
+	},
+	{
+		name: "constellation",
+		keywords: ["ai", "gpt", "无限画布", "人工智能", "图像生成"],
+	},
+	{
+		name: "window",
+		keywords: ["页脚", "导航栏", "站点", "网站", "博客搭建", "博客改造"],
+	},
+	{
+		name: "paper-plane",
+		keywords: ["写作", "随笔", "感悟", "思考", "记录", "生活"],
+	},
+	{
+		name: "code",
+		keywords: [
+			"从零搭建",
+			"上线流程",
+			"astro",
+			"javascript",
+			"css",
+			"前端",
+			"源码",
+			"代码",
+			"开发",
+		],
+	},
+] as const;
+const fallbackDecors = [
+	"blossom",
+	"parcel",
+	"cursor",
+	"clock",
+	"sun-cloud",
+	"quote",
+	"chat",
+	"orbit",
+	"constellation",
+	"window",
+	"paper-plane",
+	"code",
+] as const;
+const decorOverrides: Record<string, (typeof fallbackDecors)[number]> = {
+	"auto-listing-system": "parcel",
+	"agent-ecommerce-automation": "constellation",
+};
+const decorHash = Array.from(entry.id).reduce(
+	(total, character) => (total * 31 + (character.codePointAt(0) ?? 0)) >>> 0,
+	7,
+);
+const cardDecor =
+	decorOverrides[entry.id] ??
+	decorRules.find((rule) =>
+		rule.keywords.some((keyword: string) => decorSource.includes(keyword)),
+	)?.name ??
+	fallbackDecors[decorHash % fallbackDecors.length];
+const forcePostTitleBreak =
+	entry.id === "others/youth-most-expensive/youth-most-expensive";
+
+const coverWidth = "30%";
+const preserveCoverRatio = new Set([
+	"time-greeting",
+	"custom-cursor",
+	"quote-of-the-day",
+	"schedule-progress",
+	"welcome-toast",
+	"footer-config",
+	"portfolio-showcase-animation-principles",
+	"ai-infinite-canvas-workflow",
+	"auto-listing-system",
+	"agent-ecommerce-automation",
+	"after-the-tools-i-returned-to-my-blog",
+	"why-i-still-write-in-the-age-of-ai",
+	"chao-chao-listening-rain-years-wind",
+	"others/youth-most-expensive/youth-most-expensive",
+	"from-matriarchal-society-to-patriarchy",
+	"monthly-2026-08",
+]).has(entry.id);
+const fullPreviewCover = new Set([
+	"portfolio-showcase-animation-principles",
+	"ai-infinite-canvas-workflow",
+	"auto-listing-system",
+	"agent-ecommerce-automation",
+	"after-the-tools-i-returned-to-my-blog",
+	"why-i-still-write-in-the-age-of-ai",
+	"chao-chao-listening-rain-years-wind",
+	"others/youth-most-expensive/youth-most-expensive",
+	"from-matriarchal-society-to-patriarchy",
+	"monthly-2026-08",
+]).has(entry.id);
+const updateBadgeDate =
+	entry.id === "auto-listing-system" && updated
+		? new Intl.DateTimeFormat("zh-CN", {
+				year: "numeric",
+				month: "long",
+				day: "numeric",
+				timeZone: "Asia/Shanghai",
+			}).format(updated)
+		: undefined;
+const updateBadgeLabel = updateBadgeDate
+	? `已于${updateBadgeDate}更新`
+	: undefined;
+
+const showTags = siteConfig.postListLayout.showTags;
+const tagCount = Math.max(
+	0,
+	Math.trunc(siteConfig.postListLayout.tagCount ?? 1),
+);
+const descriptionLines = Math.max(
+	0,
+	Math.trunc(siteConfig.postListLayout.descriptionLines ?? 2),
+);
+const descriptionClampLines = String(descriptionLines);
+const shouldClampDescription = descriptionLines > 0;
+
+const { remarkPluginFrontmatter } = await render(entry);
+const descriptionText = description || remarkPluginFrontmatter.excerpt || "";
+const words = remarkPluginFrontmatter.words;
+const minutes = remarkPluginFrontmatter.minutes;
+---
+
+<div
+  class:list={[
+    "post-card-wrapper",
+    hasCover ? "has-cover" : "no-cover",
+    fullPreviewCover ? "post-card-full-preview" : "",
+    pinned ? "pinned" : "",
+    "card-base flex flex-col-reverse w-full rounded-(--radius-large) overflow-hidden relative",
+    className,
+  ]}
+  data-card-decor={cardDecor}
+  style={style}
+>
+  <!-- pinned icon -->
+  <div
+    class:list={[
+      "post-card-content",
+      "pl-4 md:pl-9 pr-4 md:pr-2 pt-4 md:pt-7 pb-4 md:pb-7 relative flex flex-col h-full",
+      {
+        "w-full md:w-[calc(100%-52px-12px)]": !hasCover,
+        "w-full md:w-[calc(100%-var(--coverWidth)-1.5rem)]": hasCover,
+      },
+    ]}
+  >
+    <a
+      href={url}
+      class:list={[
+        "post-card-title transition group w-full block font-bold mb-3 text-3xl text-90 hover:text-(--primary) dark:hover:text-(--primary) active:text-(--title-active) dark:active:text-(--title-active) before:w-1 before:h-5 before:rounded-md before:bg-(--primary) before:absolute before:top-[35px] before:left-[18px] before:hidden md:before:block",
+        forcePostTitleBreak && "post-title-force-break",
+      ]}
+    >
+      {title}
+
+      {
+        password && (
+          <Icon
+            is:inline
+            name="material-symbols:lock-outline"
+            class="inline text-2xl align-middle -translate-y-px"
+          />
+        )
+      }
+    </a>
+
+    <!-- metadata -->
+    <PostMetadata
+      published={published}
+      tags={tags}
+      showPublished={false}
+      showTags={showTags && tagCount > 0}
+      maxTags={tagCount}
+      showNoTags={false}
+      hideUpdateDate={true}
+      category={category || undefined}
+      pinned={pinned}
+      password={password}
+      className="mb-4 post-meta card-header-meta"
+    />
+
+    <!-- description -->
+    <div
+      class:list={[
+        "transition text-75 md:pr-4 description grow",
+        { "description-clamped": shouldClampDescription },
+      ]}
+      title={descriptionText}
+    >
+      {descriptionText}
+    </div>
+
+    <!-- stats -->
+    <PostStats
+      published={published}
+      words={words}
+      minutes={minutes}
+      showIcons={siteConfig.postListLayout.showStatsIcons}
+      className="stats mt-auto pt-3 text-black/30 dark:text-white/30 gap-x-2"
+    />
+  </div>
+  {
+    hasCover && (
+      <div
+        class:list={[
+          "post-card-image",
+          "w-full md:w-(--coverWidth)",
+          "aspect-2/1 md:aspect-auto",
+          "relative md:absolute md:top-4 md:bottom-4 md:right-4",
+        ]}
+      >
+        <a
+          href={url}
+          aria-label={title}
+          class="post-card-image-link group block w-full h-full rounded-(--radius-large) md:rounded-xl overflow-hidden"
+        >
+          <div class="absolute pointer-events-none z-10 w-full h-full group-hover:bg-black/30 group-active:bg-black/50 transition" />
+          <div class="absolute pointer-events-none z-20 w-full h-full flex items-center justify-center ">
+            <Icon
+              is:inline
+              name="material-symbols:chevron-right-rounded"
+              class="transition opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 text-white text-5xl"
+            />
+          </div>
+          <CoverImage
+            src={processedImage}
+            basePath={getFileDirFromPath(entry.filePath || "")}
+            alt="Cover Image of the Post"
+            class:list={[
+              "w-full h-full transition-transform duration-300",
+              fullPreviewCover
+                ? "group-hover:scale-100 group-active:scale-100"
+                : "group-hover:scale-110 group-active:scale-115",
+            ]}
+            preview={true}
+            preserveAspectRatio={preserveCoverRatio}
+            loading={loading}
+            apiUrls={apiUrls}
+          />
+        </a>
+        {
+          updateBadgeLabel && (
+            <a
+              href="https://rainzt.cn/changelog/"
+              class="post-card-update-badge"
+              aria-label={`${updateBadgeLabel}，查看更新日志`}
+            >
+              <Icon is:inline name="material-symbols:update-rounded" />
+              <span>{updateBadgeLabel}</span>
+            </a>
+          )
+        }
+      </div>
+    )
+  }
+
+  {
+    !hasCover && (
+      <a
+        href={url}
+        aria-label={title}
+        class:list={[
+          "post-card-enter-btn",
+          "flex btn-regular w-13",
+          "absolute right-3 top-3 bottom-3 rounded-xl bg-(--enter-btn-bg)",
+          "hover:bg-(--enter-btn-bg-hover) active:bg-(--enter-btn-bg-active) active:scale-95",
+        ]}
+      >
+        <Icon
+          is:inline
+          name="material-symbols:chevron-right-rounded"
+          class="transition text-(--primary) text-4xl mx-auto"
+        />
+      </a>
+    )
+  }
+</div>
+
+<style define:vars={{ coverWidth, descriptionClampLines }}>
+  .post-card-update-badge {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    min-height: 1.8rem;
+    max-width: calc(100% - 1.2rem);
+    padding: 0.32rem 0.58rem;
+    border-radius: 0.58rem;
+    color: white;
+    background: linear-gradient(135deg, #14c5ff, #1778ff);
+    box-shadow: 0 0.25rem 0.5rem rgb(23 120 255 / 0.26);
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: 0;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 220ms ease,
+      filter 220ms ease;
+  }
+
+  .post-card-update-badge:hover,
+  .post-card-update-badge:focus-visible {
+    transform: translateY(-0.12rem) scale(1.035);
+    box-shadow: 0 0.38rem 0.7rem rgb(23 120 255 / 0.34);
+    filter: brightness(1.06) saturate(1.08);
+  }
+
+  .post-card-update-badge:focus-visible {
+    outline: 2px solid rgb(255 255 255 / 0.94);
+    outline-offset: 2px;
+  }
+
+  .post-card-update-badge :global(svg) {
+    width: 0.95rem;
+    height: 0.95rem;
+    flex: 0 0 auto;
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .post-card-update-badge:hover :global(svg),
+  .post-card-update-badge:focus-visible :global(svg) {
+    transform: rotate(-16deg) scale(1.08);
+  }
+
+  :global(.grid-mode) .post-card-update-badge {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  @media (max-width: 767px) {
+    .post-card-update-badge {
+      top: 0.45rem;
+      right: 0.45rem;
+      min-height: 1.65rem;
+      padding: 0.28rem 0.48rem;
+      font-size: 0.66rem;
+    }
+
+    .post-card-update-badge :global(svg) {
+      width: 0.86rem;
+      height: 0.86rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .post-card-update-badge,
+    .post-card-update-badge :global(svg) {
+      transition: none;
+    }
+  }
+
+  .description-clamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    -webkit-line-clamp: var(--descriptionClampLines);
+    line-clamp: var(--descriptionClampLines);
+  }
+
+  .post-title-force-break {
+    white-space: pre-line;
+  }
+
+  /* === List Mode Mobile Styles === */
+  /* 移动端列表模式：封面在右侧，内容缩小 */
+  :global(.list-mode) .post-card-wrapper {
+    flex-direction: row !important;
+  }
+
+  :global(.list-mode) .has-cover .post-card-content {
+    width: calc(100% - 9rem - 0.75rem) !important;
+    padding: 0.75rem 0.5rem 0.75rem 0.75rem !important;
+  }
+
+  :global(.list-mode) .has-cover .post-card-image {
+    position: absolute !important;
+    top: 0.5rem !important;
+    bottom: 0.5rem !important;
+    right: 0.5rem !important;
+    width: 9rem !important;
+    aspect-ratio: auto !important;
+    border-radius: 0.75rem !important;
+  }
+
+  :global(.list-mode) .post-card-title {
+    font-size: 1.125rem !important;
+    line-height: 1.75rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  :global(.list-mode) .post-card-title::before {
+    display: none !important;
+  }
+
+  :global(.list-mode) .stats {
+    gap: 0.25rem !important;
+  }
+
+  :global(.list-mode) .no-cover .post-card-content {
+    width: calc(100% - 52px - 12px) !important;
+  }
+
+  :global(.list-mode) .post-card-enter-btn {
+    display: flex !important;
+  }
+
+  /* 移动端列表模式 - 隐藏tags，只在有空间时显示 */
+  :global(.list-mode) .stats a {
+    font-size: 0.65rem !important;
+    padding: 0.125rem 0.375rem !important;
+    height: 1.25rem !important;
+  }
+
+  /* === Desktop List Mode overrides === */
+  @media (min-width: 768px) {
+    :global(.list-mode) .post-card-wrapper {
+      flex-direction: row !important;
+    }
+
+    :global(.list-mode) .has-cover .post-card-content {
+      width: calc(100% - var(--coverWidth) - 1.5rem) !important;
+      padding: 1.75rem 0.5rem 1.75rem 2.25rem !important;
+    }
+
+    :global(.list-mode) .has-cover .post-card-image {
+      top: 1rem !important;
+      bottom: 1rem !important;
+      right: 1rem !important;
+      width: var(--coverWidth) !important;
+      border-radius: 0.75rem !important;
+    }
+
+    :global(.list-mode) .post-card-title {
+      font-size: 1.5rem !important;
+      line-height: 2rem !important;
+      margin-bottom: 0.75rem !important;
+    }
+
+    :global(.list-mode) .post-card-title::before {
+      display: block !important;
+      top: 2.25rem !important;
+      height: 1rem !important;
+    }
+
+    :global(.list-mode) .description {
+      font-size: inherit !important;
+    }
+
+    :global(.list-mode) .stats a {
+      font-size: 0.75rem !important;
+      padding: 0.25rem 0.5rem !important;
+      height: 1.5rem !important;
+    }
+
+    :global(.list-mode) .no-cover .post-card-content {
+      width: calc(100% - 52px - 12px) !important;
+    }
+
+    :global(.list-mode) .post-card-enter-btn {
+      display: flex !important;
+    }
+  }
+
+  /* === Grid Mode Styles === */
+  /* 网格模式：封面在顶部（移动端和桌面端一致） */
+  :global(.grid-mode) .post-card-wrapper {
+    flex-direction: column-reverse !important;
+    height: 100% !important;
+    justify-content: flex-end !important;
+  }
+
+  :global(.grid-mode) .post-card-content {
+    width: 100% !important;
+    height: auto !important;
+    flex-grow: 1 !important;
+  }
+
+  :global(.grid-mode) .post-card-image {
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: var(--radius-large) var(--radius-large) 0 0 !important;
+    max-height: none !important;
+    aspect-ratio: 2/1 !important;
+  }
+
+  :global(.grid-mode) .description {
+    flex-grow: 0 !important;
+  }
+
+  :global(.grid-mode) .stats {
+    margin-top: auto !important;
+  }
+
+  :global(.grid-mode) .has-cover .post-card-content {
+    padding-top: 0.8rem !important;
+  }
+  :global(.grid-mode) .has-cover .post-card-title::before {
+    top: 1.3rem !important;
+  }
+
+  :global(.grid-mode) .no-cover .post-card-content {
+    width: calc(100% - 52px - 12px) !important;
+  }
+
+  :global(.grid-mode) .post-card-enter-btn {
+    display: flex !important;
+  }
+</style>

@@ -1,0 +1,60 @@
+---
+import adminMailTemplate from "../../waline/templates/admin-new-comment.html?raw";
+
+const sampleValues = new Map([
+  ["{{site.name | safe}}", "朝朝听雨"],
+  ["{{site.url}}", "https://rainzt.cn/"],
+  ["{{site.postUrl}}", "https://rainzt.cn/posts/youth-is-priceless/"],
+  ["{{self.nick | safe}}", "十七"],
+  ["{{self.mail}}", "visitor@example.com"],
+  ["{{self.mail | safe}}", "visitor@example.com"],
+  ["{{self.addr | safe}}", "中国 广东"],
+  ["{{self.browser | safe}}", "Chrome"],
+  ["{{self.os | safe}}", "Windows 11"],
+  [
+    "{{self.comment | safe}}",
+    "夏夏之中，自有天意。其实不是最后一定要在一起，才是最好的结局，谁的生命中又没有那么一段最美好的回忆呢。",
+  ],
+]);
+
+let previewHtml = adminMailTemplate;
+for (const [placeholder, value] of sampleValues) {
+  previewHtml = previewHtml.replaceAll(placeholder, value);
+}
+
+previewHtml = previewHtml.replaceAll(
+  "https://rainzt.cn/assets/",
+  "/assets/",
+);
+
+const previewStyles =
+  previewHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
+const previewBody =
+  previewHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/)?.[1] ?? previewHtml;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>朝朝听雨 - 站长新评论邮件预览</title>
+    <style is:inline set:html={previewStyles}></style>
+    <style is:inline>
+      .preview-note {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 24px 16px 0;
+        color: #5f7894;
+        font-size: 12px;
+        line-height: 1.7;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="preview-note">站长收到新评论时的实际邮件样式预览；这里使用的是示例评论数据。</p>
+    <Fragment set:html={previewBody} />
+  </body>
+</html>

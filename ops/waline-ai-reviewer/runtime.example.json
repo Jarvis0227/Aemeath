@@ -1,0 +1,14 @@
+{
+	"enabled": true,
+	"model": "Pro/moonshotai/Kimi-K2.6",
+	"thinking": false,
+	"temperature": 0.55,
+	"rules": {
+		"allowed_paths": [],
+		"blocked_paths": [],
+		"ignored_keywords": [],
+		"quiet_start": "",
+		"quiet_end": "",
+		"daily_limit": 0
+	}
+}

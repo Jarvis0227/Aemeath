@@ -1,0 +1,815 @@
+{
+  "generatedAt": "2026-07-21T07:39:25.908Z",
+  "policy": {
+    "firstWallpaper": "鸣潮官方YouTube10k粉纪念壁纸-10k.png",
+    "minWidth": 1900,
+    "minHeight": 1000,
+    "aspectRatio": "1.45-2.25",
+    "minSourceBytesPerMegapixel": 65000,
+    "webpQuality": 92,
+    "note": "Vertical/mobile and heavily compressed wallpapers stay in docs/images but are excluded from horizontal fullscreen rotation to avoid blurry display."
+  },
+  "selected": [
+    {
+      "index": 1,
+      "source": "鸣潮官方YouTube10k粉纪念壁纸-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-01.webp",
+      "width": 10240,
+      "height": 5761,
+      "bytesPerMp": 1598711,
+      "outputWidth": 3839,
+      "outputHeight": 2160,
+      "bytes": 1789334
+    },
+    {
+      "index": 2,
+      "source": "0072Vf1pgy1fodqnmj1ewj31kw0zkhdz.jpg",
+      "output": "/assets/images/wallpaper/wallpaper-02.webp",
+      "width": 2048,
+      "height": 1280,
+      "bytesPerMp": 373446,
+      "outputWidth": 2048,
+      "outputHeight": 1280,
+      "bytes": 365902
+    },
+    {
+      "index": 3,
+      "source": "1.png",
+      "output": "/assets/images/wallpaper/wallpaper-03.webp",
+      "width": 1980,
+      "height": 1080,
+      "bytesPerMp": 1528907,
+      "outputWidth": 1980,
+      "outputHeight": 1080,
+      "bytes": 304448
+    },
+    {
+      "index": 4,
+      "source": "2.jpg",
+      "output": "/assets/images/wallpaper/wallpaper-04.webp",
+      "width": 2275,
+      "height": 1279,
+      "bytesPerMp": 746271,
+      "outputWidth": 2275,
+      "outputHeight": 1279,
+      "bytes": 738916
+    },
+    {
+      "index": 5,
+      "source": "20d41ac5c52022e4f6fd3b27edd5ce42.webp",
+      "output": "/assets/images/wallpaper/wallpaper-05.webp",
+      "width": 2560,
+      "height": 1553,
+      "bytesPerMp": 155599,
+      "outputWidth": 2560,
+      "outputHeight": 1553,
+      "bytes": 803040
+    },
+    {
+      "index": 6,
+      "source": "231ebc981af9847457462d4def81f726.webp",
+      "output": "/assets/images/wallpaper/wallpaper-06.webp",
+      "width": 3840,
+      "height": 2160,
+      "bytesPerMp": 136545,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1381148
+    },
+    {
+      "index": 7,
+      "source": "4.jpg",
+      "output": "/assets/images/wallpaper/wallpaper-07.webp",
+      "width": 3037,
+      "height": 1528,
+      "bytesPerMp": 877538,
+      "outputWidth": 3037,
+      "outputHeight": 1528,
+      "bytes": 961828
+    },
+    {
+      "index": 8,
+      "source": "4278522cc26c1fb107a58098865bcc25.webp",
+      "output": "/assets/images/wallpaper/wallpaper-08.webp",
+      "width": 2000,
+      "height": 1346,
+      "bytesPerMp": 93364,
+      "outputWidth": 2000,
+      "outputHeight": 1346,
+      "bytes": 329558
+    },
+    {
+      "index": 9,
+      "source": "5b25db87a28b423794cf7313d88b3963.jpg",
+      "output": "/assets/images/wallpaper/wallpaper-09.webp",
+      "width": 4093,
+      "height": 2205,
+      "bytesPerMp": 196901,
+      "outputWidth": 3840,
+      "outputHeight": 2069,
+      "bytes": 701092
+    },
+    {
+      "index": 10,
+      "source": "5bcf3f0e91a986bb1b4c7cb284a92745.webp",
+      "output": "/assets/images/wallpaper/wallpaper-10.webp",
+      "width": 3840,
+      "height": 2160,
+      "bytesPerMp": 65731,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 780856
+    },
+    {
+      "index": 11,
+      "source": "9a3215c002417cc606c51690d8630d9e.webp",
+      "output": "/assets/images/wallpaper/wallpaper-11.webp",
+      "width": 4352,
+      "height": 2448,
+      "bytesPerMp": 208622,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1203410
+    },
+    {
+      "index": 12,
+      "source": "a15b4afegy1fmvk86bxmej21hc0u0nbx.jpg",
+      "output": "/assets/images/wallpaper/wallpaper-12.webp",
+      "width": 1920,
+      "height": 1080,
+      "bytesPerMp": 267490,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "bytes": 278064
+    },
+    {
+      "index": 13,
+      "source": "ac922edeee6003a6129aa22cde9001ae.webp",
+      "output": "/assets/images/wallpaper/wallpaper-13.webp",
+      "width": 2560,
+      "height": 1440,
+      "bytesPerMp": 99252,
+      "outputWidth": 2560,
+      "outputHeight": 1440,
+      "bytes": 512298
+    },
+    {
+      "index": 14,
+      "source": "c0c7b03d8cccdfdfd1c731750f858ad9.webp",
+      "output": "/assets/images/wallpaper/wallpaper-14.webp",
+      "width": 5758,
+      "height": 3240,
+      "bytesPerMp": 75389,
+      "outputWidth": 3839,
+      "outputHeight": 2160,
+      "bytes": 871856
+    },
+    {
+      "index": 15,
+      "source": "d02649e996a7e32a6718e134af55389f.webp",
+      "output": "/assets/images/wallpaper/wallpaper-15.webp",
+      "width": 2560,
+      "height": 1707,
+      "bytesPerMp": 75637,
+      "outputWidth": 2560,
+      "outputHeight": 1707,
+      "bytes": 451666
+    },
+    {
+      "index": 16,
+      "source": "ed65be643841f5d267e9601f956a443f.webp",
+      "output": "/assets/images/wallpaper/wallpaper-16.webp",
+      "width": 3450,
+      "height": 2000,
+      "bytesPerMp": 73925,
+      "outputWidth": 3450,
+      "outputHeight": 2000,
+      "bytes": 683104
+    },
+    {
+      "index": 17,
+      "source": "t01b32d570de743f98a.jpg",
+      "output": "/assets/images/wallpaper/wallpaper-17.webp",
+      "width": 2560,
+      "height": 1600,
+      "bytesPerMp": 585200,
+      "outputWidth": 2560,
+      "outputHeight": 1600,
+      "bytes": 423898
+    },
+    {
+      "index": 18,
+      "source": "t01fdd7cfec629b1638.jpg",
+      "output": "/assets/images/wallpaper/wallpaper-18.webp",
+      "width": 1920,
+      "height": 1200,
+      "bytesPerMp": 746355,
+      "outputWidth": 1920,
+      "outputHeight": 1200,
+      "bytes": 402970
+    },
+    {
+      "index": 19,
+      "source": "desktop-original-d1.avif",
+      "output": "/assets/images/wallpaper/wallpaper-19.webp",
+      "width": 2416,
+      "height": 1376,
+      "bytesPerMp": 22023,
+      "outputWidth": 2416,
+      "outputHeight": 1376,
+      "bytes": 247500
+    },
+    {
+      "index": 20,
+      "source": "desktop-original-d2.avif",
+      "output": "/assets/images/wallpaper/wallpaper-20.webp",
+      "width": 2416,
+      "height": 1376,
+      "bytesPerMp": 29452,
+      "outputWidth": 2416,
+      "outputHeight": 1376,
+      "bytes": 314788
+    },
+    {
+      "index": 21,
+      "source": "desktop-original-d3.avif",
+      "output": "/assets/images/wallpaper/wallpaper-21.webp",
+      "width": 2688,
+      "height": 1536,
+      "bytesPerMp": 24709,
+      "outputWidth": 2688,
+      "outputHeight": 1536,
+      "bytes": 345600
+    },
+    {
+      "index": 22,
+      "source": "desktop-original-d4.avif",
+      "output": "/assets/images/wallpaper/wallpaper-22.webp",
+      "width": 2416,
+      "height": 1376,
+      "bytesPerMp": 22587,
+      "outputWidth": 2416,
+      "outputHeight": 1376,
+      "bytes": 250434
+    },
+    {
+      "index": 23,
+      "source": "desktop-original-d5.avif",
+      "output": "/assets/images/wallpaper/wallpaper-23.webp",
+      "width": 2688,
+      "height": 1536,
+      "bytesPerMp": 12527,
+      "outputWidth": 2688,
+      "outputHeight": 1536,
+      "bytes": 184564
+    },
+    {
+      "index": 24,
+      "source": "desktop-original-d6.avif",
+      "output": "/assets/images/wallpaper/wallpaper-24.webp",
+      "width": 2688,
+      "height": 1536,
+      "bytesPerMp": 16080,
+      "outputWidth": 2688,
+      "outputHeight": 1536,
+      "bytes": 233518
+    },
+    {
+      "index": 25,
+      "source": "《鸣潮》特别现场演出「WUWA TOGETHER」 宣传壁纸-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-25.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 675466
+    },
+    {
+      "index": 26,
+      "source": "7epdaq3s2mkz5mu.png",
+      "output": "/assets/images/wallpaper/wallpaper-26.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1149514
+    },
+    {
+      "index": 27,
+      "source": "爱弥斯 《于无垠电子海间轻舞》预告壁纸-10k( 含分图版).png",
+      "output": "/assets/images/wallpaper/wallpaper-27.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1935232
+    },
+    {
+      "index": 28,
+      "source": "爱弥斯 2月日历 向春而行的午后-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-28.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1045800
+    },
+    {
+      "index": 29,
+      "source": "爱弥斯 3.1版本开放壁纸-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-29.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 913770
+    },
+    {
+      "index": 30,
+      "source": "爱弥斯 88VIP联动壁纸-10k-600DPI.png",
+      "output": "/assets/images/wallpaper/wallpaper-30.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1476506
+    },
+    {
+      "index": 31,
+      "source": "爱弥斯 88VIP联动壁纸-20k-1200DPI.png",
+      "output": "/assets/images/wallpaper/wallpaper-31.webp",
+      "width": 21332,
+      "height": 12000,
+      "ratio": 1.7776666666666667,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1343194
+    },
+    {
+      "index": 32,
+      "source": "爱弥斯 环宇穹音-10k-600DPI.png",
+      "output": "/assets/images/wallpaper/wallpaper-32.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1239458
+    },
+    {
+      "index": 33,
+      "source": "爱弥斯 环宇穹音-20k-1200DPI.png",
+      "output": "/assets/images/wallpaper/wallpaper-33.webp",
+      "width": 21332,
+      "height": 12000,
+      "ratio": 1.7776666666666667,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1181468
+    },
+    {
+      "index": 34,
+      "source": "爱弥斯 鸣潮 × 高德地图联动宣传壁纸-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-34.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1384720
+    },
+    {
+      "index": 35,
+      "source": "爱弥斯 时光缝隙里的星火 2月15日壁纸.png",
+      "output": "/assets/images/wallpaper/wallpaper-35.webp",
+      "width": 10000,
+      "height": 5618,
+      "ratio": 1.7799928800284799,
+      "outputWidth": 3840,
+      "outputHeight": 2157,
+      "bytes": 1356400
+    },
+    {
+      "index": 36,
+      "source": "爱弥斯 未署名的祝福 新年签到1600星声壁纸-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-36.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 720700
+    },
+    {
+      "index": 37,
+      "source": "爱弥斯 小爱通讯预告壁纸-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-37.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 947926
+    },
+    {
+      "index": 38,
+      "source": "爱弥斯 元宵贺图-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-38.webp",
+      "width": 10240,
+      "height": 5765,
+      "ratio": 1.7762359063313096,
+      "outputWidth": 3837,
+      "outputHeight": 2160,
+      "bytes": 1480668
+    },
+    {
+      "index": 39,
+      "source": "爱弥斯 远航星剧情主线宣传图-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-39.webp",
+      "width": 10240,
+      "height": 4301,
+      "ratio": 2.380841664729133,
+      "outputWidth": 3840,
+      "outputHeight": 1613,
+      "bytes": 1086830
+    },
+    {
+      "index": 40,
+      "source": "爱弥斯 战斗演示封面-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-40.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1614122
+    },
+    {
+      "index": 41,
+      "source": "爱弥斯 X西班牙服10w粉丝贺图-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-41.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 946244
+    },
+    {
+      "index": 42,
+      "source": "鸣潮 Spotify平台歌单发布壁纸-9.6k.png",
+      "output": "/assets/images/wallpaper/wallpaper-42.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 923864
+    },
+    {
+      "index": 43,
+      "source": "莫宁 星轨间的私语 2月14日壁纸-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-43.webp",
+      "width": 10240,
+      "height": 5765,
+      "ratio": 1.7762359063313096,
+      "outputWidth": 3837,
+      "outputHeight": 2160,
+      "bytes": 1111228
+    },
+    {
+      "index": 44,
+      "source": "千咲 复刻壁纸-8k.png",
+      "output": "/assets/images/wallpaper/wallpaper-44.webp",
+      "width": 8294,
+      "height": 4666,
+      "ratio": 1.7775396485212174,
+      "outputWidth": 3839,
+      "outputHeight": 2160,
+      "bytes": 1151850
+    },
+    {
+      "index": 45,
+      "source": "千咲 Galaxy S26系列发布纪念活动壁纸-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-45.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 1334746
+    },
+    {
+      "index": 46,
+      "source": "hgcs7oy4in0ypsn.png",
+      "output": "/assets/images/wallpaper/wallpaper-46.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 844602
+    },
+    {
+      "index": 47,
+      "source": "wkh1jqy3dtfykt4.png",
+      "output": "/assets/images/wallpaper/wallpaper-47.webp",
+      "width": 10240,
+      "height": 5760,
+      "ratio": 1.7777777777777777,
+      "outputWidth": 3840,
+      "outputHeight": 2160,
+      "bytes": 980280
+    }
+  ],
+  "excluded": [
+    {
+      "name": "10.jpg",
+      "width": 627,
+      "height": 1200,
+      "ratio": 0.5225,
+      "bytesPerMp": 1243711
+    },
+    {
+      "name": "1131.png",
+      "width": 2048,
+      "height": 2048,
+      "ratio": 1,
+      "bytesPerMp": 166373
+    },
+    {
+      "name": "1be8ab20bdc9e1d0f7c4f8febff8bd90.webp",
+      "width": 1920,
+      "height": 1080,
+      "ratio": 1.7777777777777777,
+      "bytesPerMp": 58626
+    },
+    {
+      "name": "3.jpg",
+      "width": 1792,
+      "height": 1008,
+      "ratio": 1.7777777777777777,
+      "bytesPerMp": 137971
+    },
+    {
+      "name": "41ff17357c8442b58da8b08da9a6c0ca.jpg",
+      "width": 7111,
+      "height": 4000,
+      "ratio": 1.77775,
+      "bytesPerMp": 50511
+    },
+    {
+      "name": "5.jpg",
+      "width": 1860,
+      "height": 1279,
+      "ratio": 1.45426114151681,
+      "bytesPerMp": 168581
+    },
+    {
+      "name": "5185d400f99ae704cab43876acc1fc7e.webp",
+      "width": 2000,
+      "height": 1127,
+      "ratio": 1.774622892635315,
+      "bytesPerMp": 58696
+    },
+    {
+      "name": "5a2e8b12f2e48.jpg",
+      "width": 1920,
+      "height": 1080,
+      "ratio": 1.7777777777777777,
+      "bytesPerMp": 59117
+    },
+    {
+      "name": "5ad84013361bd.jpg",
+      "width": 1920,
+      "height": 1080,
+      "ratio": 1.7777777777777777,
+      "bytesPerMp": 52711
+    },
+    {
+      "name": "5af070f312032c84f7b9ac10fb7d466d.webp",
+      "width": 3508,
+      "height": 2480,
+      "ratio": 1.414516129032258,
+      "bytesPerMp": 30876
+    },
+    {
+      "name": "5b7595e45ebeb.jpg",
+      "width": 1920,
+      "height": 1080,
+      "ratio": 1.7777777777777777,
+      "bytesPerMp": 65625
+    },
+    {
+      "name": "6.jpg",
+      "width": 1200,
+      "height": 703,
+      "ratio": 1.7069701280227596,
+      "bytesPerMp": 1573651
+    },
+    {
+      "name": "622ead97bdc06ab6a013bf94a22a500b.webp",
+      "width": 3500,
+      "height": 2475,
+      "ratio": 1.4141414141414141,
+      "bytesPerMp": 25015
+    },
+    {
+      "name": "6de0eeb4667fad6124fb70fd7b08723f.webp",
+      "width": 4096,
+      "height": 2521,
+      "ratio": 1.6247520825069417,
+      "bytesPerMp": 58480
+    },
+    {
+      "name": "7.jpg",
+      "width": 1279,
+      "height": 1819,
+      "ratio": 0.703133589884552,
+      "bytesPerMp": 571963
+    },
+    {
+      "name": "7fe136f214ff360780a57c97777f5040.webp",
+      "width": 3352,
+      "height": 2010,
+      "ratio": 1.6676616915422886,
+      "bytesPerMp": 61603
+    },
+    {
+      "name": "8.jpg",
+      "width": 1279,
+      "height": 2666,
+      "ratio": 0.4797449362340585,
+      "bytesPerMp": 767377
+    },
+    {
+      "name": "8d4d0b77503f27a01ec0aae8dc86d55a.webp",
+      "width": 3508,
+      "height": 2480,
+      "ratio": 1.414516129032258,
+      "bytesPerMp": 55855
+    },
+    {
+      "name": "9.jpg",
+      "width": 1279,
+      "height": 1811,
+      "ratio": 0.7062396466040861,
+      "bytesPerMp": 98543
+    },
+    {
+      "name": "9d718787b124c3c3f07e43bd12fc8c0e.webp",
+      "width": 5120,
+      "height": 3072,
+      "ratio": 1.6666666666666667,
+      "bytesPerMp": 34359
+    },
+    {
+      "name": "a7c7bb70935a83043c3e17b63b17de99.webp",
+      "width": 7680,
+      "height": 4320,
+      "ratio": 1.7777777777777777,
+      "bytesPerMp": 34221
+    },
+    {
+      "name": "c0d548529c912fdfacbf4fc7179b7f94.webp",
+      "width": 3840,
+      "height": 2160,
+      "ratio": 1.7777777777777777,
+      "bytesPerMp": 39684
+    },
+    {
+      "name": "dcbf075f83991dad15e186d8eb097c4a.webp",
+      "width": 2007,
+      "height": 1417,
+      "ratio": 1.4163726182074805,
+      "bytesPerMp": 76259
+    },
+    {
+      "name": "eaZ8vdDpBOSAJuowkg05kQjz.jpg",
+      "width": 1920,
+      "height": 1080,
+      "ratio": 1.7777777777777777,
+      "bytesPerMp": 58587
+    },
+    {
+      "name": "JwuHdhw1iP41zOfS3uzpRDmR.jpg",
+      "width": 2508,
+      "height": 1771,
+      "ratio": 1.4161490683229814,
+      "bytesPerMp": 36689
+    },
+    {
+      "name": "mobile-original-m1.avif",
+      "width": 3328,
+      "height": 4864,
+      "ratio": 0.6842105263157895,
+      "bytesPerMp": 18957
+    },
+    {
+      "name": "mobile-original-m2.avif",
+      "width": 3328,
+      "height": 4864,
+      "ratio": 0.6842105263157895,
+      "bytesPerMp": 18637
+    },
+    {
+      "name": "mobile-original-m3.avif",
+      "width": 3328,
+      "height": 4864,
+      "ratio": 0.6842105263157895,
+      "bytesPerMp": 15200
+    },
+    {
+      "name": "mobile-original-m4.avif",
+      "width": 3328,
+      "height": 4864,
+      "ratio": 0.6842105263157895,
+      "bytesPerMp": 15578
+    },
+    {
+      "name": "mobile-original-m5.avif",
+      "width": 3328,
+      "height": 4864,
+      "ratio": 0.6842105263157895,
+      "bytesPerMp": 15845
+    },
+    {
+      "name": "mobile-original-m6.avif",
+      "width": 3328,
+      "height": 4864,
+      "ratio": 0.6842105263157895,
+      "bytesPerMp": 15058
+    },
+    {
+      "name": "Nf6TBA7rXhMqrxpMyl4F4mrw.jpg",
+      "width": 2972,
+      "height": 2000,
+      "ratio": 1.486,
+      "bytesPerMp": 44128
+    },
+    {
+      "name": "vXA4zIMGZFTcl8rExQGPYvCa.jpg",
+      "width": 1920,
+      "height": 1200,
+      "ratio": 1.6,
+      "bytesPerMp": 42920
+    },
+    {
+      "name": "w33HKycUIjDPGcn8MqUVQfyP.jpg",
+      "width": 1920,
+      "height": 1200,
+      "ratio": 1.6,
+      "bytesPerMp": 36191
+    }
+  ],
+  "mobileSelected": [
+    {
+      "index": 1,
+      "source": "(竖屏)千咲 Galaxy S26系列发布纪念活动壁纸-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-mobile-01.webp",
+      "width": 5760,
+      "height": 10240,
+      "ratio": 0.5625,
+      "outputWidth": 1440,
+      "outputHeight": 2560,
+      "bytes": 379584
+    },
+    {
+      "index": 2,
+      "source": "(竖屏)千咲 Galaxy S26系列主题预告图-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-mobile-02.webp",
+      "width": 5757,
+      "height": 10240,
+      "ratio": 0.56220703125,
+      "outputWidth": 1439,
+      "outputHeight": 2560,
+      "bytes": 354260
+    },
+    {
+      "index": 3,
+      "source": "爱弥斯 歌曲Aria封面-10k.png",
+      "output": "/assets/images/wallpaper/wallpaper-mobile-03.webp",
+      "width": 10240,
+      "height": 10240,
+      "ratio": 1,
+      "outputWidth": 1440,
+      "outputHeight": 1440,
+      "bytes": 212490
+    }
+  ],
+  "imports": [
+    {
+      "sourceDirectory": "C:\\Users\\Administrator\\Desktop\\鸣潮壁纸",
+      "importedAt": "2026-07-21T07:39:25.908Z",
+      "landscapeCount": 47,
+      "mobileOnlyCount": 3,
+      "webpQuality": 88
+    }
+  ]
+}

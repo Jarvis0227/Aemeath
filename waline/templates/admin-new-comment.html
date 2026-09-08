@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>{{site.name | safe}} · 收到新评论</title>
+    <style>
+      html,
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        background: #edf6ff !important;
+      }
+
+      table,
+      td,
+      a,
+      p {
+        font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+      }
+
+      .mail-hero {
+        table-layout: fixed;
+      }
+
+      .mail-hero-desc-mobile {
+        display: none;
+      }
+
+      @media only screen and (max-width: 600px) {
+        .mail-shell-pad {
+          padding: 16px 10px !important;
+        }
+
+        .mail-header-pad {
+          padding: 18px 20px 15px !important;
+        }
+
+        .mail-hero-wrap {
+          padding: 20px 16px 8px !important;
+        }
+
+        .mail-hero-copy {
+          width: 100% !important;
+          padding: 25px 22px 7px !important;
+          text-align: center !important;
+        }
+
+        .mail-hero-art {
+          display: none !important;
+        }
+
+        .mail-hero-title {
+          font-size: 24px !important;
+          line-height: 1.35 !important;
+          text-align: center !important;
+          white-space: normal !important;
+          word-break: keep-all !important;
+        }
+
+        .mail-hero-desc-desktop {
+          display: none !important;
+        }
+
+        .mail-hero-desc-mobile {
+          display: table-row !important;
+        }
+
+        .mail-hero-desc-mobile > td {
+          padding: 0 22px 18px !important;
+          color: #62809d !important;
+          font-size: 13px !important;
+          line-height: 1.65 !important;
+        }
+
+        .mail-body-pad,
+        .mail-meta-pad,
+        .mail-button-pad,
+        .mail-footer-pad {
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+        }
+
+        .mail-meta-cell {
+          display: block !important;
+          width: auto !important;
+          padding: 0 0 14px !important;
+        }
+
+        .mail-meta-cell:last-child {
+          padding-bottom: 0 !important;
+        }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; width: 100%; background: #edf6ff">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse; background: #edf6ff">
+      <tr>
+        <td class="mail-shell-pad" align="center" style="padding: 28px 12px">
+          <table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 640px; overflow: hidden; border-collapse: collapse; border-radius: 18px; background: #ffffff; box-shadow: 0 18px 48px rgba(92, 147, 196, 0.18)">
+            <tr>
+              <td style="padding: 0">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse">
+                  <tr>
+                    <td width="25%" height="5" style="height: 5px; background: #6eb7f5; font-size: 0; line-height: 0">&nbsp;</td>
+                    <td width="25%" height="5" style="height: 5px; background: #9cdaec; font-size: 0; line-height: 0">&nbsp;</td>
+                    <td width="25%" height="5" style="height: 5px; background: #f4d995; font-size: 0; line-height: 0">&nbsp;</td>
+                    <td width="25%" height="5" style="height: 5px; background: #9bbef6; font-size: 0; line-height: 0">&nbsp;</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="mail-header-pad" style="padding: 20px 32px 17px; border-bottom: 1px solid #e8f0f8">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse">
+                  <tr>
+                    <td valign="middle" style="padding: 0; color: #2a4d72; font-size: 16px; font-weight: 700; line-height: 1.25">
+                      <a href="{{site.url}}" style="color: #2a4d72; text-decoration: none">{{site.name | safe}}</a>
+                      <span style="padding-left: 7px; color: #8ba2bb; font-size: 12px; font-weight: 400">rainzt.cn</span>
+                    </td>
+                    <td align="right" valign="middle" style="padding: 0; color: #7892ad; font-size: 12px; line-height: 1.25">新评论提醒</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="mail-hero-wrap" style="padding: 28px 32px 8px">
+                <table class="mail-hero" role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; border-radius: 14px; background: #eff8ff">
+                  <tr>
+                    <td class="mail-hero-copy" width="64%" valign="middle" style="width: 64%; padding: 26px 0 25px 28px">
+                      <p class="mail-hero-title" style="margin: 0 0 9px; color: #315d8b; font-size: 24px; font-weight: 700; line-height: 1.38">你的博客收到新评论</p>
+                      <p class="mail-hero-desc-desktop" style="margin: 0; color: #62809d; font-size: 14px; line-height: 1.8">有人在文章里留下了新的想法。点开看看，也许正好开启一段新的交流。</p>
+                    </td>
+                    <td class="mail-hero-art" width="36%" align="right" valign="bottom" style="width: 36%; padding: 14px 12px 0 8px">
+                      <img src="https://rainzt.cn/assets/images/home-truncated/b-1.webp" width="142" alt="" style="display: block; width: 142px; max-width: 100%; height: auto; border: 0; outline: none" />
+                    </td>
+                  </tr>
+                  <tr class="mail-hero-desc-mobile">
+                    <td colspan="2" style="padding: 0 22px 18px; color: #62809d; font-size: 13px; line-height: 1.65">有人在文章里留下了新的想法。点开看看，也许正好开启一段新的交流。</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="mail-body-pad" style="padding: 23px 32px 0">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse">
+                  <tr>
+                    <td valign="top" style="padding: 0 10px 0 0">
+                      <p style="margin: 0 0 9px; color: #6b88a6; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.5">新的留言</p>
+                      <a href="{{site.postUrl}}" style="display: inline-block; margin: 0 0 10px; color: #3a75ad; font-size: 14px; font-weight: 700; line-height: 1.6; text-decoration: none">{{self.nick | safe}} 在「{{site.name | safe}}」发表了评论</a>
+                    </td>
+                    <td width="92" align="right" valign="top" style="width: 92px; padding: 0">
+                      <img src="https://rainzt.cn/assets/images/email/comment-decor.png" width="82" alt="" style="display: block; width: 82px; max-width: 82px; height: auto; border: 0; outline: none" />
+                    </td>
+                  </tr>
+                </table>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 11px; background: #f8fbfe">
+                  <tr>
+                    <td style="padding: 17px 18px; color: #344b62; font-size: 15px; line-height: 1.85">{{self.comment | safe}}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="mail-meta-pad" style="padding: 20px 32px 0">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid #dbeaf8; border-radius: 13px; background: #ffffff">
+                  <tr>
+                    <td class="mail-meta-cell" width="50%" valign="top" style="width: 50%; padding: 18px 10px 18px 20px">
+                      <p style="margin: 0 0 5px; color: #89a0b6; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.4">评论者</p>
+                      <p style="margin: 0; color: #417eb5; font-size: 14px; font-weight: 700; line-height: 1.6">{{self.nick | safe}}</p>
+                      <a href="mailto:{{self.mail}}" style="color: #718da8; font-size: 12px; line-height: 1.6; text-decoration: none">{{self.mail | safe}}</a>
+                    </td>
+                    <td class="mail-meta-cell" width="50%" valign="top" style="width: 50%; padding: 18px 20px 18px 10px">
+                      <p style="margin: 0 0 5px; color: #89a0b6; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.4">访问环境</p>
+                      <p style="margin: 0; color: #58748f; font-size: 12px; line-height: 1.7">{{self.addr | safe}}</p>
+                      <p style="margin: 0; color: #718da8; font-size: 12px; line-height: 1.7">{{self.browser | safe}} · {{self.os | safe}}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="mail-button-pad" align="center" style="padding: 28px 32px 14px">
+                <a href="{{site.postUrl}}" style="display: inline-block; padding: 12px 22px; border-radius: 9px; background: #6caeeb; color: #ffffff; font-size: 14px; font-weight: 700; line-height: 1.2; text-decoration: none; box-shadow: 0 7px 16px rgba(74, 142, 208, 0.23)">查看并回复评论</a>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="mail-footer-pad" style="padding: 16px 32px 28px">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse">
+                  <tr>
+                    <td height="1" style="height: 1px; background: #e8f0f8; font-size: 0; line-height: 0">&nbsp;</td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding: 18px 8px 0; color: #829ab1; font-size: 12px; line-height: 1.8">
+                      此邮件由 Rainzt 评论系统自动发送，仅用于通知站点管理员。<br />
+                      <span style="color: #6d8db0">物物而不物于物，念念而不念于念</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

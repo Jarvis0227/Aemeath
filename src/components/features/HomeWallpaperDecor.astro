@@ -1,0 +1,574 @@
+---
+import { Icon } from "astro-icon/components";
+import ImageWrapper from "@/components/common/ImageWrapper.astro";
+import { profileConfig, siteConfig } from "@/config";
+import { url } from "@/utils/url-utils";
+
+const quickLinks = [
+	{ label: "文章", href: url("/archive/") },
+	{ label: "友链", href: url("/friends/") },
+	{ label: "朋友圈", href: url("/moments/") },
+	{ label: "留言板", href: url("/guestbook/") },
+	{ label: "关于", href: url("/about/") },
+];
+
+const socialLinks = [
+	...profileConfig.links,
+	{
+		name: "RSS",
+		icon: "material-symbols:rss-feed-rounded",
+		url: url("/rss.xml"),
+		showName: false,
+	},
+];
+
+const stickerImages = [
+	{
+		key: "quote",
+		src: url("/images/home-stickers/claudecode.webp"),
+	},
+	{
+		key: "coder",
+		src: url("/monthly-2026-08/loading-girl.webp"),
+		initialStyle: "inset: 83.320066% auto auto 18.718750%;",
+	},
+	{
+		key: "blonde",
+		src: url("/images/home-stickers/blonde-idol.webp"),
+		initialStyle: "inset: 42.073794% auto auto 56.985938%;",
+	},
+	{
+		key: "dark",
+		src: url("/images/home-stickers/dark-haired-girl.webp"),
+		initialStyle: "inset: 36.321820% auto auto 36.997969%;",
+	},
+	{
+		key: "pink-bows",
+		src: url("/images/home-stickers/pink-bows.webp"),
+		initialStyle: "inset: 85.879934% auto auto 67.690625%;",
+	},
+	{
+		key: "aqua-singer",
+		src: url("/images/home-stickers/aqua-singer.webp"),
+		initialStyle: "inset: 85.100877% auto auto 60.510937%;",
+	},
+	{
+		key: "blue-witch",
+		src: url("/images/home-stickers/blue-witch.webp"),
+		initialStyle: "inset: 84.791667% auto auto 28.275156%;",
+	},
+	{
+		key: "white-haired-reader",
+		src: url("/images/home-stickers/white-haired-reader.webp"),
+		initialStyle: "inset: 85.243092% auto auto 34.902135%;",
+	},
+	{
+		key: "brown-lightning",
+		src: url("/images/home-stickers/brown-lightning.webp"),
+		initialStyle: "inset: 84.653289% auto auto 74.681250%;",
+	},
+	{
+		key: "pink-cat",
+		src: url("/images/home-stickers/pink-cat.webp"),
+		initialStyle: "inset: 86.495175% auto auto 81.020312%;",
+	},
+	{
+		key: "bamboo-girl",
+		src: url("/images/home-stickers/bamboo-girl.webp"),
+		initialStyle: "inset: 86.281360% auto auto 53.490625%;",
+	},
+	{
+		key: "pink-uniform",
+		src: url("/images/home-stickers/pink-uniform.webp"),
+		initialStyle: "inset: 86.343640% auto auto 41.756979%;",
+	},
+];
+
+const quoteSticker = stickerImages.find((sticker) => sticker.key === "quote");
+const floatingStickerImages = stickerImages.filter(
+	(sticker) => sticker.key !== "quote",
+);
+const mobileStickerKeys = [
+	"coder",
+	"blonde",
+	"brown-lightning",
+	"blue-witch",
+];
+---
+
+<div class="home-wallpaper-decor" data-home-wallpaper-decor>
+	<div class="home-wallpaper-decor__stickers" aria-hidden="true">
+		{floatingStickerImages.map((sticker) => (
+			<div
+				class:list={[
+					"home-wallpaper-sticker",
+					`home-wallpaper-sticker--${sticker.key}`,
+				]}
+				style={sticker.initialStyle}
+				data-home-wallpaper-initial-style={sticker.initialStyle}
+				data-home-wallpaper-mobile={mobileStickerKeys.includes(sticker.key) ? "true" : "false"}
+				data-home-wallpaper-sticker
+			>
+				<img
+					src={sticker.src}
+					alt=""
+					style="width: 100% !important; height: auto !important; max-height: none !important; object-fit: contain !important;"
+					loading="eager"
+					decoding="async"
+					referrerpolicy="no-referrer"
+				/>
+			</div>
+		))}
+
+		<div
+			class="home-wallpaper-sticker home-wallpaper-sticker--note home-wallpaper-sticker--fixed"
+			style="inset: 60.079825% auto auto 60.952083%;"
+		>
+			<span>欢迎访问</span>
+		</div>
+	</div>
+
+	<article class="home-wallpaper-card">
+		<div class="home-wallpaper-card__content">
+			<div class="home-wallpaper-card__avatar-wrap">
+				<ImageWrapper
+					src={profileConfig.avatar || "assets/images/rain-avatar.webp"}
+					alt={`${profileConfig.name}头像`}
+					class="home-wallpaper-card__avatar"
+					loading="eager"
+					fetchpriority="high"
+				/>
+				{quoteSticker && (
+					<img
+						class="home-wallpaper-card__avatar-sticker"
+						src={quoteSticker.src}
+						alt=""
+						aria-hidden="true"
+						draggable="false"
+						style="width: min(78px, 18vw) !important; height: auto !important; max-width: none !important; max-height: none !important; object-fit: contain !important; object-position: center !important; transform: translate(-7.030914px, -3.092804px);"
+						loading="eager"
+						decoding="async"
+						referrerpolicy="no-referrer"
+					/>
+				)}
+			</div>
+
+    <p class="home-wallpaper-card__identity">
+      <span class="home-wallpaper-card__identity-mark" aria-hidden="true"></span>
+      <span class="home-wallpaper-card__motion-text">{profileConfig.name}</span>
+    </p>
+    <h1><span class="home-wallpaper-card__motion-text">{siteConfig.title}</span></h1>
+    <p class="home-wallpaper-card__subtitle">
+      <span class="home-wallpaper-card__motion-text">{siteConfig.subtitle}</span>
+    </p>
+
+    <nav class="home-wallpaper-card__nav" aria-label="首页快捷导航">
+      {quickLinks.map((link) => (
+        <a href={link.href}>
+          <span class="home-wallpaper-card__motion-text">{link.label}</span>
+        </a>
+      ))}
+    </nav>
+
+			{socialLinks.length > 0 && (
+				<div class="home-wallpaper-card__socials" aria-label="社交链接">
+					{socialLinks.map((link) =>
+						link.url.startsWith("copy:") ? (
+							<button
+								type="button"
+								class="home-wallpaper-card__social-link"
+								aria-label={`${link.name}，点击复制`}
+								data-home-wallpaper-copy={link.url.slice("copy:".length)}
+							>
+								<span class="home-wallpaper-card__social-icon" aria-hidden="true">
+									<Icon is:inline name={link.icon} aria-hidden="true" />
+								</span>
+							</button>
+						) : (
+							<a
+								class="home-wallpaper-card__social-link"
+								rel="me noopener noreferrer"
+								aria-label={link.name}
+								href={link.url}
+								target="_blank"
+							>
+								<span class="home-wallpaper-card__social-icon" aria-hidden="true">
+									<Icon is:inline name={link.icon} aria-hidden="true" />
+								</span>
+							</a>
+						),
+					)}
+				</div>
+			)}
+
+			<div
+				class="home-wallpaper-copy-toast"
+				data-home-wallpaper-copy-toast
+				role="status"
+				aria-live="polite"
+				aria-atomic="true"
+			></div>
+		</div>
+	</article>
+</div>
+
+<script is:inline>
+	(() => {
+		const mobileStickerZones = [
+			{ minX: 3, maxX: 24, minY: 18, maxY: 36 },
+			{ minX: 76, maxX: 94, minY: 18, maxY: 36 },
+			{ minX: 3, maxX: 23, minY: 51, maxY: 70 },
+			{ minX: 77, maxX: 94, minY: 51, maxY: 70 },
+		];
+
+		const shuffled = (items) => {
+			const copy = [...items];
+			for (let index = copy.length - 1; index > 0; index -= 1) {
+				const swapIndex = Math.floor(Math.random() * (index + 1));
+				[copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+			}
+			return copy;
+		};
+
+		const randomizeMobileStickers = (decor) => {
+			if (!window.matchMedia("(max-width: 767px)").matches) return;
+
+			const wallpaper = decor.closest("#wallpaper-wrapper") || decor;
+			const wallpaperRect = wallpaper.getBoundingClientRect();
+			const stickers = [
+				...decor.querySelectorAll(
+					'[data-home-wallpaper-sticker][data-home-wallpaper-mobile="true"]',
+				),
+			];
+			if (!wallpaperRect.width || !wallpaperRect.height || stickers.length === 0) {
+				return;
+			}
+
+			shuffled(stickers).forEach((sticker, index) => {
+				const zone = mobileStickerZones[index % mobileStickerZones.length];
+				const stickerRect = sticker.getBoundingClientRect();
+				const stickerWidth = (stickerRect.width / wallpaperRect.width) * 100;
+				const stickerHeight = (stickerRect.height / wallpaperRect.height) * 100;
+				const maxLeft = Math.max(2, 96 - stickerWidth);
+				const maxTop = Math.max(2, 96 - stickerHeight);
+				const left = Math.min(
+					maxLeft,
+					zone.minX + Math.random() * (zone.maxX - zone.minX),
+				);
+				const top = Math.min(
+					maxTop,
+					zone.minY + Math.random() * (zone.maxY - zone.minY),
+				);
+
+				sticker.style.inset = "auto";
+				sticker.style.left = `${left}%`;
+				sticker.style.top = `${top}%`;
+				sticker.style.right = "auto";
+				sticker.style.bottom = "auto";
+			});
+		};
+
+		const restoreDesktopStickerPositions = (decor) => {
+			if (window.matchMedia("(max-width: 767px)").matches) return;
+			decor
+				.querySelectorAll("[data-home-wallpaper-initial-style]")
+				.forEach((sticker) => {
+					const initialStyle = sticker.getAttribute(
+						"data-home-wallpaper-initial-style",
+					);
+					if (initialStyle) sticker.setAttribute("style", initialStyle);
+				});
+		};
+
+		const bindMobileStickerLayout = (decor) => {
+			const mediaQuery = window.matchMedia("(max-width: 767px)");
+			const applyLayout = () => {
+				if (mediaQuery.matches) {
+					window.requestAnimationFrame(() => randomizeMobileStickers(decor));
+				} else {
+					restoreDesktopStickerPositions(decor);
+				}
+			};
+
+			applyLayout();
+			mediaQuery.addEventListener?.("change", applyLayout);
+		};
+
+		const waitForIntroCompletion = (callback) => {
+			const intro = document.getElementById("home-portfolio-intro");
+			if (!intro || intro.classList.contains("is-complete")) {
+				callback();
+				return;
+			}
+
+			let completed = false;
+			const finish = () => {
+				if (completed) return;
+				completed = true;
+				window.removeEventListener("home-portfolio-intro-complete", finish);
+				callback();
+			};
+
+			window.addEventListener("home-portfolio-intro-complete", finish);
+			window.requestAnimationFrame(() => {
+				if (intro.classList.contains("is-complete")) finish();
+			});
+		};
+
+		const revealHomeWallpaperDecor = (decor, replay = false) => {
+			if (!(decor instanceof HTMLElement)) return;
+			const wallpaper = decor.closest("#wallpaper-wrapper");
+
+			if (replay) {
+				decor.classList.remove("is-ready");
+				wallpaper?.classList.remove("home-wallpaper-motion-ready");
+				decor
+					.querySelectorAll(".is-motion-settled")
+					.forEach((element) => element.classList.remove("is-motion-settled"));
+				void decor.offsetWidth;
+			}
+
+			if (!replay && decor.dataset.revealBound === "true") return;
+			decor.dataset.revealBound = "true";
+			if (decor.dataset.motionCleanupBound !== "true") {
+				decor.dataset.motionCleanupBound = "true";
+				decor.addEventListener("animationend", (event) => {
+					if (
+						event.target instanceof HTMLElement &&
+						event.animationName.startsWith("home-wallpaper-")
+					) {
+						event.target.classList.add("is-motion-settled");
+					}
+				});
+			}
+
+			const images = [...decor.querySelectorAll("img")];
+			const waitForImage = (image) => {
+				if (image.complete) return Promise.resolve();
+
+				return new Promise((resolve) => {
+					let settled = false;
+					const finish = () => {
+						if (settled) return;
+						settled = true;
+						resolve();
+					};
+
+					image.addEventListener("load", finish, { once: true });
+					image.addEventListener("error", finish, { once: true });
+					window.setTimeout(finish, 1400);
+				});
+			};
+
+			Promise.all(images.map(waitForImage)).then(() => {
+				waitForIntroCompletion(() => {
+					if (!decor.isConnected) return;
+					window.requestAnimationFrame(() => {
+						wallpaper?.classList.add("home-wallpaper-motion-ready");
+						window.requestAnimationFrame(() => {
+							decor.classList.add("is-ready");
+						});
+					});
+				});
+			});
+		};
+
+		const bindHomeWallpaperReveal = (decor) => {
+			if (!(decor instanceof HTMLElement)) return;
+			if (decor.dataset.modeRevealBound !== "true") {
+				decor.dataset.modeRevealBound = "true";
+				window.addEventListener("wallpaperModeChange", (event) => {
+					const wallpaper = decor.closest("#wallpaper-wrapper");
+					if (event.detail?.mode === "fullscreen") {
+						revealHomeWallpaperDecor(decor, true);
+					} else {
+						decor.classList.remove("is-ready");
+						wallpaper?.classList.remove("home-wallpaper-motion-ready");
+					}
+				});
+			}
+
+			revealHomeWallpaperDecor(decor);
+		};
+
+		const bindHomeWallpaperStickers = () => {
+			const decor = document.querySelector(".home-wallpaper-decor");
+			if (!decor || decor.getAttribute("data-stickers-bound") === "true") return;
+
+			decor.setAttribute("data-stickers-bound", "true");
+			bindMobileStickerLayout(decor);
+			bindHomeWallpaperReveal(decor);
+			const wallpaper = decor.closest("#wallpaper-wrapper") || decor;
+			const stickers = decor.querySelectorAll("[data-home-wallpaper-sticker]");
+
+			stickers.forEach((sticker) => {
+				let dragState = null;
+				const isAvatarSticker = sticker.hasAttribute(
+					"data-home-wallpaper-avatar-sticker",
+				);
+
+				sticker.addEventListener("pointerdown", (event) => {
+					if (event.button !== 0 && event.pointerType !== "touch") return;
+
+					const wallpaperRect = wallpaper.getBoundingClientRect();
+					const stickerRect = sticker.getBoundingClientRect();
+					const baseTranslateX =
+						Number.parseFloat(
+							sticker.getAttribute("data-home-wallpaper-drag-x") || "0",
+						) || 0;
+					const baseTranslateY =
+						Number.parseFloat(
+							sticker.getAttribute("data-home-wallpaper-drag-y") || "0",
+						) || 0;
+					dragState = {
+						startX: event.clientX,
+						startY: event.clientY,
+						isAvatarSticker,
+						left: stickerRect.left - wallpaperRect.left,
+						top: stickerRect.top - wallpaperRect.top,
+						maxLeft: Math.max(0, wallpaperRect.width - stickerRect.width),
+						maxTop: Math.max(0, wallpaperRect.height - stickerRect.height),
+						translateX: baseTranslateX,
+						translateY: baseTranslateY,
+					};
+
+					sticker.setPointerCapture?.(event.pointerId);
+					sticker.classList.add("is-dragging");
+					if (!isAvatarSticker) {
+						sticker.style.left = `${dragState.left}px`;
+						sticker.style.top = `${dragState.top}px`;
+						sticker.style.right = "auto";
+						sticker.style.bottom = "auto";
+					}
+					sticker.style.zIndex = "8";
+				});
+
+				sticker.addEventListener("pointermove", (event) => {
+					if (!dragState) return;
+					event.preventDefault();
+					if (dragState.isAvatarSticker) {
+						dragState.translateX =
+							dragState.translateX + event.clientX - dragState.startX;
+						dragState.translateY =
+							dragState.translateY + event.clientY - dragState.startY;
+						dragState.startX = event.clientX;
+						dragState.startY = event.clientY;
+						sticker.style.transform = `translate(${dragState.translateX}px, ${dragState.translateY}px)`;
+						return;
+					}
+					const nextLeft = Math.min(
+						dragState.maxLeft,
+						Math.max(0, dragState.left + event.clientX - dragState.startX),
+					);
+					const nextTop = Math.min(
+						dragState.maxTop,
+						Math.max(0, dragState.top + event.clientY - dragState.startY),
+					);
+					sticker.style.left = `${nextLeft}px`;
+					sticker.style.top = `${nextTop}px`;
+				});
+
+				const stopDragging = (event) => {
+					if (!dragState) return;
+					if (sticker.hasPointerCapture?.(event.pointerId)) {
+						sticker.releasePointerCapture?.(event.pointerId);
+					}
+					if (dragState.isAvatarSticker) {
+						sticker.setAttribute(
+							"data-home-wallpaper-drag-x",
+							String(dragState.translateX),
+						);
+						sticker.setAttribute(
+							"data-home-wallpaper-drag-y",
+							String(dragState.translateY),
+						);
+					}
+					dragState = null;
+					sticker.classList.remove("is-dragging");
+					sticker.style.zIndex = "";
+				};
+
+				sticker.addEventListener("pointerup", stopDragging);
+				sticker.addEventListener("pointercancel", stopDragging);
+			});
+		};
+
+		const bindHomeWallpaperCopyLinks = () => {
+			const decor = document.querySelector(".home-wallpaper-decor");
+			if (!(decor instanceof HTMLElement) || decor.dataset.copyBound === "true") {
+				return;
+			}
+
+			const copyLinks = decor.querySelectorAll("[data-home-wallpaper-copy]");
+			const toast = decor.querySelector("[data-home-wallpaper-copy-toast]");
+			if (!(toast instanceof HTMLElement) || copyLinks.length === 0) return;
+
+			decor.dataset.copyBound = "true";
+			let toastTimer = 0;
+
+			const showToast = (message, isError = false) => {
+				toast.textContent = message;
+				toast.classList.toggle("is-error", isError);
+				toast.classList.add("is-visible");
+				window.clearTimeout(toastTimer);
+				toastTimer = window.setTimeout(() => {
+					toast.classList.remove("is-visible");
+				}, 1800);
+			};
+
+			const fallbackCopy = (value) => {
+				const input = document.createElement("textarea");
+				input.value = value;
+				input.setAttribute("readonly", "");
+				input.style.position = "fixed";
+				input.style.top = "-9999px";
+				input.style.left = "-9999px";
+				input.style.opacity = "0";
+				document.body.appendChild(input);
+				input.focus();
+				input.select();
+
+				let copied = false;
+				try {
+					copied = document.execCommand("copy");
+				} catch {
+					copied = false;
+				}
+				input.remove();
+				return copied;
+			};
+
+			copyLinks.forEach((copyLink) => {
+				copyLink.addEventListener("click", async (event) => {
+					event.preventDefault();
+					const value = copyLink
+						.getAttribute("data-home-wallpaper-copy")
+						?.trim();
+					if (!value) {
+						showToast("复制失败，请手动复制", true);
+						return;
+					}
+
+					let copied = false;
+					if (navigator.clipboard?.writeText) {
+						try {
+							await navigator.clipboard.writeText(value);
+							copied = true;
+						} catch {
+							copied = false;
+						}
+					}
+					if (!copied) copied = fallbackCopy(value);
+					showToast(copied ? "已复制" : "复制失败，请手动复制", !copied);
+				});
+			});
+		};
+
+		bindHomeWallpaperStickers();
+		bindHomeWallpaperCopyLinks();
+		document.addEventListener("astro:page-load", bindHomeWallpaperStickers);
+		document.addEventListener("astro:page-load", bindHomeWallpaperCopyLinks);
+		document.addEventListener("swup:page:view", bindHomeWallpaperStickers);
+		document.addEventListener("swup:page:view", bindHomeWallpaperCopyLinks);
+	})();
+</script>

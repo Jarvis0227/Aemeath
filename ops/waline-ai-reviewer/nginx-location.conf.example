@@ -1,0 +1,44 @@
+# Replace the certificate paths, then include this server block from nginx.conf.
+# The application itself only listens on 127.0.0.1:8371.
+limit_req_zone $binary_remote_addr zone=waline_ai_admin_login:10m rate=10r/m;
+
+server {
+	listen 443 ssl http2;
+	listen [::]:443 ssl http2;
+	server_name rainzt.cn;
+
+	ssl_certificate /etc/letsencrypt/live/rainzt.cn/fullchain.pem;
+	ssl_certificate_key /etc/letsencrypt/live/rainzt.cn/privkey.pem;
+	add_header Strict-Transport-Security "max-age=31536000" always;
+
+	location = /ai-comment-admin {
+		return 308 /ai-comment-admin/;
+	}
+
+	location = /ai-comment-admin/login {
+		limit_req zone=waline_ai_admin_login burst=5 nodelay;
+		proxy_pass http://127.0.0.1:8371;
+		proxy_http_version 1.1;
+		proxy_set_header Host $host;
+		proxy_set_header X-Forwarded-Proto https;
+		proxy_set_header Connection "";
+		client_max_body_size 64k;
+	}
+
+	# No trailing URI on proxy_pass: nginx forwards the complete /ai-comment-admin/... path.
+	location ^~ /ai-comment-admin/ {
+		proxy_pass http://127.0.0.1:8371;
+		proxy_http_version 1.1;
+		proxy_set_header Host $host;
+		proxy_set_header X-Forwarded-Proto https;
+		proxy_set_header Connection "";
+		client_max_body_size 64k;
+	}
+}
+
+server {
+	listen 80;
+	listen [::]:80;
+	server_name rainzt.cn;
+	return 301 https://$host$request_uri;
+}

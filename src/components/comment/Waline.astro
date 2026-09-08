@@ -1,0 +1,1310 @@
+---
+import {
+	analyticsConfig,
+	commentConfig,
+	getEnabledFriends,
+	siteConfig,
+} from "@/config";
+
+interface Props {
+	path: string;
+}
+
+const config = {
+	...commentConfig.waline,
+	path: Astro.props.path,
+	dark: "html.dark",
+	wordLimit: ["2", "300"],
+	// Umami 配置完成后，页面访问量统一由 Umami 记录，避免重复计数与额外请求。
+	...(commentConfig.waline?.visitorCount &&
+	!(
+		analyticsConfig.umamiAnalytics?.websiteId &&
+		analyticsConfig.umamiAnalytics.shareId &&
+		analyticsConfig.umamiAnalytics.shareApiBase &&
+		analyticsConfig.umamiAnalytics.showPageViews !== false
+	)
+		? { pageview: true }
+		: {}),
+	...(import.meta.env.DEV || ["localhost", "127.0.0.1", "::1", "0.0.0.0"].includes(Astro.url.hostname.toLowerCase())
+		? { pageview: false }
+		: {}),
+};
+
+const recommendedFriendUrls = getEnabledFriends()
+	.filter((friend) => friend.recommended === true)
+	.map((friend) => friend.siteurl);
+const ownerWalineUserIds = [2];
+const aiWalineUserIds: number[] = [];
+---
+<!-- Waline -->
+<div class="relative w-full">
+  <div
+    id="waline"
+    data-waline-root
+    data-waline-config={JSON.stringify(config)}
+    data-waline-path={Astro.props.path}
+    data-waline-site-url={siteConfig.site_url}
+    data-waline-recommended-links={JSON.stringify(recommendedFriendUrls)}
+    data-waline-owner-user-ids={JSON.stringify(ownerWalineUserIds)}
+    data-waline-ai-user-ids={JSON.stringify(aiWalineUserIds)}
+  ></div>
+</div>
+
+<style is:global>
+	#waline {
+		--waline-theme-color: var(--primary);
+		--waline-active-color: var(--primary);
+		--waline-color: var(--btn-content);
+		--waline-info-color: var(--content-meta);
+		--waline-bgcolor: transparent;
+		--waline-bgcolor-light: var(--btn-regular-bg);
+		--waline-border-color: var(--line-divider);
+		--waline-disable-bgcolor: var(--btn-regular-bg);
+	}
+
+	#waline .wl-panel {
+		border-radius: 0.9rem;
+		background: color-mix(in oklab, var(--card-bg) 76%, transparent);
+	}
+
+	/* A compact, page-specific note for the friend-link comment workflow. */
+	#waline .waline-link-tip {
+		position: relative;
+		display: flex;
+		align-items: flex-start;
+		gap: 0.72rem;
+		margin: 0.8rem 0 1rem;
+		padding: 0.82rem 0.92rem 0.86rem;
+		overflow: hidden;
+		border: 1px solid color-mix(in oklab, var(--primary) 28%, var(--line-divider));
+		border-radius: 0.9rem;
+		background:
+			linear-gradient(135deg,
+				color-mix(in oklab, var(--primary) 11%, var(--card-bg)),
+				color-mix(in oklab, #ffd7e7 22%, var(--card-bg)));
+		color: var(--btn-content);
+		box-shadow: 0 0.45rem 1.2rem color-mix(in oklab, var(--primary) 11%, transparent);
+	}
+
+	#waline .waline-link-tip::before {
+		position: absolute;
+		inset: 0 0 auto;
+		height: 3px;
+		background: linear-gradient(90deg, var(--primary), #f4a7c8);
+		content: "";
+		opacity: 0.8;
+	}
+
+	#waline .waline-link-tip-icon {
+		flex: 0 0 1.72rem;
+		width: 1.72rem;
+		height: 1.72rem;
+		margin-top: 0.06rem;
+		border-radius: 50%;
+		background: var(--primary);
+		-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 10v6'/%3E%3Cpath d='M12 7h.01'/%3E%3C/svg%3E") center / contain no-repeat;
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 10v6'/%3E%3Cpath d='M12 7h.01'/%3E%3C/svg%3E") center / contain no-repeat;
+	}
+
+	#waline .waline-link-tip-body {
+		min-width: 0;
+	}
+
+	#waline .waline-link-tip-title {
+		display: block;
+		margin: 0 0 0.18rem;
+		color: color-mix(in oklab, var(--primary) 84%, var(--deep-text));
+		font-size: 0.82rem;
+		font-weight: 800;
+		line-height: 1.35;
+	}
+
+	#waline .waline-link-tip-text {
+		margin: 0;
+		color: color-mix(in oklab, var(--btn-content) 88%, var(--content-meta));
+		font-size: 0.76rem;
+		line-height: 1.7;
+		overflow-wrap: anywhere;
+	}
+
+	#waline .waline-link-tip-action {
+		display: inline-block;
+		margin-inline: 0.16rem;
+		padding: 0.05rem 0.34rem;
+		border-radius: 0.4rem;
+		background: color-mix(in oklab, var(--primary) 14%, transparent);
+		color: var(--primary);
+		font-weight: 800;
+		white-space: nowrap;
+	}
+
+	html.dark #waline .waline-link-tip {
+		border-color: color-mix(in oklab, var(--primary) 34%, var(--line-divider));
+		background:
+			linear-gradient(135deg,
+				color-mix(in oklab, var(--primary) 16%, var(--card-bg)),
+				color-mix(in oklab, #7a3a59 24%, var(--card-bg)));
+	}
+
+	html.dark #waline .waline-link-tip-text {
+		color: color-mix(in oklab, var(--btn-content) 84%, white);
+	}
+
+	/* Keep long reply threads quiet by default: the first reply stays visible and the
+	 * remaining replies are available through one explicit, keyboard-friendly control. */
+	#waline .wl-card-item.waline-reply-hidden {
+		display: none;
+	}
+
+	#waline .wl-quote[data-waline-reply-collapse] {
+		padding-block-end: 0;
+	}
+
+	#waline .waline-reply-toggle {
+		display: flex;
+		width: fit-content;
+		align-items: center;
+		gap: 0.42rem;
+		margin: 0.06rem auto 0.34rem;
+		padding: 0.18rem 0.08rem;
+		border: 0;
+		border-radius: 0.35rem;
+		background: transparent;
+		color: color-mix(in oklab, var(--primary) 72%, var(--content-meta));
+		font: 700 0.69rem/1.25 var(--font-body, inherit);
+		cursor: pointer;
+		transition:
+			color 0.2s ease,
+			background-color 0.2s ease,
+			transform 0.2s ease;
+	}
+
+	#waline .waline-reply-toggle::after {
+		width: 0.38rem;
+		height: 0.38rem;
+		border-inline-end: 1.5px solid currentColor;
+		border-block-end: 1.5px solid currentColor;
+		content: "";
+		transform: translateY(-0.1rem) rotate(45deg);
+		transition: transform 0.2s ease;
+	}
+
+	#waline .waline-reply-toggle[data-waline-reply-expanded="true"]::after {
+		transform: translateY(0.1rem) rotate(225deg);
+	}
+
+	#waline .waline-reply-toggle:hover {
+		background: color-mix(in oklab, var(--primary) 8%, transparent);
+		color: var(--primary);
+		transform: translateY(-1px);
+	}
+
+	#waline .waline-reply-toggle:focus-visible {
+		outline: 2px solid color-mix(in oklab, var(--primary) 42%, transparent);
+		outline-offset: 2px;
+	}
+
+	#waline .waline-reply-toggle:active {
+		transform: translateY(0);
+	}
+
+	#waline .wl-quote[data-waline-reply-collapse]:not([data-waline-reply-expanded="true"])
+		> .wl-card-item:first-of-type > .wl-card {
+		border-bottom-color: transparent;
+	}
+
+	#waline .wl-btn.primary {
+		border-radius: 0.75rem;
+	}
+
+	#waline .firefly-comment-filter {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.42rem;
+		margin-inline-start: auto;
+		min-width: 0;
+		color: var(--content-meta);
+		font-size: 0.75rem;
+	}
+
+	#waline .firefly-comment-filter-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.38rem;
+		min-height: 2rem;
+		padding: 0.36rem 0.68rem;
+		border: 1px solid color-mix(in oklab, var(--primary) 22%, var(--line-divider));
+		border-radius: 999px;
+		background: color-mix(in oklab, var(--card-bg) 78%, transparent);
+		color: var(--content-meta);
+		font-size: 0.75rem;
+		font-weight: 700;
+		line-height: 1.2;
+		white-space: nowrap;
+		transition:
+			border-color 0.2s ease,
+			background-color 0.2s ease,
+			color 0.2s ease,
+			box-shadow 0.2s ease,
+			transform 0.2s ease;
+	}
+
+	#waline .firefly-comment-filter-toggle:hover {
+		border-color: color-mix(in oklab, var(--primary) 48%, var(--line-divider));
+		color: var(--primary);
+		box-shadow: 0 0.25rem 0.8rem color-mix(in oklab, var(--primary) 11%, transparent);
+		transform: translateY(-1px);
+	}
+
+	#waline .firefly-comment-filter-toggle:focus-visible,
+	#waline .firefly-comment-filter-confirm:focus-visible,
+	#waline .firefly-comment-filter-cancel:focus-visible,
+	#waline .firefly-comment-filter-input:focus-visible {
+		outline: 2px solid color-mix(in oklab, var(--primary) 58%, transparent);
+		outline-offset: 2px;
+	}
+
+	#waline .firefly-comment-filter-toggle[data-active="true"] {
+		border-color: color-mix(in oklab, var(--primary) 58%, transparent);
+		background: color-mix(in oklab, var(--primary) 12%, var(--card-bg));
+		color: var(--primary);
+		box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary) 10%, transparent);
+	}
+
+	#waline .firefly-comment-filter-icon {
+		width: 0.82rem;
+		height: 0.82rem;
+		flex: 0 0 auto;
+		background: currentColor;
+		-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M4 5.5c0-.83.67-1.5 1.5-1.5h13c.83 0 1.5.67 1.5 1.5 0 .38-.14.74-.4 1.02l-5.1 5.56V18l-3 1.5v-7.42L6.4 6.52A1.5 1.5 0 0 1 4 5.5Z'/%3E%3C/svg%3E");
+		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M4 5.5c0-.83.67-1.5 1.5-1.5h13c.83 0 1.5.67 1.5 1.5 0 .38-.14.74-.4 1.02l-5.1 5.56V18l-3 1.5v-7.42L6.4 6.52A1.5 1.5 0 0 1 4 5.5Z'/%3E%3C/svg%3E");
+		-webkit-mask-position: center;
+		mask-position: center;
+		-webkit-mask-repeat: no-repeat;
+		mask-repeat: no-repeat;
+		-webkit-mask-size: contain;
+		mask-size: contain;
+	}
+
+	#waline .firefly-comment-filter-status {
+		max-width: 13rem;
+		overflow: hidden;
+		color: var(--content-meta);
+		font-size: 0.68rem;
+		line-height: 1.35;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	#waline .firefly-comment-filter-panel {
+		position: absolute;
+		top: calc(100% + 0.6rem);
+		right: 0;
+		z-index: 5;
+		width: min(21rem, calc(100vw - 2rem));
+		padding: 0.76rem;
+		border: 1px solid color-mix(in oklab, var(--primary) 24%, var(--line-divider));
+		border-radius: 0.85rem;
+		background: color-mix(in oklab, var(--card-bg) 94%, transparent);
+		box-shadow: 0 0.8rem 2rem color-mix(in oklab, #17365d 14%, transparent);
+		backdrop-filter: blur(14px);
+	}
+
+	#waline .firefly-comment-filter-panel[hidden] {
+		display: none;
+	}
+
+	#waline .firefly-comment-filter-panel p {
+		margin: 0 0 0.62rem;
+		color: var(--content-meta);
+		font-size: 0.72rem;
+		line-height: 1.55;
+	}
+
+	#waline .firefly-comment-filter-form {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto auto;
+		gap: 0.4rem;
+	}
+
+	#waline .firefly-comment-filter-input {
+		min-width: 0;
+		padding: 0.46rem 0.58rem;
+		border: 1px solid var(--line-divider);
+		border-radius: 0.56rem;
+		background: color-mix(in oklab, var(--btn-regular-bg) 58%, var(--card-bg));
+		color: var(--btn-content);
+		font-size: 0.75rem;
+	}
+
+	#waline .firefly-comment-filter-confirm,
+	#waline .firefly-comment-filter-cancel {
+		padding: 0.46rem 0.62rem;
+		border: 1px solid transparent;
+		border-radius: 0.56rem;
+		font-size: 0.72rem;
+		font-weight: 750;
+		line-height: 1.2;
+		white-space: nowrap;
+	}
+
+	#waline .firefly-comment-filter-confirm {
+		border-color: color-mix(in oklab, var(--primary) 40%, transparent);
+		background: color-mix(in oklab, var(--primary) 15%, var(--card-bg));
+		color: var(--primary);
+	}
+
+	#waline .firefly-comment-filter-cancel {
+		border-color: var(--line-divider);
+		background: transparent;
+		color: var(--content-meta);
+	}
+
+	#waline .firefly-comment-filter-confirm:hover,
+	#waline .firefly-comment-filter-cancel:hover {
+		border-color: color-mix(in oklab, var(--primary) 48%, var(--line-divider));
+		color: var(--primary);
+	}
+
+	#waline .wl-card-item[data-waline-owned-comment="true"] > .wl-card {
+		box-shadow: 0 0.35rem 1rem color-mix(in oklab, var(--primary) 8%, transparent);
+	}
+
+	@media (max-width: 580px) {
+		#waline .firefly-comment-filter {
+			width: 100%;
+			margin-inline-start: 0;
+			justify-content: space-between;
+		}
+
+		#waline .firefly-comment-filter-status {
+			max-width: min(12rem, 46vw);
+		}
+
+		#waline .firefly-comment-filter-panel {
+			right: auto;
+			left: 0;
+			width: min(21rem, calc(100vw - 2.5rem));
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		#waline .firefly-comment-filter-toggle,
+		#waline .firefly-comment-filter-confirm,
+		#waline .firefly-comment-filter-cancel {
+			transition: none;
+		}
+	}
+
+	/*
+	 * Render published comments as the same left/right WeChat conversation used by the
+	 * August monthly. Visitors and thread starters stay left; Xiaoai and owner replies
+	 * move right. An owner-created top-level thread is the deliberate left-side exception.
+	 */
+	#waline .wl-cards {
+		--waline-bubble-bg: color-mix(in oklab, #edf5ff 88%, var(--card-bg));
+		--waline-bubble-ink: color-mix(in oklab, var(--btn-content) 94%, #203750);
+		--waline-bubble-shadow: color-mix(in oklab, var(--primary) 18%, transparent);
+	}
+
+	#waline .wl-card-item {
+		display: grid;
+		grid-template-columns: 2.3rem minmax(0, 1fr);
+		align-items: start;
+		column-gap: 0.62rem;
+		padding: 0.72rem 0.5rem;
+	}
+
+	#waline .wl-card-item[data-waline-side="right"] {
+		grid-template-columns: minmax(0, 1fr) 2.3rem;
+		--waline-bubble-bg: color-mix(in oklab, #95ec69 88%, var(--card-bg));
+		--waline-bubble-ink: color-mix(in oklab, var(--btn-content) 92%, #234619);
+		--waline-bubble-shadow: color-mix(in oklab, #4f9635 34%, transparent);
+	}
+
+	#waline .wl-card-item > .wl-user {
+		grid-column: 1;
+		grid-row: 1;
+		align-self: start;
+		width: 2.3rem;
+		margin: 0.1rem 0 0;
+		--avatar-size: 2.3rem;
+	}
+
+	#waline .wl-card-item[data-waline-side="right"] > .wl-user {
+		grid-column: 2;
+	}
+
+	#waline .wl-card-item > .wl-user > .wl-user-avatar {
+		display: block;
+		box-sizing: border-box;
+		width: 2.3rem;
+		height: 2.3rem;
+		border-radius: 50% !important;
+		object-fit: cover;
+		object-position: center;
+	}
+
+	#waline .wl-card-item[data-waline-side="right"] > .wl-user > .verified-icon,
+	#waline .wl-card-item[data-waline-side="right"] > .wl-user > .administrator-icon {
+		inset-inline-start: -0.2rem;
+	}
+
+	#waline .wl-card-item > .wl-card {
+		grid-column: 2;
+		grid-row: 1;
+		min-width: 0;
+		width: auto;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		text-align: left;
+	}
+
+	#waline .wl-card-item[data-waline-side="right"] > .wl-card {
+		grid-column: 1;
+		text-align: right;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.28rem 0.38rem;
+		width: 100%;
+		max-width: none;
+		margin: 0 0 0.34rem;
+		overflow: visible;
+		color: var(--content-meta);
+		line-height: 1.35;
+	}
+
+	#waline .wl-card-item[data-waline-side="right"] > .wl-card > .wl-head {
+		justify-content: flex-end;
+		margin-inline-start: auto;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-head > .wl-nick,
+	#waline .wl-card-item > .wl-card > .wl-head > .wl-time,
+	#waline .wl-card-item > .wl-card > .wl-head > .wl-badge {
+		margin: 0;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-head > .wl-time {
+		order: 1;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-head > .wl-comment-actions {
+		display: inline-flex;
+		float: none;
+		align-items: center;
+		gap: 0.22rem;
+		order: 4;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-head > .wl-meta {
+		display: inline-flex;
+		flex: 0 1 auto;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.28rem;
+		max-width: 100%;
+		order: 2;
+		line-height: 1.2;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-head > .wl-meta > .wl-addr {
+		order: 1;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-head > .wl-meta > .wl-browser {
+		order: 3;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-head > .wl-meta > .wl-os {
+		order: 2;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-head > .wl-meta > span {
+		margin: 0;
+		padding: 0;
+		background: transparent;
+		color: color-mix(in oklab, var(--content-meta) 88%, var(--waline-bubble-ink));
+		font-size: 0.68rem;
+		line-height: 1.35;
+	}
+
+	#waline .wl-card-item[data-waline-side="right"] > .wl-card > .wl-head > .wl-meta {
+		text-align: right;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-content {
+		position: relative;
+		display: flow-root;
+		box-sizing: border-box;
+		width: fit-content;
+		max-width: min(90%, 76ch);
+		margin: 0 0 0.2rem;
+		padding: 0.68rem 0.86rem 0.76rem;
+		border-radius: 0.38rem 0.38rem 0.38rem 0.12rem;
+		background: var(--waline-bubble-bg);
+		color: var(--waline-bubble-ink);
+		font-size: 0.875rem;
+		line-height: 1.84;
+		text-align: left;
+		box-shadow: 0 0.42rem 1.05rem -0.9rem var(--waline-bubble-shadow);
+	}
+
+	#waline .wl-card-item[data-waline-side="right"] > .wl-card > .wl-content {
+		margin-inline-start: auto;
+		border-radius: 0.38rem 0.38rem 0.12rem 0.38rem;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-content > .wl-bubble-tail {
+		position: absolute;
+		top: 0.74rem;
+		left: -0.23rem;
+		width: 0.56rem;
+		height: 0.56rem;
+		background: inherit;
+		content: "";
+		pointer-events: none;
+		transform: rotate(45deg);
+	}
+
+	#waline .wl-card-item[data-waline-side="right"] > .wl-card > .wl-content > .wl-bubble-tail {
+		right: -0.23rem;
+		left: auto;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-content > :not(.wl-bubble-tail) {
+		position: relative;
+		z-index: 1;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-content p {
+		color: inherit;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-content > div > :first-child {
+		margin-top: 0;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-content > div > :last-child {
+		margin-bottom: 0;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-quote {
+		width: 100%;
+		margin-top: 0.52rem;
+		border-inline-start: 0;
+	}
+
+	/* Keep the old quiet thread rhythm: one faint separator after each conversation,
+	 * while replies inside that conversation remain visually connected. */
+	#waline .wl-card-item[data-waline-thread-starter="true"] {
+		position: relative;
+		padding-block-end: 1.02rem;
+		margin-block-end: 0.18rem;
+	}
+
+	#waline .wl-card-item[data-waline-thread-starter="true"]::after {
+		position: absolute;
+		right: 0.8rem;
+		bottom: 0;
+		left: 0.8rem;
+		border-bottom: 1px dashed color-mix(in oklab, var(--line-divider) 58%, transparent);
+		content: "";
+		pointer-events: none;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-reply-wrapper,
+	#waline .wl-card-item > .wl-card > .wl-edit-wrapper,
+	#waline .wl-card-item > .wl-card > .wl-admin-actions,
+	#waline .wl-card-item > .wl-card > .wl-warning,
+	#waline .wl-card-item > .wl-card > .wl-comment-status {
+		text-align: left;
+	}
+
+	#waline .wl-card-item[data-waline-side="right"] > .wl-card > .wl-admin-actions,
+	#waline .wl-card-item[data-waline-side="right"] > .wl-card > .wl-comment-status {
+		text-align: right;
+	}
+
+	html.dark #waline .wl-cards {
+		--waline-bubble-bg: color-mix(in oklab, #324454 74%, var(--card-bg));
+		--waline-bubble-ink: color-mix(in oklab, var(--btn-content) 94%, #dcecff);
+		--waline-bubble-shadow: color-mix(in oklab, #86bfff 22%, transparent);
+	}
+
+	html.dark #waline .wl-card-item[data-waline-side="right"] {
+		--waline-bubble-bg: color-mix(in oklab, #4a7d36 76%, var(--card-bg));
+		--waline-bubble-ink: color-mix(in oklab, var(--btn-content) 94%, #ddffd0);
+		--waline-bubble-shadow: color-mix(in oklab, #94e56d 28%, transparent);
+	}
+
+	/* Keep each special identity's established color inside the chat grammar. */
+	#waline .wl-card-item[data-waline-role],
+	#waline .wl-comment {
+		--waline-role-accent: var(--primary);
+		--waline-role-soft: #dceeff;
+		--waline-role-ink: color-mix(in oklab, var(--primary) 76%, #264d72);
+		--waline-role-wash: 20%;
+		--waline-role-outline: 14%;
+		--waline-role-symbol: none;
+		--waline-role-sweep-duration: 3.8s;
+		--waline-role-sweep-soft: color-mix(in oklab, var(--waline-role-accent) 22%, transparent);
+		--waline-bubble-bg: color-mix(in oklab, var(--waline-role-soft) 64%, var(--card-bg));
+		--waline-bubble-ink: color-mix(in oklab, var(--btn-content) 76%, var(--waline-role-ink));
+		--waline-bubble-shadow: color-mix(in oklab, var(--waline-role-accent) 34%, transparent);
+	}
+
+	#waline .wl-card-item[data-waline-role] > .wl-card {
+		min-width: 0;
+	}
+
+	#waline .wl-card-item[data-waline-role] > .wl-card > .wl-content {
+		background: var(--waline-bubble-bg);
+		color: var(--waline-bubble-ink);
+		box-shadow: 0 0.42rem 1.05rem -0.88rem var(--waline-bubble-shadow);
+	}
+
+	#waline .wl-card-item[data-waline-role] > .wl-user > .wl-user-avatar {
+		box-sizing: border-box;
+		object-fit: cover;
+		object-position: center;
+		border: 2px solid color-mix(in oklab, var(--waline-role-accent) 72%, white);
+		border-radius: 50% !important;
+		background: color-mix(in oklab, var(--waline-role-soft) 46%, var(--card-bg));
+		box-shadow:
+			0 0 0 2px color-mix(in oklab, var(--waline-role-accent) 15%, transparent),
+			0 0.22rem 0.55rem color-mix(in oklab, var(--waline-role-accent) 18%, transparent);
+	}
+
+	#waline .wl-card-item[data-waline-role="owner"] > .wl-user > .administrator-icon path {
+		fill: var(--waline-role-accent);
+	}
+
+	#waline .wl-card-item[data-waline-role] > .wl-card > .wl-head > .wl-nick {
+		position: relative;
+		display: inline-block;
+		max-width: min(100%, 18rem);
+		padding: 0.12rem 0.42rem;
+		border: 1px solid color-mix(in oklab, var(--waline-role-accent) 48%, transparent);
+		border-radius: 0.56rem;
+		background-color: color-mix(in oklab, var(--waline-role-soft) 78%, white);
+		background-image: linear-gradient(
+			112deg,
+			transparent 0%,
+			var(--waline-role-sweep-soft) 37%,
+			color-mix(in oklab, white 90%, transparent) 50%,
+			var(--waline-role-sweep-soft) 63%,
+			transparent 100%
+		);
+		background-size: 220% 100%;
+		background-position: 130% 0;
+		color: var(--waline-role-ink);
+		text-shadow: 0 0 0.42rem color-mix(in oklab, var(--waline-role-accent) 38%, transparent);
+		box-shadow:
+			inset 0 0 0 1px color-mix(in oklab, white 38%, transparent),
+			0 0 0.6rem color-mix(in oklab, var(--waline-role-accent) 20%, transparent);
+		animation: waline-role-chip-sweep var(--waline-role-sweep-duration) cubic-bezier(0.42, 0, 0.22, 1) infinite;
+		will-change: background-position;
+	}
+
+	#waline [data-waline-native-owner-label] {
+		display: none;
+	}
+
+	#waline .wl-card-item[data-waline-role="owner"],
+	#waline .wl-comment[data-waline-composer-role="owner"] {
+		--waline-role-accent: #1dbde8;
+		--waline-role-soft: #c6f3ff;
+		--waline-role-ink: #08749e;
+		--waline-role-wash: 28%;
+		--waline-role-outline: 23%;
+		--waline-role-sweep-duration: 3.2s;
+		--waline-role-symbol: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 130 120'%3E%3Cg fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 58 62 23c4-3 8-3 12 0l38 35' stroke-width='5'/%3E%3Cpath d='M31 54v43c0 6 4 10 10 10h51c6 0 10-4 10-10V54M78 31V19h17v27' stroke-width='4.5'/%3E%3Cpath d='M57 107V78c0-5 4-9 9-9h3c5 0 9 4 9 9v29M42 65h11v12H42zM86 65h8v12h-8z' stroke-width='4'/%3E%3Cpath d='M58 51c0-5 7-7 10-2 3-5 10-3 10 2 0 6-10 12-10 12S58 57 58 51Z' stroke-width='3'/%3E%3C/g%3E%3C/svg%3E");
+	}
+
+	#waline .wl-card-item[data-waline-role="ai"],
+	#waline .wl-comment[data-waline-composer-role="ai"] {
+		--waline-role-accent: #8d7cff;
+		--waline-role-soft: #ebe8ff;
+		--waline-role-ink: #5c49c7;
+		--waline-role-wash: 27%;
+		--waline-role-outline: 24%;
+		--waline-role-sweep-duration: 4.6s;
+		--waline-role-symbol: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M60 17c4 20 12 28 32 32-20 4-28 12-32 32-4-20-12-28-32-32 20-4 28-12 32-32Z' stroke-width='4.5'/%3E%3Ccircle cx='60' cy='49' r='10' stroke-width='3.5'/%3E%3Cpath d='M25 78c2 10 6 14 16 16-10 2-14 6-16 16-2-10-6-14-16-16 10-2 14-6 16-16Zm73-61c1.5 7 4.5 10 12 12-7.5 1.5-10.5 4.5-12 12-1.5-7.5-4.5-10.5-12-12 7.5-2 10.5-5 12-12Z' stroke-width='3'/%3E%3Cpath d='M48 95h24M52 105h16' stroke-width='4'/%3E%3C/g%3E%3C/svg%3E");
+	}
+
+	#waline .wl-card-item[data-waline-role="admin"],
+	#waline .wl-comment[data-waline-composer-role="admin"] {
+		--waline-role-accent: #ff9f43;
+		--waline-role-soft: #ffe4bc;
+		--waline-role-ink: #a75b09;
+		--waline-role-wash: 26%;
+		--waline-role-outline: 22%;
+		--waline-role-sweep-duration: 3.5s;
+		--waline-role-symbol: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M60 12c13 10 27 14 42 15v28c0 26-15 44-42 54-27-10-42-28-42-54V27c15-1 29-5 42-15Z' stroke-width='5'/%3E%3Cpath d='m39 61 13 13 29-32' stroke-width='6'/%3E%3Cpath d='M31 38c10-2 20-5 29-11 9 6 19 9 29 11' stroke-width='3'/%3E%3C/g%3E%3C/svg%3E");
+	}
+
+	#waline .wl-card-item[data-waline-role="recommended"],
+	#waline .wl-comment[data-waline-composer-role="recommended"] {
+		--waline-role-accent: #f4bb2e;
+		--waline-role-soft: #fff0a2;
+		--waline-role-ink: #956100;
+		--waline-role-wash: 48%;
+		--waline-role-outline: 30%;
+		--waline-role-sweep-duration: 4.1s;
+		--waline-role-symbol: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M60 14c4 0 7 3 9 7l10 21 24 4c4 1 7 3 8 7 1 3 0 7-3 10L90 80l4 24c1 4-1 8-4 10-3 2-7 2-11 0L60 102l-19 12c-4 2-8 2-11 0-3-2-5-6-4-10l4-24-18-17c-3-3-4-7-3-10 1-4 4-6 8-7l24-4 10-21c2-4 5-7 9-7Z' stroke-width='4'/%3E%3Cpath d='m23 26 2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6Zm79 65 1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5 1.5-4Z' stroke-width='2.5'/%3E%3C/g%3E%3C/svg%3E");
+	}
+
+	#waline .wl-card-item[data-waline-role] > .wl-card > .wl-head > .wl-role-badge,
+	#waline .wl-card-item[data-waline-role="ai"] > .wl-card > .wl-head > .wl-ai-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.24rem;
+		min-height: 1.05rem;
+		margin: 0 0.42rem 0 0;
+		padding: 0.07rem 0.42rem;
+		border: 1px solid color-mix(in oklab, var(--waline-role-accent) 52%, transparent);
+		border-radius: 999px;
+		background-color: color-mix(in oklab, var(--waline-role-soft) 78%, white);
+		background-image: linear-gradient(
+			112deg,
+			transparent 0%,
+			var(--waline-role-sweep-soft) 37%,
+			color-mix(in oklab, white 94%, transparent) 50%,
+			var(--waline-role-sweep-soft) 63%,
+			transparent 100%
+		);
+		background-size: 220% 100%;
+		background-position: 130% 0;
+		color: var(--waline-role-ink);
+		font-size: 0.625rem;
+		font-weight: 800;
+		line-height: 1.25;
+		letter-spacing: 0.025em;
+		vertical-align: 0;
+		white-space: nowrap;
+		box-shadow:
+			inset 0 0 0 1px color-mix(in oklab, white 42%, transparent),
+			0 0 0.52rem color-mix(in oklab, var(--waline-role-accent) 24%, transparent);
+		animation: waline-role-chip-sweep var(--waline-role-sweep-duration) cubic-bezier(0.42, 0, 0.22, 1) infinite;
+		will-change: background-position;
+	}
+
+	#waline .wl-card-item[data-waline-role] > .wl-card > .wl-head > .wl-role-badge::before,
+	#waline .wl-card-item[data-waline-role="ai"] > .wl-card > .wl-head > .wl-ai-badge::before {
+		display: inline-block;
+		width: 0.72rem;
+		height: 0.72rem;
+		content: "";
+		background: currentColor;
+		-webkit-mask-image: var(--waline-role-symbol);
+		mask-image: var(--waline-role-symbol);
+		-webkit-mask-position: center;
+		mask-position: center;
+		-webkit-mask-repeat: no-repeat;
+		mask-repeat: no-repeat;
+		-webkit-mask-size: contain;
+		mask-size: contain;
+	}
+
+	html.dark #waline .wl-card-item[data-waline-role="owner"],
+	html.dark #waline .wl-comment[data-waline-composer-role="owner"] {
+		--waline-role-ink: color-mix(in oklab, var(--primary) 65%, white);
+		--waline-role-wash: 15%;
+		--waline-role-outline: 20%;
+	}
+
+	html.dark #waline .wl-card-item[data-waline-role="ai"],
+	html.dark #waline .wl-comment[data-waline-composer-role="ai"] {
+		--waline-role-ink: #c7c9ff;
+		--waline-role-wash: 14%;
+		--waline-role-outline: 20%;
+	}
+
+	html.dark #waline .wl-card-item[data-waline-role="admin"],
+	html.dark #waline .wl-comment[data-waline-composer-role="admin"] {
+		--waline-role-ink: #f2c278;
+		--waline-role-wash: 13%;
+		--waline-role-outline: 18%;
+	}
+
+	html.dark #waline .wl-card-item[data-waline-role="recommended"],
+	html.dark #waline .wl-comment[data-waline-composer-role="recommended"] {
+		--waline-role-ink: #f3d17c;
+		--waline-role-wash: 22%;
+		--waline-role-outline: 25%;
+	}
+
+	html.dark #waline .wl-card-item[data-waline-role] {
+		--waline-bubble-bg: color-mix(in oklab, var(--waline-role-accent) 18%, var(--card-bg));
+		--waline-bubble-ink: color-mix(in oklab, var(--btn-content) 84%, var(--waline-role-ink));
+	}
+
+	/* The composer echoes a special identity at a quieter intensity than published comments. */
+	#waline .wl-comment {
+		--waline-composer-wash: 8%;
+		--waline-composer-border: 24%;
+		--waline-composer-highlight: 62%;
+	}
+
+	#waline .wl-comment[data-waline-composer-role="owner"] {
+		--waline-composer-wash: 10%;
+		--waline-composer-border: 32%;
+	}
+
+	#waline .wl-comment[data-waline-composer-role="ai"] {
+		--waline-composer-wash: 9%;
+		--waline-composer-border: 29%;
+	}
+
+	#waline .wl-comment[data-waline-composer-role="admin"] {
+		--waline-composer-wash: 9%;
+		--waline-composer-border: 30%;
+	}
+
+	#waline .wl-comment[data-waline-composer-role="recommended"] {
+		--waline-composer-wash: 14%;
+		--waline-composer-border: 36%;
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-panel {
+		border-color: color-mix(
+			in oklab,
+			var(--waline-role-accent) var(--waline-composer-border),
+			var(--line-divider)
+		);
+		background-color: color-mix(
+			in oklab,
+			var(--waline-role-soft) var(--waline-composer-wash),
+			var(--card-bg)
+		);
+		box-shadow: inset 0 1px 0 color-mix(
+			in oklab,
+			white var(--waline-composer-highlight),
+			transparent
+		);
+		transition:
+			border-color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+			background-color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+			box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-panel::before {
+		position: absolute;
+		top: -1px;
+		left: 0.9rem;
+		width: clamp(4.75rem, 28%, 9rem);
+		height: 2px;
+		border-radius: 999px;
+		content: "";
+		background: var(--waline-role-accent);
+		opacity: 0.58;
+		pointer-events: none;
+		transform: scaleX(0.82);
+		transform-origin: left center;
+		transition:
+			opacity 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+			transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-panel:focus-within {
+		border-color: color-mix(in oklab, var(--waline-role-accent) 58%, var(--line-divider));
+		box-shadow:
+			0 0 0 0.2rem color-mix(in oklab, var(--waline-role-accent) 11%, transparent),
+			0 0.72rem 1.8rem color-mix(in oklab, var(--waline-role-accent) 10%, transparent),
+			inset 0 1px 0 color-mix(
+				in oklab,
+				white var(--waline-composer-highlight),
+				transparent
+			);
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-panel:focus-within::before {
+		opacity: 0.88;
+		transform: scaleX(1);
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-panel .wl-editor,
+	#waline .wl-comment[data-waline-composer-role] > .wl-panel .wl-input {
+		caret-color: var(--waline-role-accent);
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-panel .wl-editor::selection,
+	#waline .wl-comment[data-waline-composer-role] > .wl-panel .wl-input::selection {
+		background: color-mix(in oklab, var(--waline-role-accent) 24%, transparent);
+		color: var(--btn-content);
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-panel .wl-editor:focus-visible,
+	#waline .wl-comment[data-waline-composer-role] > .wl-panel .wl-input:focus-visible {
+		outline: 2px solid color-mix(in oklab, var(--waline-role-accent) 48%, transparent);
+		outline-offset: -2px;
+		background-color: color-mix(in oklab, var(--waline-role-soft) 15%, var(--card-bg));
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-login-info .wl-avatar {
+		box-sizing: border-box;
+		border: 2px solid color-mix(in oklab, var(--waline-role-accent) 70%, white);
+		background: color-mix(in oklab, var(--waline-role-soft) 38%, var(--card-bg));
+		box-shadow:
+			0 0 0 2px color-mix(in oklab, var(--waline-role-accent) 12%, transparent),
+			0 0.32rem 0.85rem color-mix(in oklab, var(--waline-role-accent) 16%, transparent);
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-login-info .wl-login-nick {
+		color: var(--waline-role-ink);
+		font-weight: 750;
+		text-decoration-color: color-mix(in oklab, var(--waline-role-accent) 36%, transparent);
+		text-underline-offset: 0.16rem;
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-login-info .wl-login-nick:hover {
+		text-decoration: underline;
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-login-info .wl-logout-btn {
+		border-radius: 50%;
+		background: color-mix(in oklab, var(--card-bg) 92%, transparent);
+		color: var(--waline-role-ink);
+		box-shadow: 0 0.18rem 0.5rem color-mix(in oklab, var(--waline-role-accent) 14%, transparent);
+	}
+
+	#waline .wl-comment[data-waline-composer-role] > .wl-login-info .wl-logout-btn:focus-visible,
+	#waline .wl-comment[data-waline-composer-role] > .wl-panel .wl-action:focus-visible {
+		outline: 2px solid color-mix(in oklab, var(--waline-role-accent) 55%, transparent);
+		outline-offset: 2px;
+	}
+
+	#waline .wl-composer-identity {
+		display: flex;
+		align-items: center;
+		gap: 0.34rem;
+		width: max-content;
+		max-width: calc(100% - 1.5rem);
+		min-height: 1.62rem;
+		margin: 0.62rem 0.75rem 0;
+		padding: 0.22rem 0.58rem 0.22rem 0.46rem;
+		border-radius: 999px;
+		background: color-mix(in oklab, var(--waline-role-soft) 38%, var(--card-bg));
+		color: var(--waline-role-ink);
+		font-size: 0.69rem;
+		font-weight: 800;
+		line-height: 1.2;
+		letter-spacing: 0.018em;
+		box-shadow: inset 0 0 0 1px color-mix(
+			in oklab,
+			var(--waline-role-accent) 24%,
+			transparent
+		);
+		animation: waline-composer-identity-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	#waline .wl-composer-identity-icon {
+		flex: 0 0 auto;
+		width: 0.82rem;
+		height: 0.82rem;
+		background: currentColor;
+		-webkit-mask-image: var(--waline-role-symbol);
+		mask-image: var(--waline-role-symbol);
+		-webkit-mask-position: center;
+		mask-position: center;
+		-webkit-mask-repeat: no-repeat;
+		mask-repeat: no-repeat;
+		-webkit-mask-size: contain;
+		mask-size: contain;
+	}
+
+	#waline .wl-composer-identity-label {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	@keyframes waline-role-chip-sweep {
+		0%,
+		100% {
+			background-position: 130% 0;
+		}
+
+		48%,
+		68% {
+			background-position: -34% 0;
+		}
+	}
+
+	html.dark #waline .wl-comment[data-waline-composer-role] {
+		--waline-composer-wash: 6%;
+		--waline-composer-border: 28%;
+		--waline-composer-highlight: 13%;
+	}
+
+	html.dark #waline .wl-comment[data-waline-composer-role="recommended"] {
+		--waline-composer-wash: 9%;
+		--waline-composer-border: 34%;
+	}
+
+	@keyframes waline-composer-identity-in {
+		from {
+			opacity: 0;
+			transform: translateY(-0.22rem) scale(0.97);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	#waline [data-waline-ai-admin-entry="true"] {
+		cursor: pointer;
+		text-underline-offset: 0.18em;
+	}
+
+	#waline [data-waline-ai-admin-entry="true"]:hover {
+		text-decoration: underline;
+		text-decoration-color: color-mix(in oklab, var(--primary) 48%, transparent);
+	}
+
+	#waline [data-waline-ai-admin-entry="true"]:focus-visible {
+		border-radius: 0.35rem;
+		outline: 2px solid color-mix(in oklab, var(--primary) 55%, transparent);
+		outline-offset: 0.18rem;
+	}
+
+	#waline .wl-card-item[data-waline-role="ai"] > .wl-card > .wl-content .wl-ai-disclaimer {
+		display: block;
+		margin-block: 0.58rem 0;
+		padding-top: 0.48rem;
+		border-top: 1px solid color-mix(in oklab, var(--waline-role-accent) 18%, transparent);
+		color: color-mix(in oklab, var(--waline-bubble-ink) 68%, var(--waline-role-ink)) !important;
+		font-size: 0.72rem;
+		font-weight: 400;
+		line-height: 1.65;
+		overflow-wrap: anywhere;
+		text-wrap: pretty;
+	}
+
+	/* The comment box sits immediately above the footer. Let the controller flip a picker inward
+	 * when opening downward would leave the comment card or the visible viewport. */
+	body .wl-emoji-popup,
+	body .wl-gif-popup {
+		z-index: 60;
+	}
+
+	body .wl-emoji-popup.waline-picker-open-upward,
+	body .wl-gif-popup.waline-picker-open-upward {
+		top: auto;
+		bottom: calc(100% + 0.625rem);
+		transform-origin: left bottom;
+	}
+
+	/* Keep Waline's native avatar column, then reveal the resolved QQ avatar in place. */
+	#waline .waline-avatar-preview {
+		flex: 0 0 var(--waline-avatar-size);
+		align-self: flex-start;
+		margin: 0.5em 0.25em 0.5em 0;
+		overflow: hidden;
+		border-color: transparent;
+		background: transparent;
+		box-shadow: none;
+		opacity: 0;
+		pointer-events: none;
+		transform: translateY(0.125rem) scale(0.86);
+		transform-origin: center;
+		transition:
+			opacity 0.2s ease,
+			transform 0.2s ease,
+			border-color 0.2s ease,
+			background 0.2s ease,
+			box-shadow 0.2s ease;
+	}
+
+	#waline .waline-avatar-preview img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		opacity: 0;
+		transition: opacity 0.16s ease;
+	}
+
+	#waline .waline-avatar-preview.is-visible {
+		border-color: color-mix(in oklab, var(--primary) 28%, transparent);
+		background: color-mix(in oklab, var(--card-bg) 68%, transparent);
+		box-shadow: 0 0.35rem 1rem color-mix(in oklab, var(--primary) 14%, transparent);
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+
+	#waline .waline-avatar-preview.is-visible img {
+		opacity: 1;
+	}
+
+	@media (max-width: 580px) {
+		#waline .waline-avatar-preview {
+			display: none;
+		}
+
+		#waline .waline-reply-toggle {
+			gap: 0.34rem;
+			margin-inline: auto;
+			margin-block: 0.02rem 0.28rem;
+			padding-block: 0.16rem;
+			font-size: 0.66rem;
+		}
+
+		#waline .waline-reply-toggle::after {
+			width: 0.34rem;
+			height: 0.34rem;
+		}
+
+		#waline .waline-link-tip {
+			gap: 0.56rem;
+			margin: 0.62rem 0 0.78rem;
+			padding: 0.68rem 0.72rem 0.72rem;
+			border-radius: 0.78rem;
+		}
+
+		#waline .waline-link-tip-icon {
+			flex-basis: 1.42rem;
+			width: 1.42rem;
+			height: 1.42rem;
+		}
+
+		#waline .waline-link-tip-title {
+			font-size: 0.76rem;
+		}
+
+		#waline .waline-link-tip-text {
+			font-size: 0.7rem;
+			line-height: 1.65;
+		}
+
+		#waline .wl-card-item {
+			grid-template-columns: 2rem minmax(0, 1fr);
+			column-gap: 0.48rem;
+			padding: 0.58rem 0.12rem;
+		}
+
+		#waline .wl-card-item[data-waline-side="right"] {
+			grid-template-columns: minmax(0, 1fr) 2rem;
+		}
+
+		#waline .wl-card-item > .wl-user {
+			width: 2rem;
+			--avatar-size: 2rem;
+		}
+
+		#waline .wl-card-item > .wl-user > .wl-user-avatar {
+			width: 2rem;
+			height: 2rem;
+			border-radius: 50%;
+		}
+
+		#waline .wl-card-item > .wl-card > .wl-head,
+		#waline .wl-card-item > .wl-card > .wl-content {
+			max-width: min(94%, 74ch);
+		}
+
+		#waline .wl-card-item > .wl-card > .wl-content {
+			padding: 0.56rem 0.68rem 0.62rem;
+			border-radius: 0.35rem 0.35rem 0.35rem 0.1rem;
+			font-size: 0.82rem;
+			line-height: 1.76;
+		}
+
+		#waline .wl-card-item[data-waline-side="right"] > .wl-card > .wl-content {
+			border-radius: 0.35rem 0.35rem 0.1rem 0.35rem;
+		}
+
+		#waline .wl-card-item[data-waline-role] > .wl-card > .wl-head > .wl-role-badge,
+		#waline .wl-card-item[data-waline-role="ai"] > .wl-card > .wl-head > .wl-ai-badge {
+			gap: 0.18rem;
+			margin-inline-end: 0.28rem;
+			padding-inline: 0.34rem;
+			font-size: 0.58rem;
+		}
+
+		#waline .wl-card-item[data-waline-role] > .wl-card > .wl-head > .wl-role-badge::before,
+		#waline .wl-card-item[data-waline-role="ai"] > .wl-card > .wl-head > .wl-ai-badge::before {
+			width: 0.64rem;
+			height: 0.64rem;
+		}
+
+		#waline .wl-card-item[data-waline-role="ai"] > .wl-card > .wl-content .wl-ai-disclaimer {
+			font-size: 0.68rem;
+			line-height: 1.6;
+		}
+
+		#waline .wl-composer-identity {
+			gap: 0.28rem;
+			max-width: calc(100% - 1.24rem);
+			min-height: 1.5rem;
+			margin: 0.52rem 0.62rem 0;
+			padding: 0.2rem 0.48rem 0.2rem 0.4rem;
+			font-size: 0.64rem;
+		}
+
+		#waline .wl-composer-identity-icon {
+			width: 0.74rem;
+			height: 0.74rem;
+		}
+
+		#waline .wl-comment[data-waline-composer-role] > .wl-panel .wl-editor,
+		#waline .wl-comment[data-waline-composer-role] > .wl-panel .wl-input {
+			font-size: 1rem;
+		}
+
+		#waline .wl-comment[data-waline-composer-role] > .wl-panel:focus-within {
+			box-shadow:
+				0 0 0 0.16rem color-mix(in oklab, var(--waline-role-accent) 10%, transparent),
+				0 0.52rem 1.35rem color-mix(in oklab, var(--waline-role-accent) 8%, transparent),
+				inset 0 1px 0 color-mix(
+					in oklab,
+					white var(--waline-composer-highlight),
+					transparent
+				);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		#waline .wl-card-item[data-waline-role] > .wl-card > .wl-head > .wl-nick,
+		#waline .wl-card-item[data-waline-role] > .wl-card > .wl-head > .wl-role-badge,
+		#waline .wl-card-item[data-waline-role="ai"] > .wl-card > .wl-head > .wl-ai-badge {
+			animation: none;
+			background-position: 50% 0;
+		}
+
+		#waline .wl-comment[data-waline-composer-role] > .wl-panel,
+		#waline .wl-comment[data-waline-composer-role] > .wl-panel::before,
+		#waline .wl-composer-identity {
+			animation: none;
+			transition: none;
+		}
+	}
+
+	@media (forced-colors: active) {
+		#waline .wl-comment[data-waline-composer-role] > .wl-panel {
+			border: 2px solid CanvasText;
+			background: Canvas;
+			box-shadow: none;
+		}
+
+		#waline .wl-comment[data-waline-composer-role] > .wl-panel::before {
+			background: Highlight;
+		}
+
+		#waline .wl-composer-identity {
+			border: 1px solid CanvasText;
+			background: Canvas;
+			color: CanvasText;
+			box-shadow: none;
+		}
+	}
+</style>

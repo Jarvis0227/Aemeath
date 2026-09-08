@@ -1,0 +1,39 @@
+[Unit]
+Description=Rainzt Waline AI Comment Reviewer
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=waline-ai-reviewer
+Group=waline-ai-reviewer
+StateDirectory=waline-ai-reviewer
+StateDirectoryMode=0700
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 /opt/waline-ai-reviewer/reviewer.py --config /etc/waline-ai-reviewer/config.json
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadOnlyPaths=/opt/waline/data /etc/waline-ai-reviewer /opt/waline-ai-reviewer /www/wwwroot/firefly
+ReadWritePaths=/var/lib/waline-ai-reviewer
+
+[Install]
+WantedBy=multi-user.target

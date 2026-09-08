@@ -1,0 +1,70 @@
+<script is:inline data-swup-ignore-script>
+	(() => {
+		if (window.__fireflyCodeInteractionManager) return;
+		window.__fireflyCodeInteractionManager = true;
+
+		function activateTab(tab, focusTab) {
+			const group = tab.closest("[data-code-group]");
+			if (!group) return;
+
+			const index = tab.dataset.codeGroupTab;
+			const tabs = group.querySelectorAll(".code-group-tab");
+			const panels = group.querySelectorAll(".code-group-panel");
+
+			tabs.forEach((item) => {
+				const active = item === tab;
+				item.setAttribute("aria-selected", String(active));
+				item.tabIndex = active ? 0 : -1;
+			});
+
+			panels.forEach((panel) => {
+				panel.hidden = panel.dataset.codeGroupPanel !== index;
+			});
+
+			if (focusTab) tab.focus({ preventScroll: true });
+		}
+
+		document.addEventListener("click", (event) => {
+			if (!(event.target instanceof Element)) return;
+			const tab = event.target.closest(".code-group-tab");
+			if (tab) activateTab(tab, true);
+		});
+
+		document.addEventListener("keydown", (event) => {
+			if (!(event.target instanceof Element)) return;
+			const currentTab = event.target.closest(".code-group-tab");
+			if (!currentTab || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+				return;
+			}
+
+			const tabs = Array.from(
+				currentTab.closest("[data-code-group]")?.querySelectorAll(".code-group-tab") || [],
+			);
+			const currentIndex = tabs.indexOf(currentTab);
+			if (currentIndex < 0) return;
+
+			let nextIndex = currentIndex;
+			if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+			if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabs.length;
+			if (event.key === "Home") nextIndex = 0;
+			if (event.key === "End") nextIndex = tabs.length - 1;
+
+			event.preventDefault();
+			activateTab(tabs[nextIndex], true);
+		});
+
+		// On touch screens the native copy control stays available. This adds a
+		// clearer active state after touching code without blocking selection/copy.
+		document.addEventListener("pointerdown", (event) => {
+			if (event.pointerType === "mouse" || !(event.target instanceof Element)) return;
+			const frame = event.target.closest(".expressive-code .frame");
+			if (!frame) return;
+
+			frame.classList.add("ff-code-touch-active");
+			window.clearTimeout(frame.__fireflyCodeTouchTimer);
+			frame.__fireflyCodeTouchTimer = window.setTimeout(() => {
+				frame.classList.remove("ff-code-touch-active");
+			}, 1800);
+		});
+	})();
+</script>

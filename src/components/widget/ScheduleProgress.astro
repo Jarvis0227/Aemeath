@@ -1,0 +1,509 @@
+---
+import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import type { WidgetComponentConfig } from "@/types/config";
+
+interface Props {
+	class?: string;
+	style?: string;
+	widgetConfig?: WidgetComponentConfig;
+}
+
+const { class: className, style } = Astro.props;
+---
+
+<WidgetLayout
+	id="schedule-progress"
+	name="时间进度"
+	class={className}
+	style={style}
+>
+	<schedule-progress>
+		<div class="progress-list">
+			<div class="progress-row" data-kind="year">
+				<span class="progress-percent">--%</span>
+				<div class="progress-detail">
+					<span class="progress-copy">本年还剩 -- 天</span>
+					<div class="progress-track" aria-hidden="true">
+						<i></i>
+					</div>
+				</div>
+			</div>
+
+			<div class="progress-row" data-kind="month">
+				<span class="progress-percent">--%</span>
+				<div class="progress-detail">
+					<span class="progress-copy">本月还剩 -- 天</span>
+					<div class="progress-track" aria-hidden="true">
+						<i></i>
+					</div>
+				</div>
+			</div>
+
+			<div class="progress-row" data-kind="week">
+				<span class="progress-percent">--%</span>
+				<div class="progress-detail">
+					<span class="progress-copy">本周还剩 -- 天</span>
+					<div class="progress-track" aria-hidden="true">
+						<i></i>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="milestone" aria-live="polite">
+			<span class="milestone-label">距离下一站</span>
+			<strong class="milestone-name">--</strong>
+			<div class="milestone-count">
+				<span class="milestone-days">--</span>
+				<small>天</small>
+			</div>
+			<time class="milestone-date" datetime="">----</time>
+		</div>
+	</schedule-progress>
+</WidgetLayout>
+
+<style>
+	schedule-progress {
+		display: block;
+		padding: 0.25rem 0 0.1rem;
+	}
+
+	.progress-list {
+		display: grid;
+		gap: 0.9rem;
+	}
+
+	.progress-row {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+	}
+
+	.progress-percent {
+		width: 3.1rem;
+		flex: none;
+		color: var(--primary);
+		font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+		font-size: 0.77rem;
+		font-weight: 750;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.progress-detail {
+		min-width: 0;
+		flex: 1;
+	}
+
+	.progress-copy {
+		display: block;
+		margin-bottom: 0.28rem;
+		color: var(--content-regular);
+		font-size: 0.76rem;
+	}
+
+	.progress-track {
+		height: 0.42rem;
+		overflow: hidden;
+		border-radius: 999px;
+		background: var(--btn-regular-bg);
+	}
+
+	.progress-track i {
+		display: block;
+		width: 0;
+		height: 100%;
+		border-radius: inherit;
+		background: linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--primary) 72%, white),
+			var(--primary)
+		);
+		box-shadow: 0 0 0.6rem color-mix(in srgb, var(--primary) 35%, transparent);
+		transition: width 650ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.milestone {
+		display: grid;
+		margin-top: 1rem;
+		padding-top: 0.85rem;
+		border-top: 1px dashed var(--line-divider);
+		grid-template-columns: 1fr auto;
+		align-items: end;
+	}
+
+	.milestone-label {
+		color: var(--content-meta);
+		font-size: 0.68rem;
+		letter-spacing: 0.05em;
+	}
+
+	.milestone-name {
+		grid-column: 1;
+		margin-top: 0.1rem;
+		color: var(--content-regular);
+		font-size: 0.95rem;
+	}
+
+	.milestone-count {
+		display: flex;
+		grid-column: 2;
+		grid-row: 1 / span 3;
+		align-items: baseline;
+		gap: 0.18rem;
+		color: var(--primary);
+	}
+
+	.milestone-days {
+		font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+		font-size: 2.1rem;
+		font-weight: 800;
+		line-height: 1;
+		letter-spacing: -0.06em;
+	}
+
+	.milestone-count small {
+		font-size: 0.68rem;
+		font-weight: 700;
+	}
+
+	.milestone-date {
+		grid-column: 1;
+		margin-top: 0.18rem;
+		color: var(--content-meta);
+		font-size: 0.68rem;
+	}
+
+	.milestone--today {
+		grid-template-columns: 1fr;
+	}
+
+	.milestone--today .milestone-name {
+		color: var(--primary);
+		font-size: 1.05rem;
+		line-height: 1.35;
+	}
+
+	.milestone--today .milestone-count {
+		display: none;
+	}
+</style>
+
+<script>
+	type FestivalKind = "国内" | "传统" | "国际";
+
+	type FixedFestival = {
+		name: string;
+		month: number;
+		day: number;
+		kind: FestivalKind;
+	};
+
+	type Festival = {
+		name: string;
+		date: Date;
+		kind: FestivalKind;
+	};
+
+	const fixedFestivals: FixedFestival[] = [
+		{ name: "元旦", month: 0, day: 1, kind: "国内" },
+		{ name: "情人节", month: 1, day: 14, kind: "国际" },
+		{ name: "妇女节", month: 2, day: 8, kind: "国际" },
+		{ name: "植树节", month: 2, day: 12, kind: "国内" },
+		{ name: "圣帕特里克节", month: 2, day: 17, kind: "国际" },
+		{ name: "愚人节", month: 3, day: 1, kind: "国际" },
+		{ name: "劳动节", month: 4, day: 1, kind: "国际" },
+		{ name: "青年节", month: 4, day: 4, kind: "国内" },
+		{ name: "儿童节", month: 5, day: 1, kind: "国际" },
+		{ name: "建党节", month: 6, day: 1, kind: "国内" },
+		{ name: "美国独立日", month: 6, day: 4, kind: "国际" },
+		{ name: "建军节", month: 7, day: 1, kind: "国内" },
+		{ name: "教师节", month: 8, day: 10, kind: "国内" },
+		{ name: "国庆节", month: 9, day: 1, kind: "国内" },
+		{ name: "万圣夜", month: 9, day: 31, kind: "国际" },
+		{ name: "双十一", month: 10, day: 11, kind: "国内" },
+		{ name: "平安夜", month: 11, day: 24, kind: "国际" },
+		{ name: "圣诞节", month: 11, day: 25, kind: "国际" },
+		{ name: "跨年夜", month: 11, day: 31, kind: "国际" },
+	];
+
+	const lunarFestivals = [
+		{ name: "春节", month: 1, day: 1 },
+		{ name: "元宵节", month: 1, day: 15 },
+		{ name: "龙抬头", month: 2, day: 2 },
+		{ name: "端午节", month: 5, day: 5 },
+		{ name: "七夕节", month: 7, day: 7 },
+		{ name: "中元节", month: 7, day: 15 },
+		{ name: "中秋节", month: 8, day: 15 },
+		{ name: "重阳节", month: 9, day: 9 },
+		{ name: "腊八节", month: 12, day: 8 },
+		{ name: "小年", month: 12, day: 23 },
+	] as const;
+
+	const dayMs = 86_400_000;
+	const lunarFormatter = new Intl.DateTimeFormat("zh-CN-u-ca-chinese", {
+		month: "numeric",
+		day: "numeric",
+	});
+
+	function daysBetween(from: Date, to: Date): number {
+		const fromUtc = Date.UTC(
+			from.getFullYear(),
+			from.getMonth(),
+			from.getDate(),
+		);
+		const toUtc = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+		return Math.max(0, Math.ceil((toUtc - fromUtc) / dayMs));
+	}
+
+	function nthWeekdayOfMonth(
+		year: number,
+		month: number,
+		weekday: number,
+		nth: number,
+	) {
+		const first = new Date(year, month, 1);
+		const offset = (weekday - first.getDay() + 7) % 7;
+		return new Date(year, month, 1 + offset + (nth - 1) * 7);
+	}
+
+	function westernEaster(year: number) {
+		const a = year % 19;
+		const b = Math.floor(year / 100);
+		const c = year % 100;
+		const d = Math.floor(b / 4);
+		const e = b % 4;
+		const f = Math.floor((b + 8) / 25);
+		const g = Math.floor((b - f + 1) / 3);
+		const h = (19 * a + b - d - g + 15) % 30;
+		const i = Math.floor(c / 4);
+		const k = c % 4;
+		const l = (32 + 2 * e + 2 * i - h - k) % 7;
+		const m = Math.floor((a + 11 * h + 22 * l) / 451);
+		const month = Math.floor((h + l - 7 * m + 114) / 31);
+		const day = ((h + l - 7 * m + 114) % 31) + 1;
+		return new Date(year, month - 1, day);
+	}
+
+	function getLunarMonthDay(date: Date) {
+		const parts = lunarFormatter.formatToParts(date);
+		return {
+			month: Number(parts.find((part) => part.type === "month")?.value),
+			day: Number(parts.find((part) => part.type === "day")?.value),
+		};
+	}
+
+	function collectFestivals(now: Date): Festival[] {
+		const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const festivals: Festival[] = [];
+
+		for (const year of [start.getFullYear(), start.getFullYear() + 1]) {
+			for (const item of fixedFestivals) {
+				festivals.push({
+					name: item.name,
+					date: new Date(year, item.month, item.day),
+					kind: item.kind,
+				});
+			}
+
+			festivals.push(
+				{
+					name: "复活节",
+					date: westernEaster(year),
+					kind: "国际",
+				},
+				{
+					name: "母亲节",
+					date: nthWeekdayOfMonth(year, 4, 0, 2),
+					kind: "国际",
+				},
+				{
+					name: "父亲节",
+					date: nthWeekdayOfMonth(year, 5, 0, 3),
+					kind: "国际",
+				},
+				{
+					name: "感恩节",
+					date: nthWeekdayOfMonth(year, 10, 4, 4),
+					kind: "国际",
+				},
+			);
+		}
+
+		for (let offset = 0; offset <= 400; offset += 1) {
+			const date = new Date(
+				start.getFullYear(),
+				start.getMonth(),
+				start.getDate() + offset,
+				12,
+			);
+			const lunar = getLunarMonthDay(date);
+			const festival = lunarFestivals.find(
+				(item) => item.month === lunar.month && item.day === lunar.day,
+			);
+
+			if (festival) {
+				festivals.push({
+					name: festival.name,
+					date: new Date(
+						date.getFullYear(),
+						date.getMonth(),
+						date.getDate(),
+					),
+					kind: "传统",
+				});
+			}
+
+			const tomorrow = new Date(
+				date.getFullYear(),
+				date.getMonth(),
+				date.getDate() + 1,
+				12,
+			);
+			const tomorrowLunar = getLunarMonthDay(tomorrow);
+			if (tomorrowLunar.month === 1 && tomorrowLunar.day === 1) {
+				festivals.push({
+					name: "除夕",
+					date: new Date(
+						date.getFullYear(),
+						date.getMonth(),
+						date.getDate(),
+					),
+					kind: "传统",
+				});
+			}
+		}
+
+		const unique = new Map<string, Festival>();
+		for (const festival of festivals) {
+			const key = `${festival.name}-${festival.date.getFullYear()}-${festival.date.getMonth()}-${festival.date.getDate()}`;
+			unique.set(key, festival);
+		}
+
+		return [...unique.values()]
+			.filter((festival) => festival.date >= start)
+			.sort((a, b) => a.date.getTime() - b.date.getTime());
+	}
+
+	function findNextMilestone(now: Date) {
+		return collectFestivals(now)[0];
+	}
+
+	class ScheduleProgress extends HTMLElement {
+		private midnightTimer?: number;
+
+		connectedCallback() {
+			this.update();
+			this.scheduleMidnightUpdate();
+		}
+
+		disconnectedCallback() {
+			if (this.midnightTimer) window.clearTimeout(this.midnightTimer);
+		}
+
+		private scheduleMidnightUpdate() {
+			const now = new Date();
+			const nextMidnight = new Date(
+				now.getFullYear(),
+				now.getMonth(),
+				now.getDate() + 1,
+			);
+			this.midnightTimer = window.setTimeout(() => {
+				this.update();
+				this.scheduleMidnightUpdate();
+			}, nextMidnight.getTime() - now.getTime() + 100);
+		}
+
+		private setProgress(
+			kind: string,
+			percent: number,
+			copy: string,
+		) {
+			const row = this.querySelector<HTMLElement>(
+				`.progress-row[data-kind="${kind}"]`,
+			);
+			if (!row) return;
+
+			const percentElement =
+				row.querySelector<HTMLElement>(".progress-percent");
+			const copyElement =
+				row.querySelector<HTMLElement>(".progress-copy");
+			const bar = row.querySelector<HTMLElement>(".progress-track i");
+
+			if (percentElement)
+				percentElement.textContent = `${percent.toFixed(1)}%`;
+			if (copyElement) copyElement.textContent = copy;
+			if (bar) bar.style.width = `${Math.min(percent, 100)}%`;
+		}
+
+		private update() {
+			const now = new Date();
+			const year = now.getFullYear();
+			const month = now.getMonth();
+			const today = now.getDate();
+			const startOfYear = new Date(year, 0, 1);
+			const startOfToday = new Date(year, month, today);
+			const daysInYear =
+				(year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
+					? 366
+					: 365;
+			const dayOfYear =
+				Math.floor(
+					(startOfToday.getTime() - startOfYear.getTime()) / dayMs,
+				) + 1;
+			const daysInMonth = new Date(year, month + 1, 0).getDate();
+			const weekday = now.getDay() || 7;
+
+			this.setProgress(
+				"year",
+				(dayOfYear / daysInYear) * 100,
+				`本年还剩 ${daysInYear - dayOfYear} 天`,
+			);
+			this.setProgress(
+				"month",
+				(today / daysInMonth) * 100,
+				`本月还剩 ${daysInMonth - today} 天`,
+			);
+			this.setProgress(
+				"week",
+				(weekday / 7) * 100,
+				`本周还剩 ${7 - weekday} 天`,
+			);
+
+			const next = findNextMilestone(now);
+			const days = daysBetween(now, next.date);
+			const monthValue = String(next.date.getMonth() + 1).padStart(2, "0");
+			const dayValue = String(next.date.getDate()).padStart(2, "0");
+			const dateValue = `${next.date.getFullYear()}-${monthValue}-${dayValue}`;
+
+			const nameElement =
+				this.querySelector<HTMLElement>(".milestone-name");
+			const labelElement =
+				this.querySelector<HTMLElement>(".milestone-label");
+			const daysElement =
+				this.querySelector<HTMLElement>(".milestone-days");
+			const dateElement =
+				this.querySelector<HTMLTimeElement>(".milestone-date");
+			const milestoneElement =
+				this.querySelector<HTMLElement>(".milestone");
+			const isToday = days === 0;
+
+			if (milestoneElement)
+				milestoneElement.classList.toggle("milestone--today", isToday);
+			if (labelElement)
+				labelElement.textContent = isToday
+					? "今天是"
+					: `距离下一站 · ${next.kind}`;
+			if (nameElement)
+				nameElement.textContent = isToday ? `${next.name}快乐~` : next.name;
+			if (daysElement) daysElement.textContent = isToday ? "" : String(days);
+			if (dateElement) {
+				dateElement.dateTime = dateValue;
+				dateElement.textContent = dateValue;
+			}
+		}
+	}
+
+	if (!customElements.get("schedule-progress")) {
+		customElements.define("schedule-progress", ScheduleProgress);
+	}
+</script>

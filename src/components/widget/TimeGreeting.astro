@@ -1,0 +1,377 @@
+---
+import { Icon } from "astro-icon/components";
+import type { WidgetComponentConfig } from "@/types/config";
+
+interface Props {
+	class?: string;
+	style?: string;
+	widgetConfig?: WidgetComponentConfig;
+}
+
+const { class: className, style } = Astro.props;
+---
+
+<time-greeting-widget
+	class:list={["time-greeting-card card-base", className]}
+	style={style}
+>
+	<div class="time-greeting-info">
+		<div class="time-greeting-copy">
+			<p class="time-greeting-message">正在获取时间...</p>
+
+			<div class="time-greeting-meta">
+				<time class="time-greeting-clock" datetime="">--:--</time>
+
+				<div class="time-greeting-date">
+					<span class="time-greeting-week">---</span>
+					<div>
+						<span class="time-greeting-day">--</span>
+						<span class="time-greeting-month">/--</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="time-greeting-icons" aria-hidden="true">
+			<Icon
+				is:inline
+				name="material-symbols:mode-night-outline-rounded"
+				data-periods="late-night"
+			/>
+			<Icon
+				is:inline
+				name="material-symbols:wb-twilight-rounded"
+				data-periods="morning"
+			/>
+			<Icon
+				is:inline
+				name="material-symbols:wb-sunny-outline-rounded"
+				data-periods="forenoon noon afternoon"
+			/>
+			<Icon
+				is:inline
+				name="material-symbols:nightlight-outline-rounded"
+				data-periods="evening"
+			/>
+		</div>
+	</div>
+
+	<div class="time-greeting-image" role="img" aria-label="随机风景图">
+		<div class="time-greeting-image-placeholder" aria-hidden="true"></div>
+	</div>
+</time-greeting-widget>
+
+<style>
+	time-greeting-widget {
+		--greeting-accent: #fb7185;
+		--greeting-text: #303038;
+		--greeting-muted: #74747d;
+		position: relative;
+		display: flex;
+		overflow: hidden;
+		flex-direction: column;
+		background: var(--card-bg);
+		color: var(--greeting-text);
+	}
+
+	time-greeting-widget.hidden {
+		display: none !important;
+	}
+
+	:global(html.dark) time-greeting-widget {
+		--greeting-text: #e5e5e5;
+		--greeting-muted: #a3a3a3;
+	}
+
+	time-greeting-widget[data-period="late-night"] {
+		--greeting-accent: #a78bfa;
+	}
+
+	time-greeting-widget[data-period="morning"] {
+		--greeting-accent: #f59e0b;
+	}
+
+	time-greeting-widget[data-period="forenoon"],
+	time-greeting-widget[data-period="noon"],
+	time-greeting-widget[data-period="afternoon"] {
+		--greeting-accent: #fb7185;
+	}
+
+	time-greeting-widget[data-period="evening"] {
+		--greeting-accent: #8b5cf6;
+	}
+
+	.time-greeting-info {
+		display: flex;
+		min-height: 6.55rem;
+		align-items: flex-start;
+		justify-content: space-between;
+		padding: 1.18rem 1.25rem 0.85rem;
+	}
+
+	.time-greeting-copy {
+		min-width: 0;
+	}
+
+	.time-greeting-message {
+		margin: 0 0 0.25rem;
+		font-size: 0.98rem;
+		font-weight: 750;
+		letter-spacing: 0.01em;
+		line-height: 1.35;
+		color: var(--greeting-text);
+	}
+
+	.time-greeting-meta {
+		display: flex;
+		align-items: flex-end;
+		gap: 0.75rem;
+	}
+
+	.time-greeting-clock {
+		font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+		font-size: 2.15rem;
+		font-weight: 750;
+		line-height: 1;
+		letter-spacing: -0.055em;
+		font-variant-numeric: tabular-nums;
+		color: var(--greeting-text);
+	}
+
+	.time-greeting-date {
+		display: flex;
+		margin-bottom: 0.05rem;
+		flex-direction: column;
+		font-weight: 750;
+		line-height: 1.05;
+		color: var(--greeting-muted);
+	}
+
+	.time-greeting-week {
+		margin-bottom: 0.15rem;
+		font-size: 0.66rem;
+		letter-spacing: 0.08em;
+	}
+
+	.time-greeting-day,
+	.time-greeting-month {
+		font-size: 0.83rem;
+	}
+
+	.time-greeting-month {
+		margin-left: 0.08rem;
+		opacity: 0.8;
+	}
+
+	.time-greeting-icons {
+		display: grid;
+		flex: none;
+		margin-top: 0.15rem;
+		place-items: center;
+		color: var(--greeting-accent);
+	}
+
+	.time-greeting-icons :global(svg) {
+		display: none;
+		font-size: 1.55rem;
+	}
+
+	.time-greeting-icons :global(svg[data-active="true"]) {
+		display: block;
+		animation: time-greeting-icon-in 360ms ease both;
+	}
+
+	.time-greeting-image {
+		position: relative;
+		width: 100%;
+		height: 9rem;
+		overflow: hidden;
+		flex: none;
+		background-image: var(
+			--time-greeting-image,
+			url("/assets/images/wallpaper/thumbs/wallpaper-18.webp")
+		);
+		background-position: center;
+		background-size: cover;
+		opacity: 0;
+		transform: scale(1.025);
+		transition:
+			opacity 650ms ease,
+			transform 5s ease;
+	}
+
+	time-greeting-widget[data-image-ready="true"] .time-greeting-image {
+		opacity: 1;
+		transform: scale(1);
+	}
+
+	.time-greeting-image-placeholder {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(
+			to bottom,
+			color-mix(in srgb, var(--card-bg) 16%, transparent),
+			transparent 30%
+		);
+	}
+
+	@keyframes time-greeting-icon-in {
+		from {
+			opacity: 0;
+			transform: rotate(-18deg) scale(0.75);
+		}
+		to {
+			opacity: 1;
+			transform: rotate(0) scale(1);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.time-greeting-image,
+		.time-greeting-icons :global(svg[data-active="true"]) {
+			animation: none;
+			transition: none;
+		}
+	}
+</style>
+
+<script>
+	type GreetingPeriod = {
+		id: string;
+		message: string;
+	};
+
+	const greetingPeriods: GreetingPeriod[] = [
+		{ id: "late-night", message: "夜深了，早点休息！" },
+		{ id: "morning", message: "早上好，新的一天！" },
+		{ id: "forenoon", message: "上午好，充满活力！" },
+		{ id: "noon", message: "中午好，记得午休！" },
+		{ id: "afternoon", message: "下午好，继续加油！" },
+		{ id: "evening", message: "晚上好，放松一下！" },
+	];
+
+	const weekDays = [
+		"SUNDAY",
+		"MONDAY",
+		"TUESDAY",
+		"WEDNESDAY",
+		"THURSDAY",
+		"FRIDAY",
+		"SATURDAY",
+	];
+
+	const wutheringWavesImages = [
+		"01",
+		...Array.from({ length: 23 }, (_, index) =>
+			String(index + 25).padStart(2, "0"),
+		),
+	].map(
+		(index) =>
+			`/assets/images/wallpaper/wallpaper-${index}.webp`,
+	);
+
+	function getRandomWutheringWavesImage(): string {
+		return wutheringWavesImages[
+			Math.floor(Math.random() * wutheringWavesImages.length)
+		];
+	}
+
+	function getGreetingPeriod(hour: number): GreetingPeriod {
+		if (hour < 6) return greetingPeriods[0];
+		if (hour < 9) return greetingPeriods[1];
+		if (hour < 12) return greetingPeriods[2];
+		if (hour < 14) return greetingPeriods[3];
+		if (hour < 18) return greetingPeriods[4];
+		return greetingPeriods[5];
+	}
+
+	class TimeGreetingWidget extends HTMLElement {
+		private minuteTimer?: number;
+		private alignmentTimer?: number;
+		private imageInitialized = false;
+
+		connectedCallback() {
+			this.updateGreeting();
+			this.loadLandscapeImage();
+			this.alignToNextMinute();
+		}
+
+		disconnectedCallback() {
+			if (this.minuteTimer) window.clearInterval(this.minuteTimer);
+			if (this.alignmentTimer) window.clearTimeout(this.alignmentTimer);
+		}
+
+		private alignToNextMinute() {
+			const delay = 60_000 - (Date.now() % 60_000) + 50;
+			this.alignmentTimer = window.setTimeout(() => {
+				this.updateGreeting();
+				this.minuteTimer = window.setInterval(
+					() => this.updateGreeting(),
+					60_000,
+				);
+			}, delay);
+		}
+
+		private loadLandscapeImage() {
+			if (this.imageInitialized) return;
+			this.imageInitialized = true;
+
+			const imageUrl = getRandomWutheringWavesImage();
+			const image = new Image();
+			image.onload = () => this.setLandscapeImage(imageUrl);
+			image.onerror = () =>
+				this.setLandscapeImage(
+					"/assets/images/wallpaper/wallpaper-01.webp",
+				);
+			image.src = imageUrl;
+		}
+
+		private setLandscapeImage(url: string) {
+			this.style.setProperty("--time-greeting-image", `url("${url}")`);
+			this.dataset.imageReady = "true";
+		}
+
+		private updateGreeting() {
+			const now = new Date();
+			const period = getGreetingPeriod(now.getHours());
+			const hours = String(now.getHours()).padStart(2, "0");
+			const minutes = String(now.getMinutes()).padStart(2, "0");
+			const month = String(now.getMonth() + 1).padStart(2, "0");
+			const day = String(now.getDate()).padStart(2, "0");
+			const dateValue = `${now.getFullYear()}-${month}-${day}`;
+
+			this.dataset.period = period.id;
+
+			const clock = this.querySelector<HTMLTimeElement>(
+				".time-greeting-clock",
+			);
+			const message = this.querySelector<HTMLElement>(
+				".time-greeting-message",
+			);
+			const week = this.querySelector<HTMLElement>(".time-greeting-week");
+			const dayDisplay =
+				this.querySelector<HTMLElement>(".time-greeting-day");
+			const monthDisplay = this.querySelector<HTMLElement>(
+				".time-greeting-month",
+			);
+
+			if (clock) {
+				clock.dateTime = `${dateValue}T${hours}:${minutes}:00+08:00`;
+				clock.textContent = `${hours}:${minutes}`;
+			}
+			if (message) message.textContent = period.message;
+			if (week) week.textContent = weekDays[now.getDay()];
+			if (dayDisplay) dayDisplay.textContent = day;
+			if (monthDisplay) monthDisplay.textContent = `/${month}`;
+
+			this.querySelectorAll<SVGElement>("[data-periods]").forEach((icon) => {
+				const periods = icon.dataset.periods?.split(" ") ?? [];
+				icon.dataset.active = String(periods.includes(period.id));
+			});
+		}
+	}
+
+	if (!customElements.get("time-greeting-widget")) {
+		customElements.define("time-greeting-widget", TimeGreetingWidget);
+	}
+</script>

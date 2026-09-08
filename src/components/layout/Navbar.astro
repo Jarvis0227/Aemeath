@@ -1,0 +1,507 @@
+---
+import { Picture } from "astro:assets";
+import * as path from "node:path";
+import type { ImageMetadata } from "astro";
+import { Icon } from "astro-icon/components";
+import DisplaySettings from "@/components/controls/DisplaySettingsIntegrated.svelte";
+import FontSwitch from "@/components/controls/FontSwitch.svelte";
+import LightDarkSwitch from "@/components/controls/LightDarkSwitch.svelte";
+import Search from "@/components/controls/Search.svelte";
+import MusicPlayer from "@/components/features/MusicPlayer.astro";
+import { backgroundWallpaper, navBarConfig, siteConfig } from "@/config";
+import { musicPlayerConfig } from "@/config/musicConfig";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import type { NavBarLink } from "@/types/config";
+import { getFallbackFormat, getImageFormats } from "@/utils/image-utils";
+import { isHomePage } from "@/utils/layout-utils";
+import { url } from "@/utils/url-utils";
+import DropdownMenu from "./DropdownMenu.astro";
+import NavMenuPanel from "./NavMenuPanel.astro";
+
+const className = Astro.props.class;
+
+// 获取导航栏透明模式配置
+const navbarTransparentMode =
+	backgroundWallpaper.mode === "banner"
+		? backgroundWallpaper.common?.navbar?.transparentMode || "semi"
+		: "semi";
+
+// 获取导航栏毛玻璃效果配置
+const navbarEnableBlur =
+	backgroundWallpaper.mode === "banner"
+		? (backgroundWallpaper.common?.navbar?.enableBlur ?? true)
+		: false;
+
+// 获取导航栏模糊度
+const navbarBlur =
+	backgroundWallpaper.mode === "banner"
+		? (backgroundWallpaper.common?.navbar?.blur ?? 20)
+		: 0;
+
+// 获取导航栏标题，如果没有设置则使用 siteConfig.title
+const navbarTitle = siteConfig.navbar.title || siteConfig.title;
+
+// 获取导航栏宽度配置
+const navbarWidthFull = siteConfig.navbar.widthFull ?? false;
+const navbarMenuAlign = siteConfig.navbar.menuAlign ?? "center";
+const isNavbarMenuCentered = navbarMenuAlign === "center";
+
+// 检查是否为首页
+const isHomePageCheck = isHomePage(Astro.url.pathname);
+
+// 检查是否有任何显示设置可用
+const showThemeColor = !siteConfig.themeColor.fixed;
+const isWallpaperSwitchable = backgroundWallpaper.switchable ?? true;
+const allowLayoutSwitch = siteConfig.postListLayout.allowSwitch;
+const hasDisplaySettings =
+	showThemeColor || isWallpaperSwitchable || allowLayoutSwitch;
+
+// 根据 siteConfig.pages 过滤导航栏链接
+const pages = siteConfig.pages;
+
+function isPageEnabled(link: NavBarLink): boolean {
+	if (!link.pageKey) return true;
+	return pages[link.pageKey as keyof typeof pages] !== false;
+}
+
+function filterLinks(link: NavBarLink): NavBarLink | null {
+	if (!link.children) {
+		return isPageEnabled(link) ? link : null;
+	}
+
+	const filteredChildren = link.children.filter(isPageEnabled);
+
+	if (filteredChildren.length === 0) return null;
+	if (filteredChildren.length === 1) return filteredChildren[0];
+	return { ...link, children: filteredChildren };
+}
+
+let links: NavBarLink[] = navBarConfig.links
+	.map(filterLinks)
+	.filter((link): link is NavBarLink => link !== null);
+
+// 处理导航栏 Logo 图片
+const logoValue = siteConfig.navbar.logo?.value || "";
+const isLocalSrcLogo =
+	siteConfig.navbar.logo?.type === "image" &&
+	logoValue &&
+	!logoValue.startsWith("/") &&
+	!logoValue.startsWith("http");
+let logoImg: ImageMetadata | null = null;
+
+if (isLocalSrcLogo) {
+	const files = import.meta.glob<ImageMetadata>(
+		"../../**/*.{png,jpg,jpeg,webp,avif,gif,svg}",
+		{ import: "default" },
+	);
+	const normalizedPath = path
+		.normalize(path.join("../../", logoValue))
+		.replace(/\\/g, "/");
+	const file = files[normalizedPath];
+	if (file) {
+		logoImg = await file();
+	}
+}
+---
+<div id="navbar" class="z-50 firefly-navbar" style={`--navbar-glass-blur: ${navbarBlur}px;`} data-transparent-mode={navbarTransparentMode} data-enable-blur={String(navbarEnableBlur)} data-is-home={isHomePageCheck} data-full-width={navbarWidthFull}>
+    <div class:list={[
+        className,
+        "firefly-nav-shell relative overflow-visible! h-18 px-4"
+    ]}>
+		<div id="progress-track" aria-hidden="true">
+			<div id="progress-bar"></div>
+		</div>
+        <div class="nav-container mx-auto h-full w-full grid grid-cols-[auto_minmax(0,1fr)_auto] items-center">
+            <a href={url('/')} class="nav-brand btn-plain scale-animation rounded-lg h-13 px-5 font-bold active:scale-95">
+                <span class:list={[
+                    "brand-name flex flex-row items-center text-md",
+                    siteConfig.navbar.followTheme ? "text-(--primary)" : "dark:text-white text-black"
+                ]} style="font-family: var(--font-navbar-title, inherit)">
+                                    {siteConfig.navbar.logo?.type === "icon" ? (
+                                        <Icon is:inline name={siteConfig.navbar.logo.value || "material-symbols:home-pin-outline"} class="text-[1.75rem] mb-1 mr-2" />
+                                    ) : siteConfig.navbar.logo?.type === "image" && logoImg ? (
+                                        <Picture
+                                            src={logoImg}
+                                            alt={siteConfig.navbar.logo.alt || siteConfig.title}
+                                            class="h-7 w-7 mb-1 mr-2 rounded-md bg-white object-contain ring-1 ring-sky-100/80 dark:ring-white/20"
+                                            formats={getImageFormats()}
+                                            fallbackFormat={getFallbackFormat()}
+                                            widths={[28, 56]}
+                                            loading="eager"
+                                            fetchpriority="high"
+                                        />
+                                    ) : siteConfig.navbar.logo?.type === "image" ? (
+                                        <img src={url(siteConfig.navbar.logo.value)} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-7 w-7 mb-1 mr-2 rounded-md bg-white object-contain ring-1 ring-sky-100/80 dark:ring-white/20" fetchpriority="high" />
+                                    ) : siteConfig.navbar.logo?.type === "url" ? (
+                                        <img src={siteConfig.navbar.logo.value} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-7 w-7 mb-1 mr-2 rounded-md bg-white object-contain ring-1 ring-sky-100/80 dark:ring-white/20" fetchpriority="high" />
+                                    ) : (
+                                        <Icon is:inline name="material-symbols:home-pin-outline" class="text-[1.75rem] mb-1 mr-2" />
+                                    )}
+                    {navbarTitle}
+                </span>
+            </a>
+            <div class:list={[
+                "nav-links hidden lg:flex items-center space-x-1 col-start-2 justify-self-end",
+                isNavbarMenuCentered ? "justify-center" : "justify-start"
+            ]}>
+                {links.map((l) => {
+                    return <DropdownMenu link={l} />;
+                })}
+            </div>
+            <div class="nav-actions flex items-center gap-1 col-start-3 justify-self-end min-w-0">
+                <!--<SearchPanel client:load>-->
+                <Search
+                    client:load
+                />
+                <FontSwitch client:load />
+                {musicPlayerConfig.showInNavbar && (
+                    <button aria-label={i18n(I18nKey.music)} class="theme-btn btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90" id="music-player-switch">
+                        <Icon is:inline name="material-symbols:music-note-rounded" class="text-[1.25rem]"></Icon>
+                    </button>
+                )}
+                {backgroundWallpaper.playerEnable && backgroundWallpaper.mode !== "none" && (
+                    <button
+                        aria-label={i18n(I18nKey.videoPlay)}
+                        class="theme-btn btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90"
+                        id="bg-player-toggle"
+                        data-i18n-play={i18n(I18nKey.videoPlay)}
+                        data-i18n-pause={i18n(I18nKey.videoPause)}
+                    >
+                        <Icon is:inline name="material-symbols:play-arrow-rounded" class="text-[1.5rem]" />
+                    </button>
+                )}
+                {hasDisplaySettings && (
+                        <button aria-label="Display Settings" class="theme-btn btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90" id="display-settings-switch">
+                            <Icon is:inline name="material-symbols:palette-outline" class="text-[1.25rem]"></Icon>
+                        </button>
+                )}
+                {/* @ts-ignore */}
+                <LightDarkSwitch client:load></LightDarkSwitch>
+                <button aria-label="Menu" aria-controls="nav-menu-panel" aria-expanded="false" name="Nav Menu" class="menu-btn btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90" id="nav-menu-switch">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+        {musicPlayerConfig.showInNavbar && (
+            <div id="music-nav-panel" class="float-panel float-panel-closed absolute transition-all right-16 p-2 pt-4.5 w-80 z-50">
+                <MusicPlayer />
+            </div>
+        )}
+        <DisplaySettings client:load></DisplaySettings>
+    </div>
+    <!-- Keep the drawer outside the glass shell: backdrop-filter creates a
+         containing block for fixed descendants on mobile. -->
+    <NavMenuPanel links={links}></NavMenuPanel>
+</div>
+
+<script>
+function loadButtonScript() {
+    function setMobileMenuOpen(open: boolean) {
+        let menuPanel = document.getElementById("nav-menu-panel");
+        let menuButton = document.getElementById("nav-menu-switch");
+        if (!menuPanel) return;
+
+        menuPanel.classList.toggle("float-panel-closed", !open);
+        menuPanel.classList.toggle("active", open);
+        menuPanel.setAttribute("aria-hidden", String(!open));
+        menuButton?.classList.toggle("active", open);
+        menuButton?.setAttribute("aria-expanded", String(open));
+        document.body.style.overflow = open ? "hidden" : "";
+    }
+
+    (window as Window & { __fireflySetMobileMenuOpen?: (open: boolean) => void })
+        .__fireflySetMobileMenuOpen = setMobileMenuOpen;
+
+    let settingBtn = document.getElementById("display-settings-switch");
+    if (settingBtn) {
+        settingBtn.onclick = function () {
+            let settingPanel = document.getElementById("display-setting");
+            if (settingPanel) {
+                settingPanel.classList.toggle("float-panel-closed");
+            }
+        };
+    }
+
+    let menuBtn = document.getElementById("nav-menu-switch");
+    if (menuBtn) {
+        menuBtn.onclick = function () {
+            let menuPanel = document.getElementById("nav-menu-panel");
+            if (menuPanel) {
+                setMobileMenuOpen(!menuPanel.classList.contains("active"));
+            }
+        };
+    }
+
+    let musicBtn = document.getElementById("music-player-switch");
+    if (musicBtn) {
+        musicBtn.onclick = function () {
+            let musicPanel = document.getElementById("music-nav-panel");
+            if (musicPanel) {
+                musicPanel.classList.toggle("float-panel-closed");
+            }
+        };
+    }
+
+    // 背景视频播放器控制按钮
+    let bgPlayerBtn = document.getElementById("bg-player-toggle");
+    if (bgPlayerBtn) {
+        bgPlayerBtn.onclick = function () {
+            window.dispatchEvent(new CustomEvent("bg-player-toggle"));
+        };
+        window.addEventListener("bg-player-state-change", function (e) {
+            var ce = e as CustomEvent;
+            var playing = ce.detail && ce.detail.playing;
+            var i18nPlay = bgPlayerBtn!.getAttribute("data-i18n-play") ?? "";
+            var i18nPause = bgPlayerBtn!.getAttribute("data-i18n-pause") ?? "";
+            var label = playing ? i18nPause : i18nPlay;
+            bgPlayerBtn!.innerHTML = playing
+                ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M16 19q-.825 0-1.412-.587T14 17V7q0-.825.588-1.412T16 5t1.413.588T18 7v10q0 .825-.587 1.413T16 19m-8 0q-.825 0-1.412-.587T6 17V7q0-.825.588-1.412T8 5t1.413.588T10 7v10q0 .825-.587 1.413T8 19"/></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M8 17.175V6.825q0-.425.3-.713t.7-.287q.125 0 .263.037t.262.113l8.15 5.175q.225.15.338.375t.112.475t-.112.475t-.338.375l-8.15 5.175q-.125.075-.262.113T9 18.175q-.4 0-.7-.288t-.3-.712"/></svg>';
+            bgPlayerBtn!.setAttribute("title", label);
+            bgPlayerBtn!.setAttribute("aria-label", label);
+        });
+        // 切换壁纸模式时隐藏/显示播放按钮
+        window.addEventListener("wallpaperModeChange", function (e) {
+            var ce = e as CustomEvent;
+            var mode = ce.detail && ce.detail.mode;
+            bgPlayerBtn!.style.display = mode === "none" ? "none" : "";
+        });
+        // Swup 导航时同步播放按钮状态（BackgroundPlayer 可能被重建，也可能持久存在）
+        function syncBgPlayerBtn() {
+            var playing = document.documentElement.hasAttribute("data-bg-video-playing");
+            var i18nPlay = bgPlayerBtn!.getAttribute("data-i18n-play") ?? "";
+            var i18nPause = bgPlayerBtn!.getAttribute("data-i18n-pause") ?? "";
+            var label = playing ? i18nPause : i18nPlay;
+            bgPlayerBtn!.innerHTML = playing
+                ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M16 19q-.825 0-1.412-.587T14 17V7q0-.825.588-1.412T16 5t1.413.588T18 7v10q0 .825-.587 1.413T16 19m-8 0q-.825 0-1.412-.587T6 17V7q0-.825.588-1.412T8 5t1.413.588T10 7v10q0 .825-.587 1.413T8 19"/></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M8 17.175V6.825q0-.425.3-.713t.7-.287q.125 0 .263.037t.262.113l8.15 5.175q.225.15.338.375t.112.475t-.112.475t-.338.375l-8.15 5.175q-.125.075-.262.113T9 18.175q-.4 0-.7-.288t-.3-.712"/></svg>';
+            bgPlayerBtn!.setAttribute("title", label);
+            bgPlayerBtn!.setAttribute("aria-label", label);
+        }
+        if (window.swup && window.swup.hooks) {
+            window.swup.hooks.on("content:replace", syncBgPlayerBtn);
+        } else {
+            document.addEventListener("swup:enable", function () {
+                window.swup.hooks.on("content:replace", syncBgPlayerBtn);
+            });
+        }
+    }
+
+    let themeSwitchBtn = document.getElementById("scheme-switch");
+    if (themeSwitchBtn) {
+        themeSwitchBtn.onclick = function () {
+            let themePanel = document.getElementById("theme-mode-panel");
+            if (themePanel) {
+                themePanel.classList.toggle("float-panel-closed");
+            }
+        };
+    }
+
+    document.addEventListener("click", function(event) {
+        const panels = ["display-setting", "nav-menu-panel", "music-nav-panel", "theme-mode-panel"];
+        const buttons = ["display-settings-switch", "nav-menu-switch", "music-player-switch", "scheme-switch"];
+
+        panels.forEach((id, index) => {
+            const panel = document.getElementById(id);
+            const button = document.getElementById(buttons[index]);
+            if (panel && button && !panel.classList.contains("float-panel-closed")) {
+                if (event.target instanceof Node && !panel.contains(event.target) && !button.contains(event.target)) {
+                    if (id === "nav-menu-panel") {
+                        setMobileMenuOpen(false);
+                    } else {
+                        panel.classList.add("float-panel-closed");
+                    }
+                }
+            }
+        });
+    });
+}
+
+loadButtonScript();
+
+function normalizeNavPath(path: string) {
+    var pathname = (path || "/").split(/[?#]/)[0] || "/";
+    try {
+        if (/^https?:\/\//.test(pathname)) {
+            pathname = new URL(pathname).pathname;
+        }
+    } catch (_) {}
+    if (!pathname.startsWith("/")) pathname = "/" + pathname;
+    var basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+    if (basePath && basePath !== "/" && pathname.startsWith(basePath)) {
+        pathname = pathname.slice(basePath.length) || "/";
+    }
+    return pathname.length > 1 ? pathname.replace(/\/+$/g, "") : "/";
+}
+
+function navPathMatches(currentPath: string, candidatePath: string) {
+    if (!candidatePath) return false;
+    if (candidatePath === "/") return currentPath === "/";
+    return currentPath === candidatePath || currentPath.startsWith(candidatePath + "/");
+}
+
+function syncNavbarActiveState() {
+    var currentPath = normalizeNavPath(window.location.pathname);
+
+    document.querySelectorAll("[data-nav-item]").forEach(function(item) {
+        var paths = (item.getAttribute("data-active-paths") || "").split("|").filter(Boolean);
+        var active = paths.some(function(path) {
+            return navPathMatches(currentPath, path);
+        });
+        var link = item.querySelector(".navbar-link");
+        if (!link) return;
+        link.classList.toggle("nav-link-active", active);
+        link.classList.toggle("active", active);
+        if (active) {
+            link.setAttribute("aria-current", "page");
+        } else {
+            link.removeAttribute("aria-current");
+        }
+    });
+
+    document.querySelectorAll("[data-mobile-nav-item]").forEach(function(item) {
+        var paths = (item.getAttribute("data-active-paths") || "").split("|").filter(Boolean);
+        var active = paths.some(function(path) {
+            return navPathMatches(currentPath, path);
+        });
+        if (item.classList.contains("mobile-link")) {
+            item.classList.toggle("mobile-nav-active", active);
+            if (active) {
+                item.setAttribute("aria-current", "page");
+            } else {
+                item.removeAttribute("aria-current");
+            }
+        }
+        if (item.classList.contains("mobile-nav-group")) {
+            item.classList.toggle("mobile-nav-group-active", active);
+        }
+    });
+}
+
+syncNavbarActiveState();
+document.addEventListener("astro:page-load", syncNavbarActiveState);
+document.addEventListener("swup:contentReplaced", syncNavbarActiveState);
+document.addEventListener("click", function(event) {
+    var target = event.target;
+    if (!(target instanceof Element)) return;
+    var link = target.closest("a[href]");
+    if (!link) return;
+    var href = link.getAttribute("href") || "";
+    if (!href || href.startsWith("#") || /^https?:\/\//.test(href)) return;
+    window.setTimeout(syncNavbarActiveState, 80);
+    window.setTimeout(syncNavbarActiveState, 240);
+});
+window.addEventListener("popstate", syncNavbarActiveState);
+window.addEventListener("hashchange", syncNavbarActiveState);
+
+// 为semifull模式添加滚动检测逻辑
+function initSemifullScrollDetection() {
+    const navbar = document.getElementById('navbar');
+    if (!navbar) return;
+
+    const transparentMode = navbar.getAttribute('data-transparent-mode');
+    if (transparentMode !== 'semifull') return;
+
+    // 无论首页/非首页，semifull 都由滚动位置决定是否进入 scrolled 状态
+    // 先移除之前的滚动监听器，避免重复绑定
+    if (window.semifullScrollHandler) {
+        window.removeEventListener('scroll', window.semifullScrollHandler as () => void);
+        window.semifullScrollHandler = undefined;
+    }
+
+    // 初始状态不强制加 scrolled，保持透明；滚动后再切换
+    navbar.classList.remove('scrolled');
+
+    let ticking = false;
+
+    function updateNavbarState() {
+        if (document.documentElement.classList.contains('is-page-transitioning')) {
+            navbar!.classList.remove('scrolled');
+            ticking = false;
+            return;
+        }
+
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const threshold = 50; // 滚动阈值，可以根据需要调整
+        // 使用批量DOM操作优化性能
+        if (scrollTop > threshold) {
+            navbar!.classList.add('scrolled');
+        } else {
+            navbar!.classList.remove('scrolled');
+        }
+
+        ticking = false;
+    }
+
+    function requestTick() {
+        if (!ticking) {
+            requestAnimationFrame(updateNavbarState);
+            ticking = true;
+        }
+    }
+
+    // 移除之前的滚动事件监听器（如果存在）
+    if (window.semifullScrollHandler) {
+        window.removeEventListener('scroll', window.semifullScrollHandler as () => void);
+    }
+
+    // 保存新的事件处理器引用
+    window.semifullScrollHandler = requestTick as unknown as (() => void);
+
+    // 监听滚动事件
+    window.addEventListener('scroll', requestTick, { passive: true });
+
+    // 初始化状态
+    updateNavbarState();
+}
+
+// 将函数暴露到全局对象，供页面切换时调用
+window.initSemifullScrollDetection = initSemifullScrollDetection;
+
+// 页面加载完成后初始化滚动检测
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSemifullScrollDetection);
+} else {
+    initSemifullScrollDetection();
+}
+</script>
+
+{
+    import.meta.env.PROD && (
+        <script is:inline data-swup-ignore-script define:vars={{ scriptUrl: url('/pagefind/pagefind.js') }}>
+            {/* 你的 loadPagefind 函数的完整内容放在这里 */}
+            async function loadPagefind() {
+                try {
+                    const response = await fetch(scriptUrl, { method: 'HEAD' });
+                    if (!response.ok) {
+                        throw new Error(`Pagefind script not found: ${response.status}`);
+                    }
+                    const pagefind = await import(scriptUrl);
+                    await pagefind.options({
+                        excerptLength: 20
+                    });
+                    window.pagefind = pagefind;
+                    document.dispatchEvent(new CustomEvent('pagefindready'));
+                    console.log('Pagefind loaded and initialized successfully, event dispatched.');
+                } catch (error) {
+                    console.error('Failed to load Pagefind:', error);
+                    window.pagefind = {
+                        search: () => Promise.resolve({ results: [] }),
+                        options: () => Promise.resolve(),
+                    };
+                    document.dispatchEvent(new CustomEvent('pagefindloaderror'));
+                    console.log('Pagefind load error, event dispatched.');
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', loadPagefind);
+            } else {
+                loadPagefind();
+            }
+        </script>
+    )
+}

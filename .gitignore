@@ -1,0 +1,66 @@
+# build output
+dist/
+
+# generated types
+.astro/
+.astro-build-check/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+*.pid
+*.jobid
+__pycache__/
+*.py[cod]
+
+# local package-manager caches and deployment archives
+.npm-cache/
+.pnpm-store/
+firefly-dist-*.tgz
+
+# environment variables
+.env
+.env.production
+ops/waline-ai-reviewer/.env*
+!ops/waline-ai-reviewer/.env.example
+ops/waline-ai-reviewer/config.json
+ops/waline-ai-reviewer/runtime.json
+ops/waline-ai-reviewer/smtp.json
+ops/waline-ai-reviewer/admin-password.json
+ops/waline-ai-reviewer/admin-sessions.json
+ops/waline-ai-reviewer/*.key
+ops/waline-ai-reviewer/*.db
+ops/waline-ai-reviewer/*.sqlite*
+waline/.env.local
+waline/smtp.json
+
+# macOS-specific files
+.DS_Store
+
+.vercel
+
+package-lock.json
+bun.lockb
+yarn.lock
+
+# ide
+.idea
+*.iml
+.claude
+
+# docs
+Firefly-docs/
+Rainzt博客部署指南.md
+
+cache/
+package/
+.obsidian/
+
+# accidental nested copy
+Firefly-master/

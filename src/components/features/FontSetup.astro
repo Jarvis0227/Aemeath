@@ -1,0 +1,100 @@
+---
+import { Font } from "astro:assets";
+import { fontConfig } from "@/config";
+import { collectUsedFontCssVars } from "@/utils/fontHelper";
+import "lxgw-wenkai-screen-webfont/lxgwwenkaiscreen.css";
+
+const allCssVars = fontConfig.enable
+	? collectUsedFontCssVars(fontConfig)
+	: new Set<string>();
+
+const selectedIds: string[] =
+	fontConfig.enable && fontConfig.selected
+		? Array.isArray(fontConfig.selected)
+			? fontConfig.selected
+			: [fontConfig.selected]
+		: [];
+
+const SYSTEM_FONT_STACK =
+	"system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif";
+const WENKAI_FONT_STACK =
+	'"LXGW WenKai Screen", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif';
+
+const selectedFontVars = selectedIds.filter((v) => v !== "system");
+const bodyFontFamily =
+	selectedFontVars.length > 0
+		? [...selectedFontVars.map((v) => `var(${v})`), SYSTEM_FONT_STACK].join(
+				", ",
+			)
+		: SYSTEM_FONT_STACK;
+
+const bannerTitleFontVar = fontConfig.enable
+	? fontConfig.bannerTitleFont || ""
+	: "";
+const bannerSubtitleFontVar = fontConfig.enable
+	? fontConfig.bannerSubtitleFont || ""
+	: "";
+const navbarTitleFontVar = fontConfig.enable
+	? fontConfig.navbarTitleFont || ""
+	: "";
+---
+
+<script is:inline>
+	(() => {
+		const storageKey = "firefly-font-mode";
+		const savedMode = localStorage.getItem(storageKey);
+		const mode = savedMode === "original" ? "original" : "wenkai";
+		document.documentElement.dataset.fontMode = mode;
+	})();
+</script>
+
+{Array.from(allCssVars).map((cssVar) => (
+	<Font cssVariable={cssVar as any} preload={selectedFontVars.includes(cssVar)} />
+))}
+
+{fontConfig.enable && (
+	<style
+		set:html={`
+		:root {
+			--font-lxgw-wenkai: ${WENKAI_FONT_STACK};
+			--font-blog-original: ${bodyFontFamily};
+			--font-original-banner-title: ${bannerTitleFontVar ? `var(${bannerTitleFontVar}, var(--font-blog-original))` : "var(--font-blog-original)"};
+			--font-original-banner-subtitle: ${bannerSubtitleFontVar ? `var(${bannerSubtitleFontVar}, var(--font-blog-original))` : "var(--font-blog-original)"};
+			--font-original-navbar-title: ${navbarTitleFontVar ? `var(${navbarTitleFontVar}, var(--font-blog-original))` : "var(--font-blog-original)"};
+			--font-active-sans: var(--font-lxgw-wenkai);
+			--font-banner-title: var(--font-lxgw-wenkai);
+			--font-banner-subtitle: var(--font-lxgw-wenkai);
+			--font-navbar-title: var(--font-lxgw-wenkai);
+			--font-sans: var(--font-lxgw-wenkai);
+		}
+
+		:root[data-font-mode="original"] {
+			--font-active-sans: var(--font-blog-original);
+			--font-banner-title: var(--font-original-banner-title);
+			--font-banner-subtitle: var(--font-original-banner-subtitle);
+			--font-navbar-title: var(--font-original-navbar-title);
+			--font-sans: var(--font-blog-original);
+		}
+
+		body,
+		button,
+		input,
+		textarea,
+		select {
+			font-family: var(--font-active-sans);
+		}
+	`}
+	/>
+)}
+
+<script>
+	if (document.fonts && typeof document.fonts.ready !== "undefined") {
+		document.fonts.ready
+			.then(() => {
+				document.dispatchEvent(new CustomEvent("fontsLoaded"));
+			})
+			.catch((error) => {
+				console.warn("Font loading failed:", error);
+			});
+	}
+</script>
