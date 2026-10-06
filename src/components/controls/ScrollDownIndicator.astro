@@ -16,18 +16,27 @@ import { Icon } from "astro-icon/components";
     if (window.__scrollDownIndicatorInit) return;
     window.__scrollDownIndicatorInit = true;
 
+    var indicator = document.getElementById("scroll-down-indicator");
+    var lastHidden = null;
+
     function updateVisibility() {
-      var indicator = document.getElementById("scroll-down-indicator");
       if (!indicator) return;
       var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      if (scrollTop > 100) {
-        indicator.classList.add("hide");
-      } else {
-        indicator.classList.remove("hide");
-      }
+      var hidden = scrollTop > 100;
+      if (hidden === lastHidden) return;
+      lastHidden = hidden;
+      indicator.classList.toggle("hide", hidden);
+    }
+
+    function refreshIndicator() {
+      indicator = document.getElementById("scroll-down-indicator");
+      lastHidden = null;
+      updateVisibility();
     }
 
     window.addEventListener("scroll", updateVisibility, { passive: true });
+    document.addEventListener("swup:contentReplaced", refreshIndicator);
+    document.addEventListener("astro:after-swap", refreshIndicator);
     updateVisibility();
   })();
 </script>

@@ -1,7 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
-import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import noticeHtml from "@/data/notice.html?raw";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
 
 const noticePath = "src/data/notice.html";
 
@@ -16,6 +16,81 @@ const noticeArticles = Array.from(noticeHtml.matchAll(articlePattern)).map(
 );
 
 const notices = [
+	{
+		version: "2026-09-17-1",
+		kicker: "UPDATE / 2026.9.17-1",
+		title: "2026.9.17-1 重大 BUG 修复公告",
+		desc: "修复表格批次与线上变种组号可能错配的问题。现在必须先完成表格组号与线上顺序的精确核对，确认一致后才允许处理图片。",
+		brief: "表格批次与线上变种组号精确核对，错配时停止",
+		sections: {
+			summary: "latest-0917-1-summary",
+			"sheet-maker": "latest-0917-1-example",
+			"bulk-import": "latest-0917-1-example",
+			universal: "latest-0917-1-flow",
+			interface: "latest-0917-1-flow",
+			safety: "latest-0917-1-checklist",
+			checklist: "latest-0917-1-checklist",
+		},
+		labels: {
+			summary: "修复内容",
+			"sheet-maker": "重叠批次",
+			"bulk-import": "重叠批次",
+			universal: "核对顺序",
+			interface: "核对顺序",
+			safety: "使用要求",
+			checklist: "使用要求",
+		},
+	},
+	{
+		version: "2026-09-17",
+		kicker: "UPDATE / 2026.9.17",
+		title: "2026.9.17 上架工具更新公告",
+		desc: "本次更新重点是多店铺分开上架、店铺配置与数据目录绑定、PNG 图片兼容，以及多店铺任务失败后的安全恢复。",
+		brief: "多店铺分开上架、目录识别、PNG 兼容和失败恢复",
+		sections: {
+			summary: "latest-0917-summary",
+			"sheet-maker": "latest-0917-multi-store",
+			"bulk-import": "latest-0917-directory",
+			universal: "latest-0917-png",
+			interface: "latest-0917-retry",
+			safety: "latest-0917-review",
+			checklist: "latest-0917-checklist",
+		},
+		labels: {
+			summary: "本次更新",
+			"sheet-maker": "多店铺上架",
+			"bulk-import": "目录识别",
+			universal: "PNG 兼容",
+			interface: "失败恢复",
+			safety: "店铺确认",
+			checklist: "更新检查",
+		},
+	},
+	{
+		version: "2026-09-16",
+		kicker: "UPDATE / 2026.9.16",
+		title: "2026.9.16 上架工具更新公告",
+		desc: "本次汇总 9.6 之后的只读统计、旧链接折扣、店铺方案复制、分批上架和安装准备更新。",
+		brief: "只读统计、旧链接折扣、店铺方案复制、分批上架和安装准备",
+		sections: {
+			summary: "latest-0916-summary",
+			"sheet-maker": "latest-0916-tools",
+			"bulk-import": "latest-0916-discount",
+			universal: "latest-0916-store",
+			interface: "latest-0916-scope",
+			safety: "latest-0916-setup",
+			checklist: "latest-0916-checklist",
+		},
+		labels: {
+			summary: "本次更新",
+			"sheet-maker": "只读统计工具",
+			"bulk-import": "旧链接折扣",
+			universal: "店铺方案复制",
+			interface: "分批上架",
+			safety: "安装准备",
+			checklist: "更新检查",
+		},
+	},
 	{
 		version: "2026-09-06",
 		kicker: "UPDATE / 2026.9.6",
@@ -46,7 +121,8 @@ const notices = [
 		kicker: "UPDATE / 2026.8.11",
 		title: "2026.8.11 上架底层逻辑更新公告",
 		desc: "Shopee 与 TK 主图改为优先独立上传，批量添加新 Model 先清理 BigSeller 继承数据，并统一标题、做表、通用配置、店铺新建和进度统计规则。",
-		brief: "主图优先上传、新 Model 继承值清理、标题与做表规则、店铺新建和进度修复",
+		brief:
+			"主图优先上传、新 Model 继承值清理、标题与做表规则、店铺新建和进度修复",
 		sections: {
 			summary: "latest-0811-summary",
 			"sheet-maker": "latest-0811-main-image",
@@ -576,7 +652,8 @@ const noticeMetaJson = JSON.stringify(
 	.history-entry:hover,
 	.history-entry.active {
 		border-color: color-mix(in oklab, var(--primary) 24%, var(--line-divider));
-		background: color-mix(in oklab, var(--primary) 11%, transparent);
+		background: transparent;
+		color: var(--primary);
 		transform: translateX(0.1rem);
 	}
 

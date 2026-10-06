@@ -73,63 +73,28 @@ const techStack = [
 
 	</section>
 
-	<footer id="site-footer" class="site-footer transition" aria-label="网站页脚">
-		<div class="site-footer__inner-border" aria-hidden="true"></div>
+	<footer id="site-footer" class="site-footer card-base transition" aria-label="网站页脚">
 
 		<div class="site-footer__decor" aria-hidden="true">
-			<div class="site-footer__planet site-footer__planet--left"><span></span></div>
-			<div class="site-footer__planet site-footer__planet--right"></div>
-
-			<svg class="site-footer__waves" viewBox="0 0 2048 430" preserveAspectRatio="none">
+			<svg class="site-footer__parcel" viewBox="0 0 190 150">
 				<defs>
-					<linearGradient id="site-footer-wave-left" x1="0" y1="0" x2="1" y2="0">
-						<stop offset="0" stop-color="#ffffff" stop-opacity="0.88"></stop>
-						<stop offset="0.58" stop-color="#8bbcff" stop-opacity="0.64"></stop>
-						<stop offset="1" stop-color="#2c86f5" stop-opacity="0"></stop>
+					<linearGradient id="site-footer-parcel-gradient" x1="0" y1="0" x2="1" y2="1">
+						<stop offset="0" stop-color="var(--footer-parcel-start)"></stop>
+						<stop offset="0.58" stop-color="var(--footer-parcel-middle)"></stop>
+						<stop offset="1" stop-color="var(--footer-parcel-end)"></stop>
 					</linearGradient>
-					<linearGradient id="site-footer-wave-right" x1="1" y1="0" x2="0" y2="0">
-						<stop offset="0" stop-color="#ffffff" stop-opacity="0.9"></stop>
-						<stop offset="0.58" stop-color="#8bbcff" stop-opacity="0.62"></stop>
-						<stop offset="1" stop-color="#2c86f5" stop-opacity="0"></stop>
-					</linearGradient>
-					<radialGradient id="site-footer-node" cx="50%" cy="50%" r="50%">
-						<stop offset="0" stop-color="#ffffff"></stop>
-						<stop offset="0.35" stop-color="#9fd3ff"></stop>
-						<stop offset="1" stop-color="#2f8df7" stop-opacity="0"></stop>
-					</radialGradient>
 				</defs>
-
-				<g fill="none" stroke="url(#site-footer-wave-left)" stroke-width="1.6">
-					<path d="M-30 170 C 154 170, 190 316, 356 321 C 500 326, 545 230, 684 245 C 776 255, 817 320, 938 338"></path>
-					<path d="M-28 202 C 126 205, 192 347, 355 351 C 500 356, 563 264, 702 279 C 790 288, 836 340, 944 354"></path>
-					<path d="M-22 237 C 122 242, 201 374, 360 378 C 514 382, 584 303, 718 315 C 805 323, 852 360, 952 370"></path>
-					<path d="M-14 274 C 121 279, 217 399, 375 403 C 526 406, 601 342, 735 349 C 824 354, 870 378, 960 385"></path>
-					<path d="M-4 310 C 136 314, 236 416, 393 420 C 545 423, 617 377, 752 381 C 839 383, 888 392, 972 397"></path>
+				<g fill="none" stroke="url(#site-footer-parcel-gradient)" stroke-linecap="round" stroke-linejoin="round">
+					<path d="m78 58 39-20 39 20-39 20-39-20Zm0 0v45l39 21 39-21V58m-39 20v46m-20-76 39 20" stroke-width="3"></path>
+					<path d="M40 95c11 0 18 1 25 7m-8-15 9 15-16 5M164 40c-10-8-21-11-34-10m12-8-13 8 11 10" stroke-width="2.5"></path>
+					<path d="M38 51h24M45 62h18" stroke-width="2" stroke-dasharray="5 7"></path>
 				</g>
-
-				<g fill="none" stroke="url(#site-footer-wave-right)" stroke-width="1.6">
-					<path d="M2078 126 C 1882 128, 1818 305, 1655 318 C 1507 330, 1456 246, 1314 258 C 1214 266, 1170 329, 1062 342"></path>
-					<path d="M2075 160 C 1889 166, 1826 337, 1654 346 C 1502 354, 1439 277, 1303 291 C 1210 301, 1157 345, 1055 358"></path>
-					<path d="M2070 197 C 1893 204, 1828 365, 1651 372 C 1500 378, 1421 312, 1287 326 C 1195 336, 1144 364, 1048 373"></path>
-					<path d="M2064 237 C 1890 244, 1823 390, 1644 396 C 1491 401, 1406 349, 1275 359 C 1182 366, 1129 381, 1038 387"></path>
-					<path d="M2058 280 C 1882 286, 1806 413, 1627 419 C 1475 423, 1394 382, 1260 389 C 1171 394, 1118 398, 1028 402"></path>
-				</g>
-
-				<g opacity="0.96">
-					<circle cx="164" cy="315" r="4.5" fill="url(#site-footer-node)"></circle>
-					<circle cx="428" cy="383" r="6" fill="url(#site-footer-node)"></circle>
-					<circle cx="548" cy="352" r="3.5" fill="url(#site-footer-node)"></circle>
-					<circle cx="1588" cy="364" r="5.5" fill="url(#site-footer-node)"></circle>
-					<circle cx="1838" cy="307" r="4" fill="url(#site-footer-node)"></circle>
-					<circle cx="1944" cy="260" r="3" fill="url(#site-footer-node)"></circle>
+				<g fill="url(#site-footer-parcel-gradient)">
+					<circle cx="39" cy="95" r="3"></circle>
+					<circle cx="47" cy="40" r="2"></circle>
+					<circle cx="171" cy="114" r="2.5"></circle>
 				</g>
 			</svg>
-
-			<span class="site-footer__star site-footer__star--one"></span>
-			<span class="site-footer__star site-footer__star--two"></span>
-			<span class="site-footer__star site-footer__star--three"></span>
-			<span class="site-footer__star site-footer__star--four"></span>
-			<span class="site-footer__star site-footer__star--five"></span>
 		</div>
 
 		<div class="site-footer__content">
@@ -221,14 +186,10 @@ const techStack = [
 			</div>
 
 			<div class="site-footer__powered">
-				<span class="site-footer__powered-dots" aria-hidden="true">• • •</span>
-				<span class="site-footer__powered-star" aria-hidden="true">✦</span>
 				<span>Powered by</span>
 				<a href="https://astro.build" target="_blank" rel="noreferrer">Astro</a>
 				<span>&amp;</span>
 				<span class="site-footer__powered-name">Aemeath {siteConfig.themeVersion || "V1.1.1"}</span>
-				<span class="site-footer__powered-star" aria-hidden="true">✦</span>
-				<span class="site-footer__powered-dots" aria-hidden="true">• • •</span>
 			</div>
 		</div>
 	</footer>

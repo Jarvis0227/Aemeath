@@ -115,7 +115,7 @@ const widgetId =
     </button>
 
     <!-- Play/Pause (Feature) -->
-    <button class="btn-play w-12 h-12 bg-(--btn-regular-bg) hover:bg-(--btn-regular-bg-hover) active:bg-(--btn-regular-bg-active) text-(--primary) rounded-full flex items-center justify-center transition-all duration-300" title={i18n(I18nKey.musicPlay)} aria-label={i18n(I18nKey.musicPlay)}>
+    <button class="btn-play w-12 h-12 text-(--primary) rounded-full flex items-center justify-center transition-all duration-300" title={i18n(I18nKey.musicPlay)} aria-label={i18n(I18nKey.musicPlay)}>
         <Icon is:inline name="material-symbols:play-arrow-rounded" class="icon-play text-3xl ml-0.5" aria-hidden="true" />
         <Icon is:inline name="material-symbols:pause-rounded" class="icon-pause text-3xl hidden" aria-hidden="true" />
     </button>
@@ -263,17 +263,22 @@ const widgetId =
     }
 
     function updatePlayStateUI(isPlaying) {
+        ui.btnPlay.classList.remove(
+            'bg-(--primary)',
+            'text-white',
+            'hover:brightness-110',
+            'bg-(--btn-regular-bg)',
+            'hover:bg-(--btn-regular-bg-hover)',
+            'active:bg-(--btn-regular-bg-active)',
+        );
+        ui.btnPlay.classList.add('text-(--primary)');
         if (isPlaying) {
-            ui.btnPlay.classList.add('bg-(--primary)', 'text-white', 'hover:brightness-110');
-            ui.btnPlay.classList.remove('bg-(--btn-regular-bg)', 'hover:bg-(--btn-regular-bg-hover)', 'active:bg-(--btn-regular-bg-active)', 'text-(--primary)');
             ui.iconPlay.classList.add('hidden');
             ui.iconPause.classList.remove('hidden');
             ui.cover.style.animationPlayState = 'running';
             ui.btnPlay.setAttribute('aria-label', cfg.i18n.pause);
             ui.btnPlay.title = cfg.i18n.pause;
         } else {
-            ui.btnPlay.classList.remove('bg-(--primary)', 'text-white', 'hover:brightness-110');
-            ui.btnPlay.classList.add('bg-(--btn-regular-bg)', 'hover:bg-(--btn-regular-bg-hover)', 'active:bg-(--btn-regular-bg-active)', 'text-(--primary)');
             ui.iconPlay.classList.remove('hidden');
             ui.iconPause.classList.add('hidden');
             ui.cover.style.animationPlayState = 'paused';

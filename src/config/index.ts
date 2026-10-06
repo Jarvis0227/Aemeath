@@ -51,6 +51,7 @@ export {
 	getEnabledFriends,
 } from "./friendsConfig"; // 友链配置
 export { galleryConfig } from "./galleryConfig"; // 相册配置
+export { homePortfolioIntroSettings } from "./homePortfolioIntro"; // 首页开屏动画访客偏好
 export { licenseConfig } from "./licenseConfig"; // 许可证配置
 // 组件配置
 export { musicPlayerConfig } from "./musicConfig"; // 音乐播放器配置
@@ -63,4 +64,3 @@ export { sidebarLayoutConfig } from "./sidebarConfig"; // 侧边栏布局配置
 // 核心配置
 export { siteConfig } from "./siteConfig"; // 站点基础配置
 export { sponsorConfig } from "./sponsorConfig"; // 打赏配置
-export { homePortfolioIntroSettings } from "./homePortfolioIntro"; // 首页开屏动画访客偏好

@@ -503,7 +503,7 @@ function portal(node: HTMLElement) {
         {:else}
            <div class="flex flex-col items-center gap-3">
              <div class="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin" style="border-top-color: {themeColor}"></div>
-             <span class="text-sm text-gray-500">{i18n(I18nKey.generatingPoster)}</span>
+             <span class="text-sm text-gray-500 dark:text-gray-400">{i18n(I18nKey.generatingPoster)}</span>
            </div>
         {/if}
       </div>

@@ -26,8 +26,19 @@ firefly-dist-*.tgz
 
 # environment variables
 .env
-.env.*
-!.env.example
+.env.production
+ops/waline-ai-reviewer/.env*
+!ops/waline-ai-reviewer/.env.example
+ops/waline-ai-reviewer/config.json
+ops/waline-ai-reviewer/runtime.json
+ops/waline-ai-reviewer/smtp.json
+ops/waline-ai-reviewer/admin-password.json
+ops/waline-ai-reviewer/admin-sessions.json
+ops/waline-ai-reviewer/*.key
+ops/waline-ai-reviewer/*.db
+ops/waline-ai-reviewer/*.sqlite*
+waline/.env.local
+waline/smtp.json
 
 # macOS-specific files
 .DS_Store
@@ -52,16 +63,3 @@ package/
 
 # accidental nested copy
 Firefly-master/
-
-# public snapshot excludes deployment and local-runtime internals
-/DEPLOY.md
-/*部署指南*.md
-/start-firefly-dev.bat
-/.github/workflows/deploy.yml
-/.github/workflows/refresh-and-deploy.yml
-/ops/
-/public/api/deploy-status.json
-/public/api/server-status.*
-/waline/
-/vercel.json
-/wrangler.jsonc

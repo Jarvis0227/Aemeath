@@ -51,6 +51,10 @@ html {
     scroll-behavior: smooth;
 }
 
+body {
+    color: var(--text-color);
+}
+
 /* 页面顶部渐变高光效果 */
 .top-gradient-highlight {
     position: fixed;
@@ -270,18 +274,15 @@ html {
         background-color: var(--card-bg-transparent) !important;
     }
 
-    /* Overlay 模式下，滚动后提高导航栏背景模糊度，增强与正文区分 */
-    .wallpaper-transparent #navbar.navbar-sticky-shadow > div {
-        backdrop-filter: blur(20px) !important;
-     
-    }
-
+    /* 滚动时只保留导航胶囊本身的玻璃效果，不再模糊整条导航区域 */
+    .wallpaper-transparent #navbar.navbar-sticky-shadow > div,
     :root.dark .wallpaper-transparent #navbar.navbar-sticky-shadow > div {
-        backdrop-filter: blur(20px) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
     }
     
     .wallpaper-transparent .btn-card {
-        background-color: var(--card-bg-transparent) !important;
+        background-color: transparent !important;
     }
 
     .wallpaper-transparent .bg-\(--card-bg\) {
@@ -596,4 +597,110 @@ html {
 /* 分页信息样式 */
 .pagination-info {
   @apply text-sm text-(--text-secondary) text-center mb-2;
+}
+
+/* Shared card finish, selected in the appearance panel. */
+html[data-card-decoration="soft"] :is(
+    .card-base,
+    .card-base-transparent,
+    .bills-page .balance-card,
+    .bills-page .monthly-card,
+    .bills-page .flow-card,
+    .bills-page .cal-card,
+    .bills-page .trend-card,
+    .bills-page .income-card,
+    .bills-page .rank-card,
+    .bills-page .yearly-card
+) {
+  border: 1px solid color-mix(in oklch, var(--primary) 9%, var(--line-divider));
+  box-shadow:
+    0 0.32rem 0.9rem color-mix(in oklch, var(--primary) 5%, transparent),
+    0 0.1rem 0.25rem color-mix(in oklch, var(--primary) 4%, transparent);
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background-color 150ms ease;
+}
+
+html[data-card-decoration="flat"] :is(
+    .card-base,
+    .card-base-transparent,
+    .bills-page .balance-card,
+    .bills-page .monthly-card,
+    .bills-page .flow-card,
+    .bills-page .cal-card,
+    .bills-page .trend-card,
+    .bills-page .income-card,
+    .bills-page .rank-card,
+    .bills-page .yearly-card
+) {
+  border: 1px solid color-mix(in oklch, var(--line-divider) 76%, var(--text-color) 4%);
+  box-shadow: none !important;
+  transition:
+    border-color 220ms ease,
+    background-color 150ms ease;
+}
+
+/* Shared controls stay clear in their idle, hover, and active states. */
+:is(
+  .btn-regular,
+  .btn-card,
+  .btn-play,
+  .meta-icon,
+  .pinned-btn,
+  .tag-item,
+  .expand-btn .btn-plain,
+  :is(button, a)[class~="bg-(--btn-regular-bg)"],
+  :is(button, a)[class~="bg-(--primary)"]
+) {
+  border: 1px solid var(--glass-control-border);
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:is(a, button).btn-regular,
+:is(button, a)[class~="bg-(--btn-regular-bg)"],
+:is(button, a)[class~="bg-(--primary)"],
+.meta-icon,
+.pinned-btn,
+.btn-play,
+.tag-item,
+.tag-item .tag-count-badge {
+  color: var(--primary);
+}
+
+button.btn-play.btn-play {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--glass-control-border));
+}
+
+.tag-item .tag-count-badge {
+  background: transparent;
+}
+
+:is(a, button):is(.btn-regular, .btn-card, .btn-play, .tag-item, .expand-btn .btn-plain):hover,
+:is(button, a)[class~="bg-(--btn-regular-bg)"]:hover,
+:is(button, a)[class~="bg-(--primary)"]:hover {
+  border-color: color-mix(in srgb, var(--primary) 36%, var(--glass-control-border));
+}
+
+:is(a, button):is(.btn-regular, .btn-card, .btn-play, .tag-item, .expand-btn .btn-plain):is(:hover, :active),
+:is(button, a)[class~="bg-(--btn-regular-bg)"]:is(:hover, :active),
+:is(button, a)[class~="bg-(--primary)"]:is(:hover, :active) {
+  background: transparent;
+}
+
+:is(a, button):is(.btn-regular, .btn-card, .btn-plain, .tag-item):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+:is(.pagination-wrapper, .responsive-pagination) [aria-current="page"] {
+  border: 1px solid color-mix(in srgb, var(--primary) 55%, var(--glass-control-border));
+  background: transparent;
+  color: var(--primary);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }

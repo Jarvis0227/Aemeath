@@ -2,10 +2,10 @@
 title: Markdown 扩展功能
 published: 1970-01-01
 updated: 1970-01-01
-description: "了解 Rain 中的 Markdown 功能"
-aiSummary: 这篇扩展语法样例把 GitHub 仓库卡片、四套 admonition 主题、剧透和图片网格放在同一页，方便核对 Rain 的组件化 Markdown 渲染。
+description: "了解 Aemeath 中的 Markdown 功能"
+aiSummary: 这篇扩展语法样例把 GitHub 仓库卡片、四套 admonition 主题、剧透和图片网格放在同一页，方便核对 Aemeath 的组件化 Markdown 渲染。
 image: ""
-tags: [演示, 示例, Markdown, Rain]
+tags: [演示, 示例, Markdown, Aemeath]
 category: "文章示例"
 draft: true
 ---
@@ -14,12 +14,12 @@ draft: true
 
 您可以添加链接到 GitHub 仓库的动态卡片，在页面加载时，仓库信息会从 GitHub API 获取。
 
-::github{repo="CuteLeaf/Firefly"}
+::github{repo="Jarvis0227/Aemeath"}
 
-使用代码 `::github{repo="CuteLeaf/Firefly"}` 创建 GitHub 仓库卡片。
+使用代码 `::github{repo="Jarvis0227/Aemeath"}` 创建 GitHub 仓库卡片。
 
 ```markdown
-::github{repo="CuteLeaf/Firefly"}
+::github{repo="Jarvis0227/Aemeath"}
 ```
 
 ## 提醒框(Admonitions)配置

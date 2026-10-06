@@ -12,17 +12,17 @@ export const siteConfig: SiteConfig = {
 	subtitle: "物物而不物于物，念念而不念于念",
 
 	// Aemeath 主题版本
-	themeVersion: "V3.4.0",
+	themeVersion: "V4.1.6",
 
 	// 站点 URL
 	site_url: "https://rainzt.cn",
 
 	// 站点描述
 	description:
-		"Aemeath 是一款基于 Astro 深度定制的个人博客主题，融合了鸣潮视觉、技术记录、工具展示与私人写作，承载我的开发历程和日常思考。",
+		"Aemeath 是朝朝听雨（Rain）的个人博客站点，记录技术实践、项目进展与日常写作。",
 
 	// 站点关键词
-	keywords: ["Rain", "Fuwari", "Astro", "ACGN", "博客", "技术博客", "静态博客"],
+	keywords: ["Aemeath", "Rain", "Astro", "ACGN", "博客", "技术博客", "静态博客"],
 
 	// 主题色
 	themeColor: {

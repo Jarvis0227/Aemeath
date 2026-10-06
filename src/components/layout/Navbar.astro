@@ -4,7 +4,6 @@ import * as path from "node:path";
 import type { ImageMetadata } from "astro";
 import { Icon } from "astro-icon/components";
 import DisplaySettings from "@/components/controls/DisplaySettingsIntegrated.svelte";
-import FontSwitch from "@/components/controls/FontSwitch.svelte";
 import LightDarkSwitch from "@/components/controls/LightDarkSwitch.svelte";
 import Search from "@/components/controls/Search.svelte";
 import MusicPlayer from "@/components/features/MusicPlayer.astro";
@@ -49,13 +48,6 @@ const isNavbarMenuCentered = navbarMenuAlign === "center";
 
 // 检查是否为首页
 const isHomePageCheck = isHomePage(Astro.url.pathname);
-
-// 检查是否有任何显示设置可用
-const showThemeColor = !siteConfig.themeColor.fixed;
-const isWallpaperSwitchable = backgroundWallpaper.switchable ?? true;
-const allowLayoutSwitch = siteConfig.postListLayout.allowSwitch;
-const hasDisplaySettings =
-	showThemeColor || isWallpaperSwitchable || allowLayoutSwitch;
 
 // 根据 siteConfig.pages 过滤导航栏链接
 const pages = siteConfig.pages;
@@ -109,9 +101,6 @@ if (isLocalSrcLogo) {
         className,
         "firefly-nav-shell relative overflow-visible! h-18 px-4"
     ]}>
-		<div id="progress-track" aria-hidden="true">
-			<div id="progress-bar"></div>
-		</div>
         <div class="nav-container mx-auto h-full w-full grid grid-cols-[auto_minmax(0,1fr)_auto] items-center">
             <a href={url('/')} class="nav-brand btn-plain scale-animation rounded-lg h-13 px-5 font-bold active:scale-95">
                 <span class:list={[
@@ -142,8 +131,8 @@ if (isLocalSrcLogo) {
                 </span>
             </a>
             <div class:list={[
-                "nav-links hidden lg:flex items-center space-x-1 col-start-2 justify-self-end",
-                isNavbarMenuCentered ? "justify-center" : "justify-start"
+                "nav-links hidden lg:flex items-center space-x-1 col-start-2",
+                isNavbarMenuCentered ? "justify-self-center justify-center" : "justify-self-start justify-start"
             ]}>
                 {links.map((l) => {
                     return <DropdownMenu link={l} />;
@@ -154,7 +143,6 @@ if (isLocalSrcLogo) {
                 <Search
                     client:load
                 />
-                <FontSwitch client:load />
                 {musicPlayerConfig.showInNavbar && (
                     <button aria-label={i18n(I18nKey.music)} class="theme-btn btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90" id="music-player-switch">
                         <Icon is:inline name="material-symbols:music-note-rounded" class="text-[1.25rem]"></Icon>
@@ -171,11 +159,9 @@ if (isLocalSrcLogo) {
                         <Icon is:inline name="material-symbols:play-arrow-rounded" class="text-[1.5rem]" />
                     </button>
                 )}
-                {hasDisplaySettings && (
-                        <button aria-label="Display Settings" class="theme-btn btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90" id="display-settings-switch">
-                            <Icon is:inline name="material-symbols:palette-outline" class="text-[1.25rem]"></Icon>
-                        </button>
-                )}
+                <button aria-label="外观设置" title="外观设置" class="theme-btn btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90" id="display-settings-switch">
+                    <Icon is:inline name="material-symbols:palette-outline" class="text-[1.25rem]"></Icon>
+                </button>
                 {/* @ts-ignore */}
                 <LightDarkSwitch client:load></LightDarkSwitch>
                 <button aria-label="Menu" aria-controls="nav-menu-panel" aria-expanded="false" name="Nav Menu" class="menu-btn btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90" id="nav-menu-switch">
@@ -204,9 +190,22 @@ function loadButtonScript() {
         let menuButton = document.getElementById("nav-menu-switch");
         if (!menuPanel) return;
 
+        if (!open) {
+            menuPanel.querySelectorAll<HTMLElement>(".mobile-nav-group").forEach((group) => {
+                const expanded = group.classList.contains("mobile-nav-group-active");
+                group.dataset.open = String(expanded);
+                group.querySelector<HTMLButtonElement>(".mobile-group-title")?.setAttribute("aria-expanded", String(expanded));
+                const panel = group.querySelector<HTMLElement>(".mobile-group-panel");
+                panel?.toggleAttribute("inert", !expanded);
+                if (expanded) panel?.removeAttribute("aria-hidden");
+                else panel?.setAttribute("aria-hidden", "true");
+            });
+        }
+
         menuPanel.classList.toggle("float-panel-closed", !open);
         menuPanel.classList.toggle("active", open);
         menuPanel.setAttribute("aria-hidden", String(!open));
+        document.getElementById("top-row")?.classList.toggle("mobile-nav-open", open);
         menuButton?.classList.toggle("active", open);
         menuButton?.setAttribute("aria-expanded", String(open));
         document.body.style.overflow = open ? "hidden" : "";
@@ -322,6 +321,110 @@ function loadButtonScript() {
 
 loadButtonScript();
 
+const compactNavbarTransitionDuration = 1100;
+const compactNavbarFoldPoint = 0.54;
+let compactNavbarModuleAnimations: Animation[] = [];
+let compactNavbarAnimatedMenu: HTMLElement | null = null;
+
+function cancelCompactNavbarModuleMotion() {
+    compactNavbarModuleAnimations.forEach((animation) => animation.cancel());
+    compactNavbarModuleAnimations = [];
+    compactNavbarAnimatedMenu?.classList.remove("is-module-folding");
+    compactNavbarAnimatedMenu = null;
+}
+
+function transitionCompactNavbarModules(navLinks: HTMLElement, expand: boolean, changeState: () => void) {
+    const items = Array.from(navLinks.querySelectorAll<HTMLElement>(":scope > .dropdown-container"));
+    const active = navLinks.querySelector<HTMLElement>(":scope > .nav-compact-active");
+    const activeIndex = active ? items.indexOf(active) : -1;
+    if (!navLinks.classList.contains("is-layout-ready") || !active || activeIndex < 0
+        || window.innerWidth <= 1440 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        cancelCompactNavbarModuleMotion();
+        changeState();
+        return;
+    }
+
+    const menuRect = navLinks.getBoundingClientRect();
+    const menuCenter = menuRect.left + menuRect.width / 2;
+    const currentOffsets = items.map((item) => {
+        const rect = item.getBoundingClientRect();
+        return rect.left + rect.width / 2 - menuCenter;
+    });
+    const currentOpacities = items.map((item) => Number.parseFloat(getComputedStyle(item).opacity));
+    const expandedOffsets = items.map((item) => Number.parseFloat(item.style.getPropertyValue("--nav-item-expanded-offset")) || 0);
+    const activeOffset = currentOffsets[activeIndex];
+    const activeExpandedOffset = expandedOffsets[activeIndex];
+
+    cancelCompactNavbarModuleMotion();
+    changeState();
+    const targetOffset = expand ? activeExpandedOffset : 0;
+    if (Math.abs(activeOffset - targetOffset) < 2
+        && items.every((_, index) => Math.abs(currentOffsets[index] - (expand ? expandedOffsets[index] : 0)) < 2)) return;
+
+    navLinks.classList.add("is-module-folding");
+    compactNavbarAnimatedMenu = navLinks;
+    const at = (offset: number) => `calc(50% + ${offset}px)`;
+    const activeTransform = (offset: number) => `translate(-50%, -50%) translateX(${offset}px)`;
+    const slideEase = "cubic-bezier(0.4, 0, 0.2, 1)";
+    const motion: KeyframeAnimationOptions = { duration: compactNavbarTransitionDuration, easing: "linear", fill: "forwards" };
+    const activeFrames = expand
+        ? [
+            { left: at(activeExpandedOffset), transform: activeTransform(activeOffset - activeExpandedOffset), offset: 0, easing: slideEase },
+            { left: at(activeExpandedOffset), transform: activeTransform(0), offset: 1 - compactNavbarFoldPoint, easing: slideEase },
+            { left: at(activeExpandedOffset), transform: activeTransform(0), offset: 1 },
+        ]
+        : [
+            { left: at(0), transform: activeTransform(activeOffset), offset: 0, easing: slideEase },
+            { left: at(0), transform: activeTransform(activeOffset), offset: compactNavbarFoldPoint, easing: slideEase },
+            { left: at(0), transform: activeTransform(0), offset: 1 },
+        ];
+    const activeAnimation = active.animate(activeFrames, motion);
+    compactNavbarModuleAnimations = [activeAnimation, ...items.flatMap((item, index) => {
+        if (index === activeIndex) return [];
+        const distance = Math.abs(index - activeIndex);
+        const joinPoint = Math.min(0.51, 0.29 + distance * 0.03);
+        const frames = expand
+            ? [
+                { left: at(currentOffsets[index]), opacity: currentOpacities[index], offset: 0, easing: slideEase },
+                { left: at(activeExpandedOffset), opacity: 0, offset: 1 - compactNavbarFoldPoint },
+                { left: at(activeExpandedOffset), opacity: 0.12, offset: 1 - joinPoint, easing: slideEase },
+                { left: at(expandedOffsets[index]), opacity: 1, offset: 1 },
+            ]
+            : [
+                { left: at(currentOffsets[index]), opacity: currentOpacities[index], offset: 0, easing: slideEase },
+                { left: at(activeOffset), opacity: 0.12, offset: joinPoint },
+                { left: at(activeOffset), opacity: 0, offset: compactNavbarFoldPoint, easing: slideEase },
+                { left: at(0), opacity: 0, offset: 1 },
+            ];
+        return [item.animate(frames, motion)];
+    })];
+    activeAnimation.onfinish = () => {
+        if (compactNavbarModuleAnimations[0] === activeAnimation) cancelCompactNavbarModuleMotion();
+    };
+}
+
+function prepareCompactNavbarReveal(navLinks: HTMLElement) {
+    const inactiveItem = navLinks.querySelector<HTMLElement>(":scope > .dropdown-container:not(.nav-compact-active)");
+    if (!inactiveItem) return;
+
+    // If a collapse is interrupted, keep the visible items moving without
+    // freezing their opacity while the menu reverses direction.
+    if (Number.parseFloat(getComputedStyle(inactiveItem).opacity) > 0.08) {
+        navLinks.style.setProperty("--nav-item-reveal-delay", "0ms");
+        return;
+    }
+
+    const style = getComputedStyle(navLinks);
+    const compactWidth = Number.parseFloat(style.getPropertyValue("--nav-links-compact-width"));
+    const expandedWidth = Number.parseFloat(style.getPropertyValue("--nav-links-expanded-width"));
+    const widthRange = expandedWidth - compactWidth;
+    const progress = widthRange > 0
+        ? Math.min(1, Math.max(0, (navLinks.getBoundingClientRect().width - compactWidth) / widthRange))
+        : 0;
+    const revealDelay = Math.round(760 * (1 - Math.min(1, progress / 0.85)));
+    navLinks.style.setProperty("--nav-item-reveal-delay", `${revealDelay}ms`);
+}
+
 function normalizeNavPath(path: string) {
     var pathname = (path || "/").split(/[?#]/)[0] || "/";
     try {
@@ -343,6 +446,109 @@ function navPathMatches(currentPath: string, candidatePath: string) {
     return currentPath === candidatePath || currentPath.startsWith(candidatePath + "/");
 }
 
+function setCompactNavbarExpanded(navbar: HTMLElement, expand: boolean, revealSubmenu = false) {
+    if (!navbar.classList.contains("scrolled")) return;
+    const navLinks = navbar.querySelector<HTMLElement>(".nav-links");
+    if (!navLinks || !navLinks.querySelector(".nav-compact-active .nav-link")) return;
+
+    if (expand) {
+        if (!navLinks.classList.contains("is-hover-expanded")) {
+            compactNavbarMotionUntil = performance.now() + compactNavbarTransitionDuration;
+            prepareCompactNavbarReveal(navLinks);
+            transitionCompactNavbarModules(navLinks, true, () => navLinks.classList.add("is-hover-expanded"));
+        }
+        if (revealSubmenu) {
+            const submenuDelay = Math.max(0, compactNavbarMotionUntil - performance.now());
+            navLinks.style.setProperty("--nav-submenu-reveal-delay", `${submenuDelay}ms`);
+            navLinks.classList.remove("is-scroll-revealed");
+            navLinks.classList.add("is-active-submenu-open");
+        } else {
+            navLinks.classList.add("is-scroll-revealed");
+            navLinks.classList.remove("is-active-submenu-open");
+        }
+    } else {
+        compactNavbarMotionUntil = 0;
+        navLinks.style.removeProperty("--nav-submenu-reveal-delay");
+        setCompactNavbarSubmenu(navLinks, null);
+        transitionCompactNavbarModules(navLinks, false, () => {
+            navLinks.classList.remove("is-hover-expanded", "is-active-submenu-open", "is-scroll-revealed");
+        });
+    }
+}
+
+function updateNavbarMenuSizing() {
+    const navbar = document.getElementById("navbar");
+    const navLinks = navbar?.querySelector<HTMLElement>(".nav-links");
+    if (!navbar || !navLinks) return;
+
+    cancelCompactNavbarModuleMotion();
+
+    const wasScrolled = navbar.classList.contains("scrolled");
+    const hadStickyShadow = navbar.classList.contains("navbar-sticky-shadow");
+    const previousStyle = navLinks.getAttribute("style");
+    const navItems = Array.from(navLinks.querySelectorAll<HTMLElement>(".dropdown-container"));
+    const previousItemStyles = navItems.map((item) => item.getAttribute("style"));
+
+    // Measure the complete menu offscreen so it also works at breakpoints where
+    // the full desktop menu is hidden in favor of the existing mobile drawer.
+    navbar.classList.remove("scrolled", "navbar-sticky-shadow");
+    navLinks.style.setProperty("position", "fixed", "important");
+    navLinks.style.setProperty("top", "0", "important");
+    navLinks.style.setProperty("left", "-10000px", "important");
+    navLinks.style.setProperty("display", "flex", "important");
+    navLinks.style.setProperty("width", "max-content", "important");
+    navLinks.style.setProperty("max-width", "none", "important");
+    navLinks.style.setProperty("transform", "none", "important");
+    navLinks.style.setProperty("visibility", "hidden", "important");
+    navLinks.style.setProperty("pointer-events", "none", "important");
+    navLinks.style.setProperty("transition", "none", "important");
+
+    navItems.forEach((item) => {
+        item.style.setProperty("position", "relative", "important");
+        item.style.setProperty("top", "auto", "important");
+        item.style.setProperty("left", "auto", "important");
+        item.style.setProperty("display", "flex", "important");
+        item.style.setProperty("opacity", "1", "important");
+        item.style.setProperty("visibility", "visible", "important");
+        item.style.setProperty("pointer-events", "auto", "important");
+        item.style.setProperty("transform", "none", "important");
+        item.style.setProperty("transition", "none", "important");
+    });
+
+    const expandedRect = navLinks.getBoundingClientRect();
+    const expandedWidth = Math.ceil(expandedRect.width);
+    const itemOffsets = navItems.map((item) => {
+        const itemRect = item.getBoundingClientRect();
+        return itemRect.left + itemRect.width / 2 - (expandedRect.left + expandedRect.width / 2);
+    });
+    const activeLink = navLinks.querySelector<HTMLElement>(".nav-link-active, .active")
+        || navLinks.querySelector<HTMLElement>(".nav-link");
+    const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const compactWidth = Math.ceil((activeLink?.getBoundingClientRect().width || rootFontSize * 4) + rootFontSize * 0.48 + 2);
+
+    if (previousStyle === null) navLinks.removeAttribute("style");
+    else navLinks.setAttribute("style", previousStyle);
+    navItems.forEach((item, index) => {
+        const previousItemStyle = previousItemStyles[index];
+        if (previousItemStyle === null) item.removeAttribute("style");
+        else if (previousItemStyle !== undefined) item.setAttribute("style", previousItemStyle);
+    });
+    if (wasScrolled) navbar.classList.add("scrolled");
+    if (hadStickyShadow) navbar.classList.add("navbar-sticky-shadow");
+
+    navLinks.style.setProperty("--nav-links-expanded-width", `${expandedWidth}px`);
+    navLinks.style.setProperty("--nav-links-compact-width", `${compactWidth}px`);
+
+    navLinks.querySelectorAll(".nav-compact-active").forEach((item) => item.classList.remove("nav-compact-active"));
+    const compactLink = navLinks.querySelector<HTMLElement>(".nav-link-active, .active")
+        || navLinks.querySelector<HTMLElement>(".nav-link");
+    compactLink?.closest(".dropdown-container")?.classList.add("nav-compact-active");
+    navLinks.querySelectorAll<HTMLElement>(".dropdown-container").forEach((item, index) => {
+        item.style.setProperty("--nav-item-expanded-offset", `${itemOffsets[index] || 0}px`);
+    });
+    navLinks.classList.add("is-layout-ready");
+}
+
 function syncNavbarActiveState() {
     var currentPath = normalizeNavPath(window.location.pathname);
 
@@ -360,9 +566,23 @@ function syncNavbarActiveState() {
         } else {
             link.removeAttribute("aria-current");
         }
+
+        item.querySelectorAll<HTMLElement>(".dropdown-item[data-nav-active-paths]").forEach(function(child) {
+            var childPaths = (child.getAttribute("data-nav-active-paths") || "").split("|").filter(Boolean);
+            var childActive = childPaths.some(function(path) {
+                return navPathMatches(currentPath, path);
+            });
+            child.classList.toggle("current-theme-btn", childActive);
+            child.classList.toggle("dropdown-item-active", childActive);
+            if (childActive) {
+                child.setAttribute("aria-current", "page");
+            } else {
+                child.removeAttribute("aria-current");
+            }
+        });
     });
 
-    document.querySelectorAll("[data-mobile-nav-item]").forEach(function(item) {
+    document.querySelectorAll<HTMLElement>("[data-mobile-nav-item]").forEach(function(item) {
         var paths = (item.getAttribute("data-active-paths") || "").split("|").filter(Boolean);
         var active = paths.some(function(path) {
             return navPathMatches(currentPath, path);
@@ -377,13 +597,119 @@ function syncNavbarActiveState() {
         }
         if (item.classList.contains("mobile-nav-group")) {
             item.classList.toggle("mobile-nav-group-active", active);
+            item.dataset.open = String(active);
+            item.querySelector<HTMLButtonElement>(".mobile-group-title")?.setAttribute("aria-expanded", String(active));
+            const panel = item.querySelector<HTMLElement>(".mobile-group-panel");
+            panel?.toggleAttribute("inert", !active);
+            if (active) panel?.removeAttribute("aria-hidden");
+            else panel?.setAttribute("aria-hidden", "true");
         }
     });
+
+    updateNavbarMenuSizing();
 }
 
 syncNavbarActiveState();
 document.addEventListener("astro:page-load", syncNavbarActiveState);
 document.addEventListener("swup:contentReplaced", syncNavbarActiveState);
+
+const navbarForHover = document.getElementById("navbar");
+const navLinksForHover = navbarForHover?.querySelector<HTMLElement>(".nav-links");
+let compactNavbarExpandedUntil = 0;
+let compactNavbarHoldTimer: number | undefined;
+let compactNavbarPointerActive = false;
+let compactNavbarMotionUntil = 0;
+function setCompactNavbarSubmenu(navLinks: HTMLElement, item: HTMLElement | null) {
+    const dropdown = item?.matches(".dropdown-container") && navLinks.contains(item)
+        && item.querySelector(".dropdown-menu") ? item : null;
+    const openDropdown = navLinks.querySelector<HTMLElement>(":scope > .dropdown-container.nav-submenu-open");
+    if (openDropdown === dropdown) return;
+
+    openDropdown?.classList.remove("nav-submenu-open");
+    if (!dropdown) return;
+
+    const delay = Math.max(0, compactNavbarMotionUntil - performance.now());
+    navLinks.style.setProperty("--nav-submenu-reveal-delay", `${delay}ms`);
+    dropdown.classList.add("nav-submenu-open");
+}
+function clearCompactNavbarHold() {
+    if (compactNavbarHoldTimer !== undefined) {
+        window.clearTimeout(compactNavbarHoldTimer);
+        compactNavbarHoldTimer = undefined;
+    }
+}
+
+function keepCompactNavbarExpanded(navbar: HTMLElement, revealSubmenu = false) {
+    if (!navbar.classList.contains("scrolled")) return;
+
+    compactNavbarExpandedUntil = performance.now() + 5000;
+    setCompactNavbarExpanded(navbar, true, revealSubmenu || compactNavbarPointerActive);
+    clearCompactNavbarHold();
+    compactNavbarHoldTimer = window.setTimeout(function() {
+        compactNavbarHoldTimer = undefined;
+        const navLinks = navbar.querySelector<HTMLElement>(".nav-links");
+        if (navLinks?.matches(":hover, :focus-within")) return;
+        setCompactNavbarExpanded(navbar, false);
+    }, 5000);
+}
+
+function collapseCompactNavbarWhenPointerLeaves(navbar: HTMLElement) {
+    const navLinks = navbar.querySelector<HTMLElement>(".nav-links");
+    if (!navbar.classList.contains("scrolled") || !navLinks?.classList.contains("is-hover-expanded")) return;
+    if (navLinks.matches(":hover, :focus-within")) return;
+
+    compactNavbarPointerActive = false;
+    setCompactNavbarSubmenu(navLinks, null);
+    navLinks.classList.add("is-scroll-revealed");
+    navLinks.classList.remove("is-active-submenu-open");
+    compactNavbarExpandedUntil = performance.now() + 5000;
+    clearCompactNavbarHold();
+    compactNavbarHoldTimer = window.setTimeout(function() {
+        compactNavbarHoldTimer = undefined;
+        if (!navLinks.matches(":hover, :focus-within")) {
+            setCompactNavbarExpanded(navbar, false);
+        }
+    }, 5000);
+}
+
+if (navbarForHover && navLinksForHover) {
+    navLinksForHover.addEventListener("pointerenter", function() {
+        keepCompactNavbarExpanded(navbarForHover, false);
+    });
+    navLinksForHover.addEventListener("pointerleave", function() {
+        setCompactNavbarSubmenu(navLinksForHover, null);
+        collapseCompactNavbarWhenPointerLeaves(navbarForHover);
+    });
+    navLinksForHover.addEventListener("pointermove", function(event) {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        if (!compactNavbarPointerActive) {
+            compactNavbarPointerActive = true;
+            keepCompactNavbarExpanded(navbarForHover, true);
+        }
+        if (!navbarForHover.classList.contains("scrolled")) return;
+        setCompactNavbarSubmenu(navLinksForHover, target.closest<HTMLElement>(".dropdown-container"));
+    });
+    navLinksForHover.addEventListener("focusin", function(event) {
+        keepCompactNavbarExpanded(navbarForHover, true);
+        const target = event.target;
+        if (target instanceof Element) {
+            setCompactNavbarSubmenu(navLinksForHover, target.closest<HTMLElement>(".dropdown-container"));
+        }
+    });
+    navLinksForHover.addEventListener("focusout", function() {
+        requestAnimationFrame(function() {
+            if (!compactNavbarPointerActive) {
+                const focused = document.activeElement;
+                setCompactNavbarSubmenu(navLinksForHover, focused instanceof Element
+                    ? focused.closest<HTMLElement>(".dropdown-container") : null);
+            }
+            collapseCompactNavbarWhenPointerLeaves(navbarForHover);
+        });
+    });
+}
+
 document.addEventListener("click", function(event) {
     var target = event.target;
     if (!(target instanceof Element)) return;
@@ -397,13 +723,25 @@ document.addEventListener("click", function(event) {
 window.addEventListener("popstate", syncNavbarActiveState);
 window.addEventListener("hashchange", syncNavbarActiveState);
 
+let navbarMenuResizeFrame = 0;
+window.addEventListener("resize", function() {
+    if (navbarMenuResizeFrame) cancelAnimationFrame(navbarMenuResizeFrame);
+    navbarMenuResizeFrame = requestAnimationFrame(function() {
+        navbarMenuResizeFrame = 0;
+        updateNavbarMenuSizing();
+    });
+}, { passive: true });
+
 // 为semifull模式添加滚动检测逻辑
 function initSemifullScrollDetection() {
     const navbar = document.getElementById('navbar');
     if (!navbar) return;
 
     const transparentMode = navbar.getAttribute('data-transparent-mode');
-    if (transparentMode !== 'semifull') return;
+    const isStatic = document.documentElement.getAttribute('data-navbar-behavior') === 'static';
+    if (transparentMode !== 'semifull' && !isStatic) return;
+
+    cancelCompactNavbarModuleMotion();
 
     // 无论首页/非首页，semifull 都由滚动位置决定是否进入 scrolled 状态
     // 先移除之前的滚动监听器，避免重复绑定
@@ -412,26 +750,72 @@ function initSemifullScrollDetection() {
         window.semifullScrollHandler = undefined;
     }
 
-    // 初始状态不强制加 scrolled，保持透明；滚动后再切换
+    clearCompactNavbarHold();
+    const navLinks = navbar.querySelector<HTMLElement>(".nav-links");
+    if (navLinks) setCompactNavbarSubmenu(navLinks, null);
+    navLinks?.classList.remove("is-hover-expanded", "is-active-submenu-open", "is-scroll-revealed");
+    navLinks?.style.removeProperty("--nav-submenu-reveal-delay");
+    compactNavbarExpandedUntil = 0;
+    compactNavbarPointerActive = false;
+    compactNavbarMotionUntil = 0;
+
+    // 顶部与滚动态共用相同定位，切换时只改变横向偏移和可见性。
     navbar.classList.remove('scrolled');
+    if (isStatic) return;
 
     let ticking = false;
+    let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
     function updateNavbarState() {
-        if (document.documentElement.classList.contains('is-page-transitioning')) {
+        if (document.documentElement.getAttribute('data-navbar-behavior') === 'static') {
             navbar!.classList.remove('scrolled');
+            lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            ticking = false;
+            return;
+        }
+        if (document.documentElement.classList.contains('is-page-transitioning')) {
+            cancelCompactNavbarModuleMotion();
+            navbar!.classList.remove('scrolled');
+            const navLinks = navbar!.querySelector<HTMLElement>(".nav-links");
+            if (navLinks) setCompactNavbarSubmenu(navLinks, null);
+            navLinks?.classList.remove("is-hover-expanded", "is-active-submenu-open", "is-scroll-revealed");
+            navLinks?.style.removeProperty("--nav-submenu-reveal-delay");
+            clearCompactNavbarHold();
+            compactNavbarExpandedUntil = 0;
+            compactNavbarPointerActive = false;
+            compactNavbarMotionUntil = 0;
+            lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
             ticking = false;
             return;
         }
 
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const threshold = 50; // 滚动阈值，可以根据需要调整
-        // 使用批量DOM操作优化性能
-        if (scrollTop > threshold) {
-            navbar!.classList.add('scrolled');
-        } else {
-            navbar!.classList.remove('scrolled');
+        const scrollDelta = scrollTop - lastScrollTop;
+        const threshold = 50;
+        const shouldCollapse = scrollTop > threshold;
+        const isCollapsed = navbar!.classList.contains('scrolled');
+
+        if (shouldCollapse !== isCollapsed) {
+            if (!shouldCollapse && navLinks) prepareCompactNavbarReveal(navLinks);
+            clearCompactNavbarHold();
+            compactNavbarExpandedUntil = 0;
+            compactNavbarPointerActive = false;
+            compactNavbarMotionUntil = 0;
+            if (navLinks) setCompactNavbarSubmenu(navLinks, null);
+            const changeState = () => {
+                navLinks?.classList.remove("is-hover-expanded", "is-active-submenu-open");
+                navLinks?.classList.toggle("is-scroll-revealed", shouldCollapse);
+                navLinks?.style.removeProperty("--nav-submenu-reveal-delay");
+                navbar!.classList.toggle("scrolled", shouldCollapse);
+            };
+            if (navLinks) transitionCompactNavbarModules(navLinks, !shouldCollapse, changeState);
+            else changeState();
         }
+
+        if (navbar!.classList.contains("scrolled") && scrollDelta < -2) {
+            keepCompactNavbarExpanded(navbar!, false);
+        }
+        lastScrollTop = scrollTop;
 
         ticking = false;
     }
@@ -460,6 +844,7 @@ function initSemifullScrollDetection() {
 
 // 将函数暴露到全局对象，供页面切换时调用
 window.initSemifullScrollDetection = initSemifullScrollDetection;
+window.addEventListener('navbarBehaviorChange', initSemifullScrollDetection);
 
 // 页面加载完成后初始化滚动检测
 if (document.readyState === 'loading') {

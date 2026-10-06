@@ -29,8 +29,9 @@ src/content/spec/      关于、友链、留言等特殊页面
 src/config/            站点配置
 public/                静态资源
 dist/                  构建后的生产文件
-package.json           项目脚本与依赖配置
-astro.config.mjs       Astro 构建配置
+package.json           项目脚本
+wrangler.jsonc         Cloudflare Workers 静态资源配置
+vercel.json            Vercel 输出目录配置
 ```
 
 其中最常用的是 `src/content/posts/`。以后新文章基本都放在这里。

@@ -8,6 +8,7 @@ import ChangelogManager from "@components/features/ChangelogManager.astro";
 import FancyboxManager from "@components/features/FancyboxManager.astro";
 import FontSetup from "@components/features/FontSetup.astro";
 import MusicManager from "@components/features/MusicManager.astro";
+import RecommendedStarFlowManager from "@components/features/RecommendedStarFlowManager.astro";
 import SakuraEffect from "@components/features/SakuraEffect.astro";
 import WalineManager from "@components/features/WalineManager.astro";
 import WelcomeToast from "@components/features/WelcomeToast.astro";
@@ -30,6 +31,7 @@ import { defaultFavicons } from "@/constants/icon";
 import type { Favicon } from "@/types/config";
 import { getBackgroundImages, isHomePage } from "@/utils/layout-utils";
 import { url } from "@/utils/url-utils";
+import { nationalDayTheme } from "@/config/nationalDayTheme";
 
 import "@/styles/main.css";
 import "@/styles/variables.styl";
@@ -52,9 +54,15 @@ let { title, description, lang, setOGTypeArticle, postSlug } = Astro.props;
 // Swup can update the body for each page visit, but it's after the page transition, causing a delay for banner height change
 // so use Swup hooks instead to change the height immediately when a link is clicked
 const isHomePageCheck = isHomePage(Astro.url.pathname);
-const localPreviewHostnames = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+const localPreviewHostnames = new Set([
+	"localhost",
+	"127.0.0.1",
+	"::1",
+	"0.0.0.0",
+]);
 const isLocalPreview =
-	import.meta.env.DEV || localPreviewHostnames.has(Astro.url.hostname.toLowerCase());
+	import.meta.env.DEV ||
+	localPreviewHostnames.has(Astro.url.hostname.toLowerCase());
 // The paginated post index uses the same card surface as the homepage, but it
 // must not inherit homepage-only banner and navigation behavior.
 const isPostListPage =
@@ -73,8 +81,14 @@ const shouldShowTopHighlight =
 
 const enableBanner = backgroundWallpaper.mode === "banner";
 const backgroundImages = getBackgroundImages();
-const wallpaperPreloadImage =
-	backgroundImages.desktop[0] || backgroundImages.mobile[0] || "";
+const shouldPreloadWallpaper =
+	isHomePageCheck && backgroundWallpaper.mode !== "none";
+const desktopWallpaperPreloadImage = shouldPreloadWallpaper
+	? backgroundImages.desktop[0] || ""
+	: "";
+const mobileWallpaperPreloadImage = shouldPreloadWallpaper
+	? backgroundImages.mobile[0] || ""
+	: "";
 
 let pageTitle: string;
 if (title) {
@@ -98,13 +112,16 @@ if (!lang) {
 	lang = `${siteConfig.lang}`;
 }
 const siteLang = lang.replace("_", "-");
-const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString();
+const canonicalUrl = new URL(
+	Astro.url.pathname,
+	siteConfig.site_url,
+).toString();
 
 // 使用固定的banner偏移量，position配置用于图片定位
 ---
 
 <!doctype html>
-<html lang={siteLang} class="bg-(--page-bg) text-[14px] md:text-[16px]" data-wallpaper-mode={backgroundWallpaper.mode}>
+<html lang={siteLang} class="bg-(--page-bg) text-[14px] md:text-[16px]" data-wallpaper-mode={backgroundWallpaper.mode} data-card-decoration="flat" data-national-day-theme={String(nationalDayTheme.defaultEnabled)}>
   <head>
     <meta charset="UTF-8" />
     {analyticsConfig?.googleAnalyticsId && (
@@ -117,6 +134,7 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
           <UmamiAnalytics
           websiteId={analyticsConfig.umamiAnalytics.websiteId}
           scriptUrl={analyticsConfig.umamiAnalytics.scriptUrl}
+          hostUrl={analyticsConfig.umamiAnalytics.hostUrl}
           replaysScriptUrl={analyticsConfig.umamiAnalytics.replaysScriptUrl}
           trackOutboundLinks={analyticsConfig.umamiAnalytics.trackOutboundLinks}
           collectWebVitals={analyticsConfig.umamiAnalytics.collectWebVitals}
@@ -186,8 +204,13 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     {
-      wallpaperPreloadImage && backgroundWallpaper.mode !== "none" && (
-        <link rel="preload" as="image" href={wallpaperPreloadImage} fetchpriority="high" />
+      desktopWallpaperPreloadImage && (
+        <link rel="preload" as="image" href={desktopWallpaperPreloadImage} media="(min-width: 1024px)" fetchpriority="high" />
+      )
+    }
+    {
+      mobileWallpaperPreloadImage && (
+        <link rel="preload" as="image" href={mobileWallpaperPreloadImage} media="(max-width: 1023px)" fetchpriority="high" />
       )
     }
     {
@@ -272,6 +295,7 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
         BANNER_HEIGHT_EXTEND,
         PAGE_WIDTH,
         configHue,
+        nationalDayThemeDefaultEnabled: nationalDayTheme.defaultEnabled,
         defaultMode: siteConfig.themeColor.defaultMode ?? "light",
         defaultWallpaperMode: backgroundWallpaper.mode,
         isWallpaperSwitchable:
@@ -282,6 +306,25 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
         cardTransparentOpacity: backgroundWallpaper.overlay?.cardOpacity ?? 0.6,
       }}
     >
+      try {
+        const storedCardDecorationMode = localStorage.getItem("cardDecorationMode");
+        document.documentElement.setAttribute(
+          "data-card-decoration",
+          storedCardDecorationMode === "soft" ? "soft" : "flat"
+        );
+      } catch {
+        document.documentElement.setAttribute("data-card-decoration", "flat");
+      }
+
+      try {
+        document.documentElement.setAttribute(
+          "data-navbar-behavior",
+          localStorage.getItem("navbarBehaviorV2") === "auto" ? "auto" : "static"
+        );
+      } catch {
+        document.documentElement.setAttribute("data-navbar-behavior", "static");
+      }
+
       // 主题初始化 - 与setting-utils.ts保持一致
       const LIGHT_MODE = "light";
       const DARK_MODE = "dark";
@@ -321,8 +364,25 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
         isDark ? darkTheme : lightTheme
       );
 
-      // Load the hue from local storage
-      const hue = localStorage.getItem("hue") || configHue;
+      // Restore the site-wide seasonal theme preference before first paint.
+      const storedNationalDayTheme = localStorage.getItem("nationalDayThemeEnabled");
+      const legacyColorPreset = localStorage.getItem("themeColorPreset");
+      const nationalDayThemeEnabled = storedNationalDayTheme === null
+        ? nationalDayThemeDefaultEnabled
+        : storedNationalDayTheme === "true";
+      let hue = localStorage.getItem("hue") || configHue;
+      if (
+        storedNationalDayTheme === null &&
+        legacyColorPreset === "china-red" &&
+        hue === "5"
+      ) {
+        hue = String(configHue);
+        localStorage.setItem("hue", hue);
+      }
+      document.documentElement.dataset.nationalDayTheme = String(
+        nationalDayThemeEnabled
+      );
+      localStorage.removeItem("themeColorPreset");
       document.documentElement.style.setProperty("--hue", hue);
 
       // 设置卡片透明度（全屏透明模式下使用），优先使用用户自定义值
@@ -388,6 +448,9 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
       (function applyWallpaperMode() {
         // 使用 requestAnimationFrame 确保在下一帧之前执行
         requestAnimationFrame(function () {
+          // Swup may rerun this inline initializer after swapping the center.
+          // Keep the homepage shell until its page-1 scroll has finished.
+          if (document.documentElement.classList.contains("route-home-scroll-active")) return;
           // 根据模式隐藏显示对应元素
           if (
             wallpaperMode === WALLPAPER_NONE ||
@@ -490,9 +553,15 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
             } else {
               mainContentWrapper.classList.remove("mobile-main-no-banner");
             }
-            // 全屏壁纸模式：用 relative 定位让内容紧跟壁纸（移动端非首页除外，壁纸已隐藏）
-            const isMobileNonHome = window.innerWidth < 1024 && !isHomePage;
-            if (wallpaperMode === WALLPAPER_FULLSCREEN && !isMobileNonHome) {
+            // 全屏壁纸只在首页展示；其他页面从导航栏下方的内容区开始。
+            const isNonHomePage = !isHomePage;
+            if (isNonHomePage) {
+              mainContentWrapper.classList.add("non-home-main-layout", "no-banner-layout");
+              mainContentWrapper.style.setProperty("top", "5.5rem", "important");
+              mainContentWrapper.style.position = "";
+              mainContentWrapper.style.zIndex = "";
+              mainContentWrapper.style.setProperty("margin-top", "0", "important");
+            } else if (wallpaperMode === WALLPAPER_FULLSCREEN) {
               mainContentWrapper.style.position = "relative";
               mainContentWrapper.style.top = "0";
               mainContentWrapper.style.zIndex = "30";
@@ -500,17 +569,6 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
             } else if (isMobile && isHomePage && (wallpaperMode === WALLPAPER_BANNER || wallpaperMode === undefined)) {
               // 移动端横幅模式首页：清除 inline top，让 CSS 响应式规则生效
               mainContentWrapper.style.removeProperty("top");
-              mainContentWrapper.style.position = "";
-              mainContentWrapper.style.zIndex = "";
-              mainContentWrapper.style.setProperty("margin-top", "0", "important");
-            } else if (isMobileNonHome) {
-              mainContentWrapper.style.setProperty("top", "5.5rem", "important");
-              mainContentWrapper.style.position = "";
-              mainContentWrapper.style.zIndex = "";
-              mainContentWrapper.style.setProperty("margin-top", "0", "important");
-            } else if (wallpaperMode === WALLPAPER_BANNER && !isHomePage) {
-              // 桌面端横幅模式非首页：与首页相同定位（保留grid transform）
-              mainContentWrapper.style.setProperty("top", "calc(var(--banner-height) - 3.5rem)", "important");
               mainContentWrapper.style.position = "";
               mainContentWrapper.style.zIndex = "";
               mainContentWrapper.style.setProperty("margin-top", "0", "important");
@@ -602,10 +660,10 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
 
     <!-- 页面顶部渐变高光效果 - 只在full和semifull模式下显示 -->
     {shouldShowTopHighlight && <div class="top-gradient-highlight" />}
-    <div id="page-background-decoration" aria-hidden="true"></div>
     <ConfigCarrier />
     <MusicManager />
     <slot />
+    <div id="route-white-screen" aria-hidden="true"></div>
 
 
 
@@ -618,6 +676,7 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
     <!-- Fancybox Manager -->
     <FancyboxManager />
     <ChangelogManager />
+    <RecommendedStarFlowManager />
     <WalineManager />
   </body>
 </html>
@@ -632,8 +691,8 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
   @reference "../styles/main.css";
 
   @layer components {
-	/* Keep the page scrollable by wheel, touch and keyboard, but replace the browser's
-	   distracting root scrollbar with the slim reading-progress line above the navbar. */
+	/* Keep the page scrollable by wheel, touch and keyboard while the floating
+	   progress circle provides position feedback without a root scrollbar. */
 	html,
 	body {
 	  /* Decorative scenes and the off-canvas mobile menu can extend past the
@@ -652,47 +711,6 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
 	    overflow-x: hidden;
 	  }
 	}
-
-    /*
-     * 页面背景装饰：顶部壁纸仍由 MainGridLayout 独立管理，
-     * 樱花从壁纸底部开始，完全不参与顶部壁纸的显示。
-     */
-    #page-background-decoration {
-      position: fixed;
-      top: var(--banner-height-home);
-      right: 0;
-      bottom: 0;
-      left: 0;
-      z-index: 0;
-      pointer-events: none;
-      /* 从顶部取景并轻微放大，避开底部最柔焦的一圈，同时保留朦胧花瓣。 */
-      background: url('/assets/images/effects/cherry-border.webp') center top / 110% auto no-repeat;
-      opacity: 0.14;
-    }
-
-    body.no-banner-layout #page-background-decoration {
-      top: 5.5rem;
-    }
-
-    :root.dark #page-background-decoration {
-      opacity: 0.09;
-    }
-
-    @media (max-width: 1023px) {
-      #page-background-decoration {
-        background-size: auto 116%;
-        background-position: center top;
-        opacity: 0.11;
-      }
-    }
-
-    @media (max-width: 640px) {
-      #page-background-decoration {
-        background-size: auto 116%;
-        background-position: center top;
-        opacity: 0.08;
-      }
-    }
 
 	html::-webkit-scrollbar,
 	body::-webkit-scrollbar {
@@ -735,7 +753,6 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
       width: 100% !important;
       height: 100% !important;
       object-fit: cover !important;
-      object-position: center !important;
       filter: none !important;
       opacity: 1 !important;
     }
@@ -829,6 +846,8 @@ const canonicalUrl = new URL(Astro.url.pathname, siteConfig.site_url).toString()
 </style>
 
 <script>
+  // Swup swaps page content without running the changelog page's bundled script.
+  import "@/scripts/blog-changelog";
   import { initLottieEmojis } from "@/scripts/lottie";
   import { pathsEqual, url } from "@/utils/url-utils";
   import {
@@ -1049,17 +1068,19 @@ function disableAnimation() {
     );
   };
 
-  const scrollToPage = (pathname: string, behavior: ScrollBehavior = "auto") => {
-    if (isPageZeroPath(pathname)) {
+  const scrollToPage = (pathname: string, behavior: ScrollBehavior = "instant") => {
+    const mainContent = document.querySelector(
+      ".w-full.z-30.pointer-events-none",
+    ) as HTMLElement | null;
+
+    // 非首页已直接排在导航栏下方，无需再滚动到旧的“页面 1”位置。
+    if (isPageZeroPath(pathname) || mainContent?.classList.contains("non-home-main-layout")) {
       window.scrollTo({ top: 0, left: 0, behavior });
       return;
     }
 
     // 以真实主内容区为目标，页面 1 需要避开导航栏，
     // 这样全屏和横幅模式都能在内容区稳定落位。
-    const mainContent = document.querySelector(
-      ".w-full.z-30.pointer-events-none",
-    ) as HTMLElement | null;
     const navbarHeight = document.getElementById("navbar-wrapper")?.getBoundingClientRect().height ?? 0;
     const mainRect = mainContent?.getBoundingClientRect();
     const mainTop = mainRect ? mainRect.top + window.scrollY : window.innerHeight;
@@ -1074,9 +1095,11 @@ function disableAnimation() {
   // Swup 和页面组件都可能在不同时间触发滚动恢复。用短时间的多次校正，
   // 确保异步组件完成后仍遵守同一套页面 0/页面 1 规则。
   let pageScrollScheduleId = 0;
+  let smoothRouteScrollPath: string | null = null;
+  let smoothRouteScrollUntil = 0;
   const scheduleScrollToPage = (
     pathname: string,
-    behavior: ScrollBehavior = "auto",
+    behavior: ScrollBehavior = "instant",
     onlyIfAtTop = false,
   ) => {
     const scheduleId = ++pageScrollScheduleId;
@@ -1087,7 +1110,24 @@ function disableAnimation() {
         if (scheduleId !== pageScrollScheduleId) return;
         if (!pathsEqual(window.location.pathname, pathname) || window.location.hash) return;
         if (onlyIfAtTop && window.scrollY > 1) return;
-        scrollToPage(pathname, index === 0 ? behavior : "auto");
+        // Let the viewport carry the persistent sidebars into place. The later
+        // correction still settles any layout shift after the smooth scroll.
+        if (
+          smoothRouteScrollPath &&
+          pathsEqual(smoothRouteScrollPath, pathname) &&
+          performance.now() < smoothRouteScrollUntil
+        ) {
+          if (index === delays.length - 1) {
+            window.setTimeout(() => {
+              if (scheduleId !== pageScrollScheduleId) return;
+              if (!pathsEqual(window.location.pathname, pathname) || window.location.hash) return;
+              smoothRouteScrollPath = null;
+              scrollToPage(pathname);
+            }, smoothRouteScrollUntil - performance.now() + 80);
+          }
+          return;
+        }
+        scrollToPage(pathname, index === 0 ? behavior : "instant");
       }, delay);
     });
   };
@@ -1098,6 +1138,31 @@ function disableAnimation() {
 
     const isHome = pathsEqual(pathname, url("/"));
     const wallpaperMode = document.documentElement.getAttribute("data-wallpaper-mode");
+    const mainContentWrapper = document.querySelector(
+      ".w-full.z-30.pointer-events-none",
+    ) as HTMLElement | null;
+
+    wallpaperWrapper.classList.toggle("non-home-wallpaper-hidden", !isHome);
+    if (isHome) {
+      wallpaperWrapper.style.removeProperty("display");
+    } else {
+      wallpaperWrapper.style.setProperty("display", "none", "important");
+    }
+    if (mainContentWrapper) {
+      mainContentWrapper.classList.toggle("non-home-main-layout", !isHome);
+      mainContentWrapper.classList.toggle(
+        "no-banner-layout",
+        !isHome || wallpaperMode !== "banner",
+      );
+
+      if (!isHome) {
+        mainContentWrapper.style.setProperty("top", "5.5rem", "important");
+        mainContentWrapper.style.position = "";
+        mainContentWrapper.style.zIndex = "";
+        mainContentWrapper.style.setProperty("margin-top", "0", "important");
+      }
+    }
+
     const shouldShowHomeDecor =
       isHome &&
       (wallpaperMode === "fullscreen" ||
@@ -1131,10 +1196,103 @@ function disableAnimation() {
   // 记录本次切页目标，等 Swup 完成内容替换后再按目标页面重新校准一次滚动位置。
   // visit:start 阶段使用旧 DOM，直接定位主网格会在替换后被新布局覆盖。
   let pendingScrollPath: string | null = null;
+  let routeTransitionCleanup: number | undefined;
+  let routeWhiteCleanup: number | undefined;
+  let homeToInnerScrollPath: string | null = null;
+  let returnHomeExitActive = false;
+  let homePageOneTop = 0;
+  let homeScrollStart = 0;
+  let previousRouteBodyMinHeight = "";
+
+  const finishHomeToInnerScroll = () => {
+    const targetPath = homeToInnerScrollPath;
+    if (!targetPath) return;
+    // Rebase page 1 onto the inner-page origin in one frame. The sidebars stay
+    // at the same viewport position while the homepage wallpaper disappears.
+    syncWallpaperWrapperClasses(targetPath);
+    document.body.classList.remove("is-home", "lg:is-home");
+    syncPostListPageClass(targetPath);
+    document.getElementById("navbar")?.setAttribute("data-is-home", "false");
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.body.style.minHeight = previousRouteBodyMinHeight;
+    homeToInnerScrollPath = null;
+    smoothRouteScrollPath = null;
+    document.documentElement.classList.remove("route-home-scroll-active");
+    syncScrollProgress(true);
+  };
+
+  const watchHomeToInnerScroll = () => {
+    const expectedPath = homeToInnerScrollPath;
+    const deadline = performance.now() + 1500;
+    const check = () => {
+      if (!expectedPath || homeToInnerScrollPath !== expectedPath) return;
+      const reachedPageOne = Math.abs(window.scrollY - homePageOneTop) <= 4;
+      const contentReady = document.documentElement.classList.contains("route-content-ready");
+      if (contentReady && (reachedPageOne || performance.now() >= deadline)) {
+        finishHomeToInnerScroll();
+        return;
+      }
+      requestAnimationFrame(check);
+    };
+    requestAnimationFrame(check);
+  };
 
   const setup = () => {
+    window.swup.hooks.on("visit:abort", () => {
+      if (homeToInnerScrollPath) {
+        document.body.style.minHeight = previousRouteBodyMinHeight;
+      }
+      homeToInnerScrollPath = null;
+      returnHomeExitActive = false;
+      document.documentElement.classList.remove(
+        "route-home-scroll-active",
+        "route-white-cover",
+        "route-white-reveal",
+        "route-home-to-inner",
+        "route-home-to-post",
+        "route-sidebar-reflow",
+        "route-inner-to-home",
+        "route-content-ready",
+      );
+      syncWallpaperWrapperClasses(window.location.pathname);
+    });
+
+    window.swup.hooks.on("animation:out:await", async () => {
+      if (returnHomeExitActive) {
+        // Swup's selector can finish before the three persistent columns do.
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 340));
+        return;
+      }
+      if (!homeToInnerScrollPath) return;
+      const started = performance.now();
+      const enteringPost = document.documentElement.classList.contains("route-home-to-post");
+      await new Promise<void>((resolve) => {
+        const check = () => {
+          const distance = Math.abs(homePageOneTop - homeScrollStart);
+          const remaining = Math.abs(homePageOneTop - window.scrollY);
+          const scrollReady = enteringPost
+            ? remaining <= distance * 0.72 || performance.now() - started > 260
+            : remaining <= 4 || performance.now() - started > 1200;
+          if (!homeToInnerScrollPath || scrollReady) {
+            resolve();
+          } else {
+            requestAnimationFrame(check);
+          }
+        };
+        check();
+      });
+    });
+
+    window.swup.hooks.on("animation:out:end", async () => {
+      if (!returnHomeExitActive) return;
+      document.documentElement.classList.add("route-white-cover");
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => window.setTimeout(resolve, 90)));
+      });
+    });
+
     // 由目标页面决定进入页面 0 还是页面 1。
-    window.swup.hooks.replace("scroll:top", (visit: { to: { url: string } }, args: { options: ScrollIntoViewOptions }) => {
+    window.swup.hooks.replace("scroll:top", (visit: { to: { url: string } }) => {
       const targetPathname = (() => {
         try {
           return new URL(visit.to.url, window.location.href).pathname;
@@ -1142,7 +1300,7 @@ function disableAnimation() {
           return visit.to.url;
         }
       })();
-      scheduleScrollToPage(targetPathname, args.options.behavior ?? "auto");
+      scheduleScrollToPage(targetPathname);
       return true;
     });
 
@@ -1162,7 +1320,7 @@ function disableAnimation() {
         return true;
       }
 
-      scheduleScrollToPage(targetUrl.pathname, visit.scroll?.animate ? "smooth" : "auto");
+      scheduleScrollToPage(targetUrl.pathname);
       if (visit.scroll) visit.scroll.scrolledToContent = true;
       return true;
     });
@@ -1213,13 +1371,17 @@ function disableAnimation() {
     });
     window.swup.hooks.on("content:replace", () => {
       syncPostListPageClass();
+      if (returnHomeExitActive) {
+        document.body.classList.add("is-home", "lg:is-home");
+        document.getElementById("navbar")?.setAttribute("data-is-home", "true");
+      }
       const isHome = pathsEqual(window.location.pathname, url("/"));
       const currentMode = document.documentElement.getAttribute("data-wallpaper-mode");
       const isMobileForBanner = window.innerWidth < 1024;
       const mainEl = document.querySelector(".w-full.z-30.pointer-events-none") as HTMLElement | null;
 
       // 移动端 banner/全屏模式非首页：隐藏壁纸并调整内容位置（首页由 visit:start 和 page:view 处理）
-      if (isMobileForBanner && (currentMode === "banner" || currentMode === "fullscreen") && !isHome) {
+      if (!homeToInnerScrollPath && isMobileForBanner && (currentMode === "banner" || currentMode === "fullscreen") && !isHome) {
             const wrapper = document.getElementById("wallpaper-wrapper");
             if (wrapper) {
               wrapper.style.display = "none";
@@ -1235,7 +1397,7 @@ function disableAnimation() {
       }
 
       // 桌面端全屏壁纸模式：壁纸始终可见，内容用 relative 定位紧跟壁纸
-      if (!isMobileForBanner && currentMode === "fullscreen" && mainEl) {
+      if (isHome && !isMobileForBanner && currentMode === "fullscreen" && mainEl) {
         mainEl.style.position = "relative";
         mainEl.style.zIndex = "30";
         mainEl.style.setProperty("top", "0", "important");
@@ -1243,12 +1405,23 @@ function disableAnimation() {
       }
 
       // 桌面端横幅模式：统一用banner高度定位，不改变grid transform
-      if (!isMobileForBanner && currentMode === "banner" && mainEl) {
+      if (isHome && !isMobileForBanner && currentMode === "banner" && mainEl) {
         mainEl.style.setProperty("top", "calc(var(--banner-height) - 3.5rem)", "important");
         mainEl.style.position = "";
         mainEl.style.zIndex = "";
         mainEl.style.setProperty("margin-top", "0", "important");
       }
+
+      if (!homeToInnerScrollPath) {
+        syncWallpaperWrapperClasses(window.location.pathname);
+      }
+      if (returnHomeExitActive) {
+        scrollToPage(window.location.pathname);
+      }
+      if (document.documentElement.matches(".route-home-to-inner, .route-inner-to-home")) {
+        document.getElementById("content-wrapper")?.classList.add("route-motion-handled");
+      }
+      document.documentElement.classList.add("route-content-ready");
 
       // 更新侧边栏组件的可见性（根据新页面的 URL）
       updateSidebarComponentsVisibility();
@@ -1291,9 +1464,9 @@ function disableAnimation() {
       }
 
     });
-    window.swup.hooks.on("visit:start", (visit: { to: { url: string } }) => {
-      // The top line is reading progress now, not a fake page-load indicator.
-      syncScrollProgress();
+    window.swup.hooks.on("visit:start", (visit: { to: { url: string }; history?: { popstate?: boolean } }) => {
+      // Keep the floating reading progress indicator in sync during navigation.
+      syncScrollProgress(true);
 
       // change banner height immediately when a link is clicked
       const bodyElement = document.querySelector("body");
@@ -1305,8 +1478,91 @@ function disableAnimation() {
         }
       })();
       const isHomePage = pathsEqual(targetPathname, url("/"));
+      const wasHomePage = bodyElement?.classList.contains("is-home") ?? false;
+      const canAnimateBoundary =
+        !visit.history?.popstate &&
+        !visit.to.url.includes("#") &&
+        !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isHomeToInner = wasHomePage && !isHomePage;
+      const isReturningHome = !wasHomePage && isHomePage;
+      const isTargetPost = targetPathname.includes("/posts/") || targetPathname.includes("/post/");
+      const isCurrentPost = window.location.pathname.includes("/posts/") || window.location.pathname.includes("/post/");
+      if (isHomeToInner) {
+        // These columns persist across Swup visits. Their first-load animation
+        // must not replay when a post-only widget becomes visible later.
+        document.querySelectorAll("#left-sidebar .onload-animation, #right-sidebar .onload-animation, #left-sidebar.onload-animation, #right-sidebar.onload-animation")
+          .forEach((element) => element.classList.remove("onload-animation"));
+      }
+      const homeMain = document.querySelector(".w-full.z-30.pointer-events-none") as HTMLElement | null;
+      const innerTop = parseFloat(getComputedStyle(document.documentElement).fontSize) * 5.5;
+      const mainTop = homeMain ? homeMain.getBoundingClientRect().top + window.scrollY : 0;
+      const maxScrollTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const pageOneTop = Math.min(maxScrollTop, Math.max(0, mainTop - innerTop));
+      const shouldScrollHomePageOne =
+        canAnimateBoundary && isHomeToInner && Math.abs(pageOneTop - window.scrollY) > 24;
+      const shouldSmoothScroll =
+        !visit.history?.popstate &&
+        !visit.to.url.includes("#") &&
+        !pathsEqual(targetPathname, window.location.pathname) &&
+        window.scrollY > 24 &&
+        !isHomeToInner &&
+        !isReturningHome &&
+        !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      smoothRouteScrollPath = shouldSmoothScroll ? targetPathname : null;
+      smoothRouteScrollUntil = shouldSmoothScroll ? performance.now() + 900 : 0;
+      if (homeToInnerScrollPath) {
+        document.body.style.minHeight = previousRouteBodyMinHeight;
+      }
+      homeToInnerScrollPath = null;
+      returnHomeExitActive = false;
       pendingScrollPath = targetPathname;
+      window.clearTimeout(routeTransitionCleanup);
+      window.clearTimeout(routeWhiteCleanup);
+      document.documentElement.classList.remove("route-content-ready");
+      document.documentElement.classList.remove("route-white-cover", "route-white-reveal", "route-home-scroll-active");
+      document.documentElement.classList.toggle(
+        "route-home-to-inner",
+        isHomeToInner,
+      );
+      document.documentElement.classList.toggle(
+        "route-home-to-post",
+        shouldScrollHomePageOne && isTargetPost,
+      );
+      document.documentElement.classList.toggle(
+        "route-sidebar-reflow",
+        canAnimateBoundary && !isCurrentPost && isTargetPost,
+      );
+      document.documentElement.classList.toggle(
+        "route-inner-to-home",
+        isReturningHome,
+      );
+      if (canAnimateBoundary && isReturningHome) {
+        // Keep the inner-page layout in place until all three columns leave.
+        returnHomeExitActive = true;
+        return;
+      }
+      if (shouldScrollHomePageOne) {
+        document.documentElement.classList.add("route-home-scroll-active");
+        homeToInnerScrollPath = targetPathname;
+        homePageOneTop = pageOneTop;
+        homeScrollStart = window.scrollY;
+        previousRouteBodyMinHeight = document.body.style.minHeight;
+        document.body.style.minHeight = `${Math.ceil(pageOneTop + window.innerHeight + 2)}px`;
+        smoothRouteScrollPath = targetPathname;
+        smoothRouteScrollUntil = performance.now() + 1600;
+        window.scrollTo({ top: pageOneTop, left: 0, behavior: "smooth" });
+        watchHomeToInnerScroll();
+        return;
+      }
+      if (isReturningHome) {
+        document
+          .getElementById("wallpaper-wrapper")
+          ?.style.setProperty("display", "block", "important");
+      }
       syncWallpaperWrapperClasses(targetPathname);
+      if (!visit.to.url.includes("#")) {
+        scrollToPage(targetPathname, shouldSmoothScroll ? "smooth" : "instant");
+      }
       syncPostListPageClass(targetPathname);
 
       // 禁用 #main-grid 的过渡动画，防止 lg:is-home 切换时 transform 产生 700ms 动画
@@ -1421,7 +1677,7 @@ function disableAnimation() {
           mainContentWrapper.style.zIndex = "";
           mainContentWrapper.style.setProperty("margin-top", "0", "important");
         }
-      } else if (!isMobile && wallpaperWrapper) {
+      } else if (!isMobile && isHomePage && wallpaperWrapper) {
         // 桌面端：确保banner正常显示
         wallpaperWrapper.style.display = "";
         wallpaperWrapper.classList.remove("mobile-hide-banner");
@@ -1487,7 +1743,7 @@ function disableAnimation() {
       const isMobileForBanner = window.innerWidth < 1024;
       const wrapper = document.getElementById("wallpaper-wrapper") as HTMLElement | null;
       const mainEl = document.querySelector(".w-full.z-30.pointer-events-none") as HTMLElement | null;
-      if (isMobileForBanner && (currentMode === "banner" || currentMode === "fullscreen")) {
+      if (!homeToInnerScrollPath && isMobileForBanner && (currentMode === "banner" || currentMode === "fullscreen")) {
           if (!isHome) {
             if (wrapper) {
               wrapper.style.display = "none";
@@ -1516,7 +1772,7 @@ function disableAnimation() {
       }
 
       // 桌面端全屏壁纸模式：壁纸始终可见，内容用 relative 定位紧跟壁纸
-      if (!isMobileForBanner && currentMode === "fullscreen" && mainEl) {
+      if (isHome && !isMobileForBanner && currentMode === "fullscreen" && mainEl) {
         mainEl.style.position = "relative";
         mainEl.style.zIndex = "30";
         mainEl.style.setProperty("top", "0", "important");
@@ -1524,14 +1780,30 @@ function disableAnimation() {
       }
 
       // 桌面端横幅模式：统一用banner高度定位，不改变grid transform
-      if (!isMobileForBanner && currentMode === "banner" && mainEl) {
+      if (isHome && !isMobileForBanner && currentMode === "banner" && mainEl) {
         mainEl.style.setProperty("top", "calc(var(--banner-height) - 3.5rem)", "important");
         mainEl.style.position = "";
         mainEl.style.zIndex = "";
         mainEl.style.setProperty("margin-top", "0", "important");
       }
 
-      syncWallpaperWrapperClasses(window.location.pathname);
+      if (!homeToInnerScrollPath) {
+        syncWallpaperWrapperClasses(window.location.pathname);
+      }
+
+      if (returnHomeExitActive) {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          if (!returnHomeExitActive) return;
+          window.setTimeout(() => {
+            if (!returnHomeExitActive) return;
+            document.documentElement.classList.add("route-white-reveal");
+            routeWhiteCleanup = window.setTimeout(() => {
+              document.documentElement.classList.remove("route-white-cover", "route-white-reveal");
+              returnHomeExitActive = false;
+            }, 340);
+          }, 90);
+        }));
+      }
 
       const targetPathAfterReplace = pendingScrollPath;
       pendingScrollPath = null;
@@ -1602,7 +1874,23 @@ function disableAnimation() {
       });
     });
     window.swup.hooks.on("visit:end", (_visit: { to: { url: string } }) => {
-      requestAnimationFrame(syncScrollProgress);
+      requestAnimationFrame(() => syncScrollProgress(true));
+
+      const clearRouteMotion = () => {
+        if (homeToInnerScrollPath) {
+          routeTransitionCleanup = window.setTimeout(clearRouteMotion, 80);
+          return;
+        }
+        document.documentElement.classList.remove(
+          "route-home-to-inner",
+          "route-home-to-post",
+          "route-sidebar-reflow",
+          "route-inner-to-home",
+          "route-content-ready",
+        );
+        syncWallpaperWrapperClasses(window.location.pathname);
+      };
+      routeTransitionCleanup = window.setTimeout(clearRouteMotion, 520);
 
       if (!window.location.hash) {
         scheduleScrollToPage(window.location.pathname);
@@ -1631,7 +1919,7 @@ function disableAnimation() {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (window.scrollY <= 1 && !window.location.hash) {
-          scheduleScrollToPage(window.location.pathname, "auto", true);
+          scheduleScrollToPage(window.location.pathname, "instant", true);
         }
       });
     });
@@ -1654,11 +1942,13 @@ function disableAnimation() {
   let backToTopBtn = document.getElementById("back-to-top-btn");
   let toc = document.getElementById("toc-wrapper");
   let navbar = document.getElementById("navbar-wrapper");
-  let scrollProgressBar = document.getElementById("progress-bar");
   let scrollProgressCircle = document.getElementById("scroll-progress-circle");
   let scrollProgressCircleValue = document.getElementById("scroll-progress-circle-value");
   let scrollProgressCircleLabel = document.getElementById("scroll-progress-circle-label");
   let lastScrollProgress = -1;
+  let lastScrollProgressPercent = -1;
+  let lastScrollProgressUpdateAt = -Infinity;
+  let lastSidebarScrolled: boolean | null = null;
   const sidebarStickyState: Record<
     "left" | "right",
     { topClass: "top-0" | "top-4"; hasVisibleTop: boolean }
@@ -1667,12 +1957,16 @@ function disableAnimation() {
     right: { topClass: "top-0", hasVisibleTop: false },
   };
 
-  function syncScrollProgress() {
-    scrollProgressBar ??= document.getElementById("progress-bar");
+  function syncScrollProgress(force = false) {
+    // Reading document height and painting the SVG on every scroll frame is
+    // expensive on long articles. The small indicator only needs ~12 updates/s.
+    const now = performance.now();
+    if (!force && now - lastScrollProgressUpdateAt < 80) return;
+    lastScrollProgressUpdateAt = now;
     scrollProgressCircle ??= document.getElementById("scroll-progress-circle");
     scrollProgressCircleValue ??= document.getElementById("scroll-progress-circle-value");
     scrollProgressCircleLabel ??= document.getElementById("scroll-progress-circle-label");
-    if (!scrollProgressBar && !scrollProgressCircle) return;
+    if (!scrollProgressCircle) return;
 
     const scrollingElement = document.scrollingElement || document.documentElement;
     const maxScroll = Math.max(0, scrollingElement.scrollHeight - window.innerHeight);
@@ -1682,18 +1976,17 @@ function disableAnimation() {
     // Avoid a style write on every scroll event when rounding leaves the visual state unchanged.
     if (Math.abs(nextProgress - lastScrollProgress) < 0.0005) return;
     lastScrollProgress = nextProgress;
-    if (scrollProgressBar) {
-      scrollProgressBar.style.setProperty("--scroll-progress", nextProgress.toFixed(4));
-    }
-
     if (scrollProgressCircle) {
       const percentage = Math.round(nextProgress * 100);
       scrollProgressCircleValue?.style.setProperty(
         "stroke-dashoffset",
         `${(100 - nextProgress * 100).toFixed(2)}`,
       );
-      scrollProgressCircleLabel && (scrollProgressCircleLabel.textContent = `${percentage}%`);
-      scrollProgressCircle.setAttribute("aria-label", `页面滚动进度 ${percentage}%`);
+      if (percentage !== lastScrollProgressPercent) {
+        lastScrollProgressPercent = percentage;
+        scrollProgressCircleLabel && (scrollProgressCircleLabel.textContent = `${percentage}%`);
+        scrollProgressCircle.setAttribute("aria-label", `页面滚动进度 ${percentage}%`);
+      }
     }
   }
 
@@ -1708,63 +2001,40 @@ function disableAnimation() {
     const bannerHeight = window.innerHeight * (BANNER_HEIGHT / 100);
     const navbarElement = document.getElementById("navbar");
 
-    // 根据滚动位置动态更新侧边栏 sticky 间距
+    // Sticky spacing only changes when we cross the top of the page.
     updateSidebarStickySpacing();
 
-    // 使用批量DOM操作优化性能
-    const operations: (() => void)[] = [];
-
     if (backToTopBtn) {
-      operations.push(() => {
-        if (scrollTop > bannerHeight) {
-          backToTopBtn.classList.remove("hide");
-        } else {
-          backToTopBtn.classList.add("hide");
-        }
-      });
+      const hidden = scrollTop <= bannerHeight;
+      if (backToTopBtn.classList.contains("hide") !== hidden) {
+        backToTopBtn.classList.toggle("hide", hidden);
+      }
     }
 
     if (bannerEnabled && toc) {
-      operations.push(() => {
-        if (scrollTop > bannerHeight) {
-          toc.classList.remove("toc-hide");
-        } else {
-          toc.classList.add("toc-hide");
-        }
-      });
+      const hidden = scrollTop <= bannerHeight;
+      if (toc.classList.contains("toc-hide") !== hidden) {
+        toc.classList.toggle("toc-hide", hidden);
+      }
     }
 
     if (stickyNavbar && navbar) {
-      operations.push(() => {
+      if (navbar.classList.contains("navbar-hidden")) {
         navbar.classList.remove("navbar-hidden");
-      });
+      }
     } else if (bannerEnabled && navbar) {
-      operations.push(() => {
-        const threshold = window.innerHeight * (BANNER_HEIGHT_HOME / 100) - 88;
-
-        if (scrollTop >= threshold) {
-          navbar.classList.add("navbar-hidden");
-        } else {
-          navbar.classList.remove("navbar-hidden");
-        }
-      });
+      const threshold = window.innerHeight * (BANNER_HEIGHT_HOME / 100) - 88;
+      const hidden = scrollTop >= threshold;
+      if (navbar.classList.contains("navbar-hidden") !== hidden) {
+        navbar.classList.toggle("navbar-hidden", hidden);
+      }
     }
 
     if (navbarElement) {
-      operations.push(() => {
-        if (scrollTop > 8) {
-          navbarElement.classList.add("navbar-sticky-shadow");
-        } else {
-          navbarElement.classList.remove("navbar-sticky-shadow");
-        }
-      });
-    }
-
-    // 批量执行DOM操作
-    if (operations.length > 0) {
-      requestAnimationFrame(() => {
-        operations.forEach((op) => op());
-      });
+      const shadow = scrollTop > 8;
+      if (navbarElement.classList.contains("navbar-sticky-shadow") !== shadow) {
+        navbarElement.classList.toggle("navbar-sticky-shadow", shadow);
+      }
     }
   }
 
@@ -1792,7 +2062,8 @@ function disableAnimation() {
       "--banner-height-extend",
       `${offset}px`
     );
-    syncScrollProgress();
+    syncScrollProgress(true);
+    updateSidebarStickySpacing(true);
   };
 
   // 页面加载完成后初始化banner和内容溢出容器
@@ -1906,6 +2177,17 @@ function disableAnimation() {
   // 更新侧边栏组件的可见性
   function updateSidebarComponentsVisibility() {
     const isPostPage = isCurrentPagePost();
+    const animateReflow = document.documentElement.classList.contains("route-sidebar-reflow");
+    const movingSections = animateReflow
+      ? Array.from(document.querySelectorAll<HTMLElement>(
+          "#left-sidebar > div:not([id]) > .card-base, #right-sidebar > div:not([id]) > .card-base, #left-sidebar-sticky, #right-sidebar-sticky",
+        )).filter((card) =>
+          !card.classList.contains("widget-hide-on-post") &&
+          !card.classList.contains("widget-hide-on-non-post") &&
+          card.getClientRects().length > 0
+        )
+      : [];
+    const previousTops = new Map(movingSections.map((section) => [section, section.getBoundingClientRect().top]));
 
     // 移动端文章页：若底部组件均配置为不在文章页显示，则隐藏整个容器，
     // 避免空容器保留间距，也防止任何子组件样式意外突破隐藏状态。
@@ -1941,13 +2223,27 @@ function disableAnimation() {
     });
 
     // 组件可见性变化后，立即重算 sticky 间距，避免 swup 切页后残留旧间距
-    updateSidebarStickySpacing();
+    updateSidebarStickySpacing(true);
+    for (const section of movingSections) {
+      const offset = previousTops.get(section)! - section.getBoundingClientRect().top;
+      if (Math.abs(offset) > 1) {
+        section.animate(
+          [{ transform: `translateY(${offset}px)` }, { transform: "translateY(0)" }],
+          { duration: 420, easing: "ease-in-out" },
+        );
+      }
+    }
+    if (animateReflow) {
+      document.documentElement.classList.remove("route-sidebar-reflow");
+    }
   }
 
   // 根据当前页面实际可见的顶部组件与滚动位置，动态更新侧边栏 sticky 间距
-  function updateSidebarStickySpacing() {
+  function updateSidebarStickySpacing(force = false) {
     const scrollTop = document.documentElement.scrollTop || window.scrollY || 0;
     const isScrolled = scrollTop > 2;
+    if (!force && lastSidebarScrolled === isScrolled) return;
+    lastSidebarScrolled = isScrolled;
 
     (["left", "right"] as const).forEach((side) => {
       const sticky = document.getElementById(`${side}-sidebar-sticky`);

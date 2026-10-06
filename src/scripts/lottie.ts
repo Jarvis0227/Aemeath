@@ -96,7 +96,10 @@ function observeAnimations() {
 				const animation = activeAnimations.get(element);
 				if (!animation) continue;
 				if (entry.isIntersecting) {
-					if (element.dataset.lottieStatic === "true" && element.dataset.lottiePlaying !== "true") {
+					if (
+						element.dataset.lottieStatic === "true" &&
+						element.dataset.lottiePlaying !== "true"
+					) {
 						animation.pause();
 						animation.goToAndStop?.(0, true);
 					} else {
@@ -136,8 +139,15 @@ function removeStaleAnimations(elements: Set<HTMLElement>) {
 	}
 }
 
-async function loadAnimationForElement(element: HTMLElement, runtime: LottieRuntime) {
-	if (activeAnimations.has(element) || loadingAnimations.has(element) || !element.isConnected)
+async function loadAnimationForElement(
+	element: HTMLElement,
+	runtime: LottieRuntime,
+) {
+	if (
+		activeAnimations.has(element) ||
+		loadingAnimations.has(element) ||
+		!element.isConnected
+	)
 		return;
 
 	const name = getAnimationName(element);
@@ -194,9 +204,16 @@ function observeLazyElements() {
 			for (const entry of entries) {
 				if (!entry.isIntersecting) continue;
 				void loadRuntime()
-					.then((runtime) => loadAnimationForElement(entry.target as HTMLElement, runtime))
+					.then((runtime) =>
+						loadAnimationForElement(entry.target as HTMLElement, runtime),
+					)
 					.then(() => observeAnimations())
-					.catch(() => markFallback(entry.target as HTMLElement, (entry.target as HTMLElement).dataset.lottieName || ""));
+					.catch(() =>
+						markFallback(
+							entry.target as HTMLElement,
+							(entry.target as HTMLElement).dataset.lottieName || "",
+						),
+					);
 			}
 		},
 		{ rootMargin: "240px", threshold: 0.01 },
@@ -232,7 +249,8 @@ async function initializeLottieEmojis() {
 	if (eagerElements.length) {
 		try {
 			const runtime = await loadRuntime();
-			for (const element of eagerElements) await loadAnimationForElement(element, runtime);
+			for (const element of eagerElements)
+				await loadAnimationForElement(element, runtime);
 		} catch {
 			for (const element of eagerElements)
 				markFallback(element, element.dataset.lottieName || "");
@@ -242,7 +260,8 @@ async function initializeLottieEmojis() {
 	if (lazyElements.size && !observeLazyElements()) {
 		try {
 			const runtime = await loadRuntime();
-			for (const element of lazyElements) await loadAnimationForElement(element, runtime);
+			for (const element of lazyElements)
+				await loadAnimationForElement(element, runtime);
 		} catch {
 			for (const element of lazyElements)
 				markFallback(element, element.dataset.lottieName || "");
@@ -252,7 +271,7 @@ async function initializeLottieEmojis() {
 	observeAnimations();
 }
 
-export function initLottieEmojis() {
+export function initLottieEmojis(): void {
 	if (scheduledFrame) cancelAnimationFrame(scheduledFrame);
 	scheduledFrame = requestAnimationFrame(() => {
 		scheduledFrame = 0;
@@ -260,7 +279,7 @@ export function initLottieEmojis() {
 	});
 }
 
-export function setLottiePlayback(name: string, shouldPlay: boolean) {
+export function setLottiePlayback(name: string, shouldPlay: boolean): void {
 	if (typeof document === "undefined") return;
 
 	const element = Array.from(

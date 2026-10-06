@@ -182,8 +182,7 @@ function goToPage(page: number) {
   {:else}
     <div class="text-center py-12">
       <h3 class="text-xl font-medium text-gray-600 dark:text-gray-400 mb-2">{i18n(I18nKey.bangumiNoData)}</h3>
-      <p class="text-gray-500 dark:text-gray-500">{i18n(I18nKey.bangumiNoDataDescription)}</p>
+      <p class="text-gray-500 dark:text-gray-400">{i18n(I18nKey.bangumiNoDataDescription)}</p>
     </div>
   {/if}
 </div>
-

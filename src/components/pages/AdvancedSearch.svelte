@@ -8,26 +8,140 @@ import { url as formatUrl } from "@/utils/url-utils";
 
 export let title = i18n(I18nKey.search);
 export let description = "";
-type Post = { url:string; title:string; description:string; image:string; published:number; category:string; tags:string[]; searchText:string };
-type Result = SearchResult & { image?:string; published?:number; category?:string; tags?:string[]; page?:boolean };
-let keyword = "", results:Result[] = [], loading = false, ready = false, timer:NodeJS.Timeout, cache:Post[]|null = null;
+type Post = {
+	url: string;
+	title: string;
+	description: string;
+	image: string;
+	published: number;
+	category: string;
+	tags: string[];
+	searchText: string;
+};
+type Result = SearchResult & {
+	image?: string;
+	published?: number;
+	category?: string;
+	tags?: string[];
+	page?: boolean;
+};
+let keyword = "",
+	results: Result[] = [],
+	loading = false,
+	ready = false,
+	timer: NodeJS.Timeout,
+	cache: Post[] | null = null;
 
-const esc = (v:string) => v.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c] || c));
-const hi = (v:string, q:string) => { const w=q.trim(); if(!w)return esc(v); const e=w.replace(/[.*+?^$()|[\]\\{}]/g,"\\$&"); return esc(v).replace(new RegExp(e,"gi"), m => "<mark>"+m+"</mark>"); };
-const clean = (v:string) => v.replace(/<[^>]*>/g,"");
-const norm = (v:string) => { try { return new URL(v,window.location.origin).pathname.replace(/\/?$/,"/"); } catch { return v; } };
-const date = (v?:number) => v ? new Intl.DateTimeFormat("zh-CN",{year:"numeric",month:"short",day:"numeric"}).format(new Date(v)) : "";
-const posts = async () => { if(cache)return cache; const r=await fetch(formatUrl("/api/allPostMeta.json")); cache=r.ok?await r.json():[]; return cache as Post[]; };
-const local = async (q:string):Promise<Result[]> => (await posts()).filter(p => [p.searchText,p.title,p.description,p.category,...p.tags].join(" ").toLowerCase().includes(q.trim().toLowerCase())).map(p => ({url:p.url,meta:{title:hi(p.title,q)},excerpt:hi(p.description||p.title,q),image:p.image,published:p.published,category:p.category,tags:p.tags}));
-const enrich = async (items:SearchResult[]):Promise<Result[]> => { const map=new Map((await posts()).map(p=>[norm(p.url),p])); return items.map(item => { const p=map.get(norm(item.url)); return p?{...item,image:p.image,published:p.published,category:p.category,tags:p.tags}:{...item,page:true}; }); };
+const esc = (v: string) =>
+	v.replace(
+		/[&<>"']/g,
+		(c) =>
+			({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+				c
+			] || c,
+	);
+const hi = (v: string, q: string) => {
+	const w = q.trim();
+	if (!w) return esc(v);
+	const e = w.replace(/[.*+?^$()|[\]\\{}]/g, "\\$&");
+	return esc(v).replace(new RegExp(e, "gi"), (m) => "<mark>" + m + "</mark>");
+};
+const clean = (v: string) => v.replace(/<[^>]*>/g, "");
+const norm = (v: string) => {
+	try {
+		return new URL(v, window.location.origin).pathname.replace(/\/?$/, "/");
+	} catch {
+		return v;
+	}
+};
+const date = (v?: number) =>
+	v
+		? new Intl.DateTimeFormat("zh-CN", {
+				year: "numeric",
+				month: "short",
+				day: "numeric",
+			}).format(new Date(v))
+		: "";
+const posts = async () => {
+	if (cache) return cache;
+	const r = await fetch(formatUrl("/api/allPostMeta.json"));
+	cache = r.ok ? await r.json() : [];
+	return cache as Post[];
+};
+const local = async (q: string): Promise<Result[]> =>
+	(await posts())
+		.filter((p) =>
+			[p.searchText, p.title, p.description, p.category, ...p.tags]
+				.join(" ")
+				.toLowerCase()
+				.includes(q.trim().toLowerCase()),
+		)
+		.map((p) => ({
+			url: p.url,
+			meta: { title: hi(p.title, q) },
+			excerpt: hi(p.description || p.title, q),
+			image: p.image,
+			published: p.published,
+			category: p.category,
+			tags: p.tags,
+		}));
+const enrich = async (items: SearchResult[]): Promise<Result[]> => {
+	const map = new Map((await posts()).map((p) => [norm(p.url), p]));
+	return items.map((item) => {
+		const p = map.get(norm(item.url));
+		return p
+			? {
+					...item,
+					image: p.image,
+					published: p.published,
+					category: p.category,
+					tags: p.tags,
+				}
+			: { ...item, page: true };
+	});
+};
 
 const search = async () => {
- if(!ready || !keyword.trim()){results=[];return;} loading=true;
- try { let found:SearchResult[]=[]; if(window.pagefind){ const r=await window.pagefind.search(keyword); found=await Promise.all(r.results.map(async item=>{const {content:_content,...data}=await item.data();return data;})); } results=found.length?await enrich(found):await local(keyword); }
- catch(e){console.error("Search error:",e);results=[];} finally{loading=false;}
+	if (!ready || !keyword.trim()) {
+		results = [];
+		return;
+	}
+	loading = true;
+	try {
+		let found: SearchResult[] = [];
+		if (window.pagefind) {
+			const r = await window.pagefind.search(keyword);
+			found = await Promise.all(
+				r.results.map(async (item) => {
+					const { content: _content, ...data } = await item.data();
+					return data;
+				}),
+			);
+		}
+		results = found.length ? await enrich(found) : await local(keyword);
+	} catch (e) {
+		console.error("Search error:", e);
+		results = [];
+	} finally {
+		loading = false;
+	}
 };
-onMount(()=>{const init=async()=>{ready=true;keyword=new URLSearchParams(location.search).get("q")||"";if(keyword)await search();}; if(window.pagefind||import.meta.env.DEV)init();else {document.addEventListener("pagefindready",init,{once:true});document.addEventListener("pagefindloaderror",init,{once:true});}});
-const input=()=>{clearTimeout(timer);timer=setTimeout(search,260);};
+onMount(() => {
+	const init = async () => {
+		ready = true;
+		keyword = new URLSearchParams(location.search).get("q") || "";
+		if (keyword) await search();
+	};
+	if (window.pagefind || import.meta.env.DEV) init();
+	else {
+		document.addEventListener("pagefindready", init, { once: true });
+		document.addEventListener("pagefindloaderror", init, { once: true });
+	}
+});
+const input = () => {
+	clearTimeout(timer);
+	timer = setTimeout(search, 260);
+};
 </script>
 
 <section class="search-page" aria-labelledby="search-page-title">

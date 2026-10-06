@@ -1,0 +1,239 @@
+{
+  "templateMode": true,
+  "source": {
+    "periodStart": "",
+    "periodEnd": "",
+    "basis": "请在本地配置自己的账单数据"
+  },
+  "latestMonth": "2026-01",
+  "months": [
+    {
+      "key": "2026-01",
+      "label": "账单模板（无数据）",
+      "year": 2026,
+      "month": 1,
+      "asOfDate": "2026-01-01",
+      "income": 0,
+      "expense": 0,
+      "balance": 0,
+      "incomeCount": 0,
+      "expenseCount": 0,
+      "days": [
+        {
+          "day": 1,
+          "dateKey": "2026-01-01",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 2,
+          "dateKey": "2026-01-02",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 3,
+          "dateKey": "2026-01-03",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 4,
+          "dateKey": "2026-01-04",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 5,
+          "dateKey": "2026-01-05",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 6,
+          "dateKey": "2026-01-06",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 7,
+          "dateKey": "2026-01-07",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 8,
+          "dateKey": "2026-01-08",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 9,
+          "dateKey": "2026-01-09",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 10,
+          "dateKey": "2026-01-10",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 11,
+          "dateKey": "2026-01-11",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 12,
+          "dateKey": "2026-01-12",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 13,
+          "dateKey": "2026-01-13",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 14,
+          "dateKey": "2026-01-14",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 15,
+          "dateKey": "2026-01-15",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 16,
+          "dateKey": "2026-01-16",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 17,
+          "dateKey": "2026-01-17",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 18,
+          "dateKey": "2026-01-18",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 19,
+          "dateKey": "2026-01-19",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 20,
+          "dateKey": "2026-01-20",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 21,
+          "dateKey": "2026-01-21",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 22,
+          "dateKey": "2026-01-22",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 23,
+          "dateKey": "2026-01-23",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 24,
+          "dateKey": "2026-01-24",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 25,
+          "dateKey": "2026-01-25",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 26,
+          "dateKey": "2026-01-26",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 27,
+          "dateKey": "2026-01-27",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 28,
+          "dateKey": "2026-01-28",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 29,
+          "dateKey": "2026-01-29",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 30,
+          "dateKey": "2026-01-30",
+          "income": 0,
+          "expense": 0
+        },
+        {
+          "day": 31,
+          "dateKey": "2026-01-31",
+          "income": 0,
+          "expense": 0
+        }
+      ],
+      "categories": {
+        "income": [],
+        "expense": []
+      }
+    }
+  ],
+  "years": [
+    {
+      "year": 2026,
+      "income": 0,
+      "expense": 0,
+      "balance": 0,
+      "months": [
+        {
+          "month": 1,
+          "income": 0,
+          "expense": 0,
+          "balance": 0
+        }
+      ],
+      "startMonth": 1,
+      "endMonth": 1,
+      "activeMonths": 0
+    }
+  ],
+  "latestFlow": {
+    "key": "2026-01",
+    "label": "暂无流水",
+    "days": []
+  }
+}

@@ -20,17 +20,18 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import GrandmaTimeFilm from "@/components/article/GrandmaTimeFilm.svelte";
 import MonthlyExperiment from "@/components/article/MonthlyExperiment.svelte";
+import MonthlyScrollReveal from "@/components/article/MonthlyScrollReveal.svelte";
 import CoverImage from "@/components/common/CoverImage.astro";
 import PostMetadata from "@/components/layout/PostMeta.astro";
 import RecommendedPost from "@/components/misc/RecommendedPost.astro";
 import SharePoster from "@/components/misc/SharePoster.svelte";
 import { getEnabledFriends } from "@/config";
 import { coverImageConfig } from "@/config/coverImageConfig";
-import friendsFeedSnapshot from "@/data/friends-feed-snapshot.json";
 import { licenseConfig } from "@/config/licenseConfig";
 import { profileConfig } from "@/config/profileConfig";
 import { siteConfig } from "@/config/siteConfig";
 import { sponsorConfig } from "@/config/sponsorConfig";
+import friendsFeedSnapshot from "@/data/friends-feed-snapshot.json";
 import { formatDateToYYYYMMDD } from "@/utils/date-utils";
 import { getApiUrlList, processCoverImageSync } from "@/utils/image-utils";
 import { url } from "@/utils/url-utils";
@@ -66,14 +67,26 @@ const preservePostCoverRatio = [
 	"chao-chao-listening-rain-years-wind",
 	"others/youth-most-expensive/youth-most-expensive",
 	"in-grandmas-white-hair-i-saw-time",
+	"monthly-2026-09",
 ].includes(entry.id);
-const forcePostTitleBreak = entry.id === "others/youth-most-expensive/youth-most-expensive";
+const forcePostTitleBreak =
+	entry.id === "others/youth-most-expensive/youth-most-expensive";
+const isSeptemberMonthly = entry.id === "monthly-2026-09";
 const postMarkdownClass = [
-  preservePostCoverRatio ? "story-post-layout" : "",
-  entry.id === "monthly-2026-08" ? "monthly-post-layout" : "",
+	preservePostCoverRatio ? "story-post-layout" : "",
+	entry.id.startsWith("monthly-") ? "monthly-post-layout" : "",
+	isSeptemberMonthly ? "monthly-issue-2026-09" : "",
 ]
-  .filter(Boolean)
-  .join(" ");
+	.filter(Boolean)
+	.join(" ");
+const markdownClass = [
+	"mb-6",
+	"markdown-content",
+	isSeptemberMonthly ? "" : "onload-animation",
+	postMarkdownClass,
+]
+	.filter(Boolean)
+	.join(" ");
 const apiUrls = getApiUrlList(entry.data.image, entry.id);
 
 let posterCoverUrl = processedImage;
@@ -165,14 +178,19 @@ const normalizeFriendUrl = (friendUrl: string | undefined | null) =>
 		.toLowerCase();
 
 let monthlyMomentItems: MonthlyMomentItem[] = [];
-if (entry.id === "monthly-2026-08") {
+if (entry.id.startsWith("monthly-")) {
 	const friends = getEnabledFriends();
 	const ownSiteUrl = normalizeFriendUrl(siteConfig.site_url);
 	const friendsByUrl = new Map(
-		friends.map((friend) => [normalizeFriendUrl(friend.siteurl), friend] as const),
+		friends.map(
+			(friend) => [normalizeFriendUrl(friend.siteurl), friend] as const,
+		),
 	);
 	const stripFeedMarkup = (value: string) =>
-		value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+		value
+			.replace(/<[^>]*>/g, " ")
+			.replace(/\s+/g, " ")
+			.trim();
 
 	monthlyMomentItems = friendsFeedSnapshot.sources
 		.flatMap((source) => {
@@ -350,7 +368,7 @@ if (entry.id === "monthly-2026-08") {
 
       {entry.data.password ? (
         <EncryptedPost password={entry.data.password} slug={entry.id} hint={entry.data.passwordHint}>
-          <Markdown class={`mb-6 markdown-content onload-animation ${postMarkdownClass}`}>
+          <Markdown class={markdownClass}>
             <Content />
           </Markdown>
 
@@ -440,15 +458,17 @@ if (entry.id === "monthly-2026-08") {
         <>
           {entry.id === "in-grandmas-white-hair-i-saw-time" ? (
             <GrandmaTimeFilm client:load>
-              <Markdown slot="plain" class={`mb-6 markdown-content onload-animation ${postMarkdownClass}`}>
+              <Markdown slot="plain" class={markdownClass}>
                 <Content />
               </Markdown>
             </GrandmaTimeFilm>
           ) : (
-            <Markdown class={`mb-6 markdown-content onload-animation ${postMarkdownClass}`}>
+            <Markdown class={markdownClass}>
               <Content />
             </Markdown>
           )}
+
+          {isSeptemberMonthly && <MonthlyScrollReveal client:load />}
 
           {/* 打赏按钮 & 分享按钮 */}
           {
@@ -1569,7 +1589,7 @@ if (entry.id === "monthly-2026-08") {
     --chapter-accent-source: #c18a18;
   }
 
-  #swup-container .monthly-post-layout > section:has(> h2[id="写在第一期月刊最后"]) {
+  #swup-container .monthly-post-layout > section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) {
     --chapter-accent-source: #657185;
   }
 
@@ -2060,7 +2080,7 @@ if (entry.id === "monthly-2026-08") {
   }
 
   /* Closing: an editorial sign-off with a centered, quieter final cadence. */
-  #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) {
+  #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) {
     margin-top: clamp(4.5rem, 9vw, 7rem);
     padding-block: clamp(2rem, 5vw, 3.4rem) clamp(2.8rem, 6vw, 4rem);
     border-block: 1px solid var(--chapter-rule);
@@ -2068,7 +2088,7 @@ if (entry.id === "monthly-2026-08") {
       linear-gradient(180deg, transparent, var(--chapter-wash) 18%, var(--chapter-wash) 82%, transparent);
   }
 
-  #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) > h2 {
+  #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) > h2 {
     justify-content: center;
     gap: 0.8rem;
     margin: 0 0 1.8rem;
@@ -2078,8 +2098,8 @@ if (entry.id === "monthly-2026-08") {
     text-align: center;
   }
 
-  #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) > h2::before,
-  #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) > h2::after {
+  #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) > h2::before,
+  #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) > h2::after {
     content: "";
     display: block;
     flex: 1 1 3rem;
@@ -2088,19 +2108,19 @@ if (entry.id === "monthly-2026-08") {
     background: var(--chapter-rule);
   }
 
-  #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) > p {
+  #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) > p {
     max-width: 59ch;
     margin-right: auto;
     margin-left: auto;
   }
 
-  #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) > p:first-of-type {
+  #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) > p:first-of-type {
     color: color-mix(in oklab, var(--monthly-ink) 88%, var(--chapter-accent));
     font-size: 1.08rem;
     font-weight: 620;
   }
 
-  #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) > p:last-of-type {
+  #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) > p:last-of-type {
     margin-top: 2.8rem;
     color: color-mix(in oklab, var(--monthly-ink) 84%, var(--chapter-accent));
     font-family: var(--font-zen-maru-gothic), sans-serif;
@@ -2109,7 +2129,7 @@ if (entry.id === "monthly-2026-08") {
     text-align: center;
   }
 
-  #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) > p:last-of-type::before {
+  #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) > p:last-of-type::before {
     content: "";
     display: block;
     width: 2.8rem;
@@ -2252,6 +2272,14 @@ if (entry.id === "monthly-2026-08") {
     line-height: 0.72;
     text-align: right;
     white-space: pre;
+  }
+
+  #swup-container .monthly-post-layout > section center:has(figure > img[src*="monthly-2026-09/umami-dashboard"])::before {
+    content: "●  LIVE DATA   08.27 — 09.27";
+  }
+
+  #swup-container .monthly-post-layout > section center:has(figure > img[src*="monthly-2026-09/umami-dashboard"])::after {
+    content: "4.01K\AVISITORS";
   }
 
   #swup-container .monthly-post-layout > section center:has(figure > img[src*="umami-dashboard"]) figure {
@@ -3048,7 +3076,7 @@ if (entry.id === "monthly-2026-08") {
     #swup-container .monthly-post-layout section:has(> h2[id="这个月也做了几次停止"]) > p:first-of-type,
     #swup-container .monthly-post-layout section:has(> h2[id="这个月最有意思的事我一直在加也一直在删"]) > p:first-of-type,
     #swup-container .monthly-post-layout section:has(> h2[id="8-月推荐友链"]) > p:first-of-type,
-    #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) > p:first-of-type {
+    #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) > p:first-of-type {
       font-size: 1rem;
     }
 
@@ -3112,8 +3140,8 @@ if (entry.id === "monthly-2026-08") {
 
     #swup-container .monthly-post-layout section:has(> h2[id="这个月也做了几次停止"]) > h2::before,
     #swup-container .monthly-post-layout section:has(> h2[id="这个月也做了几次停止"]) > h2::after,
-    #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) > h2::before,
-    #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) > h2::after {
+    #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) > h2::before,
+    #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) > h2::after {
       flex-basis: 1.5rem;
       max-width: 2.4rem;
     }
@@ -3147,12 +3175,12 @@ if (entry.id === "monthly-2026-08") {
       height: 0.85rem;
     }
 
-    #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) {
+    #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) {
       margin-top: 4.25rem;
       padding-block: 2.2rem 3rem;
     }
 
-    #swup-container .monthly-post-layout section:has(> h2[id="写在第一期月刊最后"]) > h2 {
+    #swup-container .monthly-post-layout section:has(> h2:is([id="写在第一期月刊最后"], [id="写在第二期月刊最后"])) > h2 {
       gap: 0.55rem;
       font-size: clamp(1.55rem, 7.5vw, 2rem);
     }
@@ -7062,6 +7090,988 @@ if (entry.id === "monthly-2026-08") {
     #swup-container .monthly-post-layout .monthly-drift-wall__column,
     #swup-container .monthly-post-layout .monthly-drift-wall__tile {
       transition: none;
+    }
+  }
+
+  /* September starts from a quiet, static base for its new visual direction. */
+  #swup-container .monthly-issue-2026-09 > section:has(> h2) {
+    border-block: 0 !important;
+  }
+
+  #swup-container .monthly-issue-2026-09 > section > h2 {
+    padding-top: 0.2rem;
+    border-block: 0 !important;
+  }
+
+  #swup-container .monthly-issue-2026-09 > section > h2::before,
+  #swup-container .monthly-issue-2026-09 > section > h2::after {
+    display: none !important;
+    content: none !important;
+    background: none !important;
+    box-shadow: none !important;
+  }
+
+  #swup-container .monthly-issue-2026-09 > section > h2:target {
+    background-image: none;
+    animation: none;
+  }
+
+  #swup-container .monthly-issue-2026-09 h3 {
+    padding-bottom: 0.1rem;
+    border-bottom: 0 !important;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-data-strip {
+    margin-top: 1.4rem;
+    padding-block: 0.4rem;
+    border-block: 0;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-data-source {
+    padding-bottom: 0.1rem;
+    border-bottom: 0 !important;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-foundation-intro {
+    display: grid;
+    gap: 0.7rem;
+    margin: 1.35rem 0 0.55rem;
+    padding: 0;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-foundation-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.8rem;
+    color: var(--monthly-ink);
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-foundation-heading strong {
+    font-size: 1.12rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-foundation-heading span {
+    color: var(--monthly-muted);
+    font-size: 0.68rem;
+    white-space: nowrap;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-foundation-intro p {
+    margin: 0;
+    color: var(--monthly-muted);
+    font-size: 0.86rem;
+    line-height: 1.7;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-foundation-intro + .card-github {
+    margin-top: 0.85rem;
+  }
+
+  #swup-container .monthly-issue-2026-09 .card-github {
+    margin-block: 0.7rem;
+    animation: none !important;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-data-strip > div,
+  #swup-container .monthly-issue-2026-09 .monthly-data-strip > div::after {
+    transition: none;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-data-strip > div::after {
+    display: none;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-data-strip > div:hover {
+    transform: none;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-date-replay__closing {
+    transform: none;
+    transition: none;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-article-cover-pair {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(0.55rem, 1.6vw, 0.9rem);
+    width: min(100%, 54rem);
+    margin: 0.8rem auto 1.5rem;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-article-cover img {
+    transition: none;
+  }
+
+  #swup-container .monthly-issue-2026-09 .monthly-article-cover:hover img,
+  #swup-container .monthly-issue-2026-09 .monthly-article-cover:focus-visible img {
+    box-shadow: 0 0.9rem 1.8rem -1.4rem color-mix(in oklab, var(--chapter-accent) 46%, transparent);
+    transform: none;
+  }
+
+  @media (max-width: 640px) {
+    #swup-container .monthly-issue-2026-09 .monthly-article-cover-pair {
+      grid-template-columns: 1fr;
+      width: min(92%, 24rem);
+    }
+
+    #swup-container .monthly-issue-2026-09 .monthly-foundation-heading {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+  }
+
+  /* September friend entries use a compact, static reading card. The first
+   * entry gets the same card skin, while its open-source module stays below
+   * as a separate reading block. */
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro)) {
+    display: grid;
+    grid-template-columns: 3.75rem minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    column-gap: 0.9rem;
+    row-gap: 0.55rem;
+    align-items: start;
+    margin: 1.1rem 0;
+    padding: 0.95rem 1.05rem 1rem;
+    min-height: 9.5rem;
+    border: 1px solid var(--line-divider);
+    border-radius: 0.85rem;
+    background: var(--card-bg);
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro))
+    > h3 {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    padding: 0;
+    border: 0 !important;
+    line-height: 1.3;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro))
+    > h3 > a:not(.anchor) {
+    display: inline-block;
+    color: var(--text-color);
+    font-size: 1rem;
+    font-weight: 760;
+    text-decoration: none;
+    text-wrap: balance;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro))
+    > h3 > .anchor {
+    display: none;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro))
+    > p:has(> .monthly-friend-avatar) {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: start;
+    margin: 0;
+    padding: 0;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro))
+    > .monthly-friend-meta {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 0;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro))
+    > p:not(:has(> .monthly-friend-avatar)) {
+    grid-column: 2;
+    grid-row: 3;
+    margin: 0.15rem 0 0;
+    padding: 0;
+    color: var(--monthly-muted);
+    font-size: 0.86rem;
+    line-height: 1.7;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro))
+    > h3 > a:not(.anchor):focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 68%, transparent);
+    outline-offset: 0.18rem;
+    border-radius: 0.2rem;
+  }
+
+  @media (max-width: 640px) {
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro)) {
+      grid-template-columns: 3.2rem minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr);
+      column-gap: 0.72rem;
+      padding: 0.85rem 0.85rem 0.9rem;
+      min-height: 15rem;
+    }
+
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro))
+      > p:has(> .monthly-friend-avatar) {
+      grid-row: 1;
+    }
+
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro))
+      > .monthly-friend-meta {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro))
+      > p:not(:has(> .monthly-friend-avatar)) {
+      grid-column: 1 / -1;
+      grid-row: 3;
+    }
+
+    #swup-container .monthly-issue-2026-09 .monthly-friend-avatar {
+      width: 3.2rem;
+      height: 3.2rem;
+    }
+  }
+
+  /* The foundation friend has extra GitHub content after its recommendation
+   * copy, so only the first three grid rows receive the shared card surface. */
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"]) {
+    display: grid;
+    grid-template-columns: 3.75rem minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    column-gap: 0.9rem;
+    row-gap: 0.55rem;
+    align-items: start;
+    margin: 1.1rem 0;
+    padding: 0.95rem 1.05rem 1rem;
+    border: 0;
+    background: transparent;
+    isolation: isolate;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"])::before {
+    content: "";
+    grid-column: 1 / -1;
+    grid-row: 1 / 4;
+    align-self: stretch;
+    min-height: 9.5rem;
+    margin: -0.95rem -1.05rem -1rem;
+    border: 1px solid var(--line-divider);
+    border-radius: 0.85rem;
+    background: var(--card-bg);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"]) > h3 {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    padding: 0;
+    border: 0 !important;
+    line-height: 1.3;
+    position: relative;
+    z-index: 1;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"]) > h3 > a:not(.anchor) {
+    display: inline-block;
+    color: var(--text-color);
+    font-size: 1rem;
+    font-weight: 760;
+    text-decoration: none;
+    text-wrap: balance;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"]) > h3 > .anchor {
+    display: none;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"]) > p:has(> .monthly-friend-avatar) {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: start;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"]) > .monthly-friend-meta {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"]) > p:not(:has(> .monthly-friend-avatar)) {
+    grid-column: 2;
+    grid-row: 3;
+    margin: 0.15rem 0 0;
+    padding: 0;
+    color: var(--monthly-muted);
+    font-size: 0.86rem;
+    line-height: 1.7;
+    position: relative;
+    z-index: 1;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"]) > .monthly-foundation-intro,
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"]) > .card-github {
+    grid-column: 1 / -1;
+    margin-inline: -1.05rem;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"]) > h3 > a:not(.anchor):focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 68%, transparent);
+    outline-offset: 0.18rem;
+    border-radius: 0.2rem;
+  }
+
+  @media (max-width: 640px) {
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(> h3[id="夏夜流萤"]) {
+      grid-template-columns: 3.2rem minmax(0, 1fr);
+      grid-template-rows: auto auto auto;
+      column-gap: 0.72rem;
+      padding: 0.85rem 0.85rem 0.9rem;
+      min-height: 0;
+    }
+
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(> h3[id="夏夜流萤"]) > p:has(> .monthly-friend-avatar) {
+      grid-row: 1;
+    }
+
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(> h3[id="夏夜流萤"]) > .monthly-friend-meta {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(> h3[id="夏夜流萤"])
+      > p:not(:has(> .monthly-friend-avatar)) {
+      grid-column: 1 / -1;
+      grid-row: 3;
+    }
+
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(> h3[id="夏夜流萤"])::before {
+      margin: -0.85rem -0.85rem -0.9rem;
+    }
+
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(> h3[id="夏夜流萤"]) > .monthly-foundation-intro,
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(> h3[id="夏夜流萤"]) > .card-github {
+      margin-inline: -0.85rem;
+    }
+  }
+
+  /* Give the friend cards the same clear hover response as the GitHub cards,
+   * using a light yellow surface that fits this issue's quieter palette. */
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro)) {
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease !important;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro)):is(:hover, :focus-within) {
+    border-color: color-mix(in srgb, #e5b941 58%, var(--line-divider));
+    background-color: color-mix(in srgb, #ffe58a 34%, var(--card-bg));
+    box-shadow: 0 0.25rem 0.75rem -0.45rem color-mix(in srgb, #d5a72f 32%, transparent);
+    transform: translateY(-2px);
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro)):active {
+    transform: scale(0.992);
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"])::before {
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease !important;
+  }
+
+  #swup-container .monthly-issue-2026-09
+    section:has(> h2[id="9-月推荐友链"])
+    > section:has(> h3[id="夏夜流萤"]):has(
+      > h3:hover,
+      > p:first-of-type:hover,
+      > .monthly-friend-meta:hover,
+      > p:nth-of-type(2):hover,
+      > h3:focus-within
+    )::before {
+    border-color: color-mix(in srgb, #e5b941 58%, var(--line-divider));
+    background-color: color-mix(in srgb, #ffe58a 34%, var(--card-bg));
+    box-shadow: 0 0.25rem 0.75rem -0.45rem color-mix(in srgb, #d5a72f 32%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro)),
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(> h3[id="夏夜流萤"]),
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(> h3[id="夏夜流萤"])::before {
+      transition: none !important;
+    }
+
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro)):is(:hover, :focus-within) {
+      transform: none;
+    }
+
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(> h3[id="夏夜流萤"]):has(
+        > h3:hover,
+        > p:first-of-type:hover,
+        > .monthly-friend-meta:hover,
+        > p:nth-of-type(2):hover,
+        > h3:focus-within
+      )::before {
+      box-shadow: none;
+    }
+
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(.monthly-friend-avatar):not(:has(.monthly-foundation-intro)):active,
+    #swup-container .monthly-issue-2026-09
+      section:has(> h2[id="9-月推荐友链"])
+      > section:has(> h3[id="夏夜流萤"]):has(
+        > h3:active,
+        > p:first-of-type:active,
+        > .monthly-friend-meta:active,
+        > p:nth-of-type(2):active
+      )::before {
+      transform: none;
+    }
+  }
+
+  /* September's visual language: warm data tiles and an editorial scroll reveal. */
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 {
+    --monthly-september-accent: #c98532;
+    --monthly-september-wash: color-mix(in oklab, #e5b456 11%, var(--card-bg));
+  }
+
+  .dark #swup-container .monthly-post-layout.monthly-issue-2026-09 {
+    --monthly-september-accent: #e8b45e;
+    --monthly-september-wash: color-mix(in oklab, #c98532 14%, var(--card-bg));
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    > section:has(> h2[id]) > h2 {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100%;
+    margin-inline: auto !important;
+    padding: 1.2rem 0 0.45rem;
+    border: 0 !important;
+    color: var(--monthly-ink) !important;
+    background: none !important;
+    background-image: none !important;
+    font-family: var(--font-active-sans, inherit) !important;
+    font-size: clamp(1.65rem, 4.2vw, 2.55rem);
+    font-weight: 760;
+    letter-spacing: -0.025em;
+    line-height: 1.28;
+    text-align: center !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    > section:has(> h2[id]) > h2::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    > section:has(> h2[id]) > h2::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    > section:has(> h2[id]) > h2 > *,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    > section:has(> h2[id]) > h2 .monthly-title-char {
+    font-family: var(--font-active-sans, inherit) !important;
+    color: inherit !important;
+    background: none !important;
+    background-image: none !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    > section:has(> h2[id]) > h2 > .anchor {
+    display: none !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    > section > h2 .monthly-title-char {
+    opacity: 1 !important;
+    filter: none !important;
+    clip-path: none !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    section:has(> h2[id="生活篇"]),
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    section:has(> h2[id="生活篇"]) *,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    section:has(> h2[id="写在第二期月刊最后"]),
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    section:has(> h2[id="写在第二期月刊最后"]) * {
+    font-family: var(--font-active-sans, inherit) !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    section:has(> h2[id="生活篇"]) > p {
+    text-align: center;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    section:has(> h2[id="生活篇"]) > p:first-of-type::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    section:has(> h2[id="写在第二期月刊最后"]) {
+    border-block: 0 !important;
+    background: none !important;
+    text-align: center;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    section:has(> h2[id="写在第二期月刊最后"]) > p {
+    text-align: center;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    section:has(> h2[id="写在第二期月刊最后"]) > p:last-of-type::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip {
+    gap: 0.68rem;
+    margin: 1.7rem auto 1rem;
+    padding: 0;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip > div {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.3rem;
+    min-height: 6.5rem;
+    padding: 0.8rem 0.45rem;
+    border: 1px solid color-mix(in oklab, var(--monthly-september-accent) 24%, var(--line-divider));
+    border-radius: 0.95rem 0.95rem 0.95rem 0.35rem;
+    background: var(--monthly-september-wash);
+    box-shadow: 0 0.7rem 1.25rem -1.1rem color-mix(in oklab, var(--monthly-september-accent) 66%, transparent);
+    transition:
+      border-color 220ms ease,
+      background-color 220ms ease,
+      box-shadow 220ms ease !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip > div:nth-child(1) { --monthly-stat-tilt: -0.8deg; }
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip > div:nth-child(2) { --monthly-stat-tilt: 0.55deg; }
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip > div:nth-child(3) { --monthly-stat-tilt: -0.45deg; }
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip > div:nth-child(4) { --monthly-stat-tilt: 0.75deg; }
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip > div:nth-child(5) { --monthly-stat-tilt: -0.55deg; }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-value {
+    color: var(--monthly-ink);
+    font-family: var(--font-active-sans, inherit);
+    font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: 820;
+    letter-spacing: -0.04em;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-label {
+    color: var(--monthly-muted);
+    font-family: var(--font-active-sans, inherit);
+    font-size: 0.72rem;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  @media (hover: hover) {
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip > div:hover {
+      border-color: color-mix(in oklab, var(--monthly-september-accent) 58%, var(--line-divider));
+      background: color-mix(in oklab, var(--monthly-september-accent) 16%, var(--card-bg));
+      box-shadow: 0 1rem 1.6rem -1.15rem color-mix(in oklab, var(--monthly-september-accent) 66%, transparent);
+    }
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-stop-pair {
+    width: min(100%, 56rem);
+    margin: 1.5rem auto 2.1rem;
+    gap: clamp(0.65rem, 2vw, 1.2rem);
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-stop-pair__item,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-stop-pair__item--left,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-stop-pair__item--right {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    min-height: 7.2rem;
+    padding: 1rem 0.8rem;
+    border: 1px solid color-mix(in oklab, var(--monthly-september-accent) 20%, var(--line-divider));
+    border-radius: 1rem 1rem 1rem 0.35rem;
+    background: var(--monthly-september-wash);
+    text-align: center !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-stop-pair__item::before,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-stop-pair__item--left::before,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-stop-pair__item--right::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-stop-pair__item > div,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-stop-pair__item--left > div {
+    justify-content: center !important;
+    flex-wrap: wrap;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-stop-pair__item small {
+    max-width: 28ch;
+  }
+
+  @media (hover: hover) {
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-article-cover:hover img,
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-article-cover:focus-visible img {
+      box-shadow: 0 1.1rem 2rem -1.15rem color-mix(in oklab, var(--monthly-september-accent) 65%, transparent);
+    }
+  }
+
+  /* The two screenshots follow different scroll paths, both readable without JS. */
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    > section center:has(figure > img[src*="monthly-2026-09/umami-dashboard"]) {
+    width: 100%;
+    margin: 1.5rem auto 2rem;
+    padding: 0;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    > section center:has(figure > img[src*="monthly-2026-09/umami-dashboard"])::before,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    > section center:has(figure > img[src*="monthly-2026-09/umami-dashboard"])::after,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    figure:has(> img[src*="monthly-2026-09/umami-dashboard"])::before,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    figure:has(> img[src*="monthly-2026-09/umami-dashboard"])::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    figure:has(> img[src*="monthly-2026-09/umami-dashboard"]) {
+    padding: 0;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    figure:has(> img[src*="monthly-2026-09/umami-dashboard"]) > img {
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+
+  /* Entrances run once on intersection; none of these images repaint on every scroll tick. */
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    figure:has(> img[src*="monthly-2026-09/analytics-page"]) {
+    perspective: 1100px;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    figure:has(> img[src*="monthly-2026-09/analytics-page"]) > img {
+    transform-origin: left center;
+    backface-visibility: hidden;
+    transition: none !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .monthly-article-cover img {
+    transform: none !important;
+    filter: none !important;
+    clip-path: none !important;
+    transition: box-shadow 180ms ease !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    figure:has(> img[src*="monthly-2026-09/"]) figcaption {
+    font-family: var(--font-active-sans, inherit);
+    letter-spacing: normal;
+    text-align: center;
+  }
+
+  /* September shares August's enter-once timing, not its visual treatments.
+     Only off-screen nodes receive these classes; without JS all copy is visible. */
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .sept-enter {
+    --sept-enter-x: 0px;
+    --sept-enter-y: 1.2rem;
+    opacity: 0;
+    transform: translate3d(var(--sept-enter-x), var(--sept-enter-y), 0);
+    transition:
+      opacity var(--sept-enter-duration, 790ms) cubic-bezier(0.22, 1, 0.36, 1),
+      transform var(--sept-enter-duration, 790ms) cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .sept-enter.sept-enter--visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .sept-enter--chapter {
+    --sept-enter-y: 1.45rem;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .sept-enter--chapter[data-sept-chapter="data"] {
+    --sept-enter-y: -1.2rem;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .sept-enter--chapter[data-sept-chapter="articles"],
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .sept-enter--chapter[data-sept-chapter="network"] {
+    --sept-enter-x: -1.7rem;
+    --sept-enter-y: 0px;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .sept-enter--chapter[data-sept-chapter="friends"] {
+    --sept-enter-x: 1.7rem;
+    --sept-enter-y: 0px;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .sept-enter--chapter[data-sept-chapter="stop"] {
+    --sept-enter-y: -1rem;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .sept-enter--date,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .sept-enter--friend {
+    --sept-enter-x: -1.4rem;
+    --sept-enter-y: 0px;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .sept-enter--stop[data-sept-stop-side="left"] {
+    --sept-enter-x: -1.35rem;
+    --sept-enter-y: 0px;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .sept-enter--stop[data-sept-stop-side="right"] {
+    --sept-enter-x: 1.35rem;
+    --sept-enter-y: 0px;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .monthly-wechat-thread--instant .monthly-wechat-thread__notice,
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .monthly-wechat-thread--instant .monthly-wechat-message {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09 .sept-enter--cover {
+    --sept-enter-y: 1.65rem;
+  }
+
+  /* A compositor-friendly cover retracts downward; the full-resolution image
+     stays still instead of repainting its clip path on every animation frame. */
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    figure:has(> img[src*="monthly-2026-09/umami-dashboard"].sept-enter--dashboard) > img {
+    opacity: 1;
+    transform: none !important;
+    clip-path: none !important;
+    transition: none !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    figure:has(> img[src*="monthly-2026-09/umami-dashboard"].sept-enter--dashboard)::after {
+    content: "" !important;
+    display: block !important;
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    border-radius: 0.55rem;
+    background: var(--card-bg);
+    pointer-events: none;
+    transform: scaleY(1);
+    transform-origin: center bottom;
+    transition: transform 1050ms ease-in-out !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    figure:has(> img[src*="monthly-2026-09/umami-dashboard"].sept-enter--dashboard.sept-enter--visible)::after {
+    transform: scaleY(0);
+  }
+
+  /* The statistics page opens like a sheet; article covers arrive in sequence. */
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    img.sept-enter.sept-enter--analytics {
+    --sept-enter-x: 1.8rem;
+    --sept-enter-y: 0px;
+    transition:
+      opacity var(--sept-enter-duration, 790ms) ease,
+      transform var(--sept-enter-duration, 790ms) cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .sept-enter--cover:nth-child(2) {
+    transition-delay: 70ms;
+  }
+
+  #swup-container .monthly-post-layout.monthly-issue-2026-09
+    .sept-enter--cover:nth-child(3) {
+    transition-delay: 140ms;
+  }
+
+  @media (max-width: 640px) {
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 > section:has(> h2[id]) > h2 {
+      padding-top: 1rem;
+      font-size: clamp(1.5rem, 7.3vw, 2.05rem);
+    }
+
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip > div:last-child {
+      grid-column: 1 / -1;
+      width: calc(50% - 0.34rem);
+      justify-self: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #swup-container .monthly-post-layout.monthly-issue-2026-09
+      figure:has(> img[src*="monthly-2026-09/umami-dashboard"].sept-enter--dashboard)::after {
+      display: none !important;
+    }
+
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .sept-enter,
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .sept-enter.sept-enter--visible {
+      opacity: 1 !important;
+      transform: none !important;
+      clip-path: none !important;
+      transition: none !important;
+    }
+
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-scroll-reveal,
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-scroll-reveal--visible,
+    #swup-container .monthly-post-layout.monthly-issue-2026-09
+      > section > h2 .monthly-title-char,
+    #swup-container .monthly-post-layout.monthly-issue-2026-09
+      .monthly-wechat-thread__notice,
+    #swup-container .monthly-post-layout.monthly-issue-2026-09
+      .monthly-wechat-message {
+      animation: none !important;
+      filter: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+      clip-path: none !important;
+      transition: none !important;
+    }
+
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip > div,
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-article-cover img {
+      transition: none !important;
+    }
+
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-data-strip > div:hover,
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-article-cover:hover img,
+    #swup-container .monthly-post-layout.monthly-issue-2026-09 .monthly-article-cover:focus-visible img {
+      transform: none !important;
     }
   }
 </style>

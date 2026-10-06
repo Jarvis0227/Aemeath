@@ -91,9 +91,14 @@ function createWikiLink(post, label, anchor) {
 }
 
 function shouldSkipNode(parent) {
-	return ["link", "linkReference", "definition", "image", "inlineCode", "html"].includes(
-		parent?.type,
-	);
+	return [
+		"link",
+		"linkReference",
+		"definition",
+		"image",
+		"inlineCode",
+		"html",
+	].includes(parent?.type);
 }
 
 /**
@@ -115,13 +120,16 @@ export function remarkWikiLink(options = {}) {
 			}
 
 			const parts = [];
-			const matcher = /\[\[([^\[\]\n]+)\]\]/g;
+			const matcher = /\[\[([^[\]\n]+)\]\]/g;
 			let cursor = 0;
 			let match;
 
 			while ((match = matcher.exec(node.value))) {
 				if (match.index > cursor) {
-					parts.push({ type: "text", value: node.value.slice(cursor, match.index) });
+					parts.push({
+						type: "text",
+						value: node.value.slice(cursor, match.index),
+					});
 				}
 
 				const rawReference = match[1].trim();

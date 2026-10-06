@@ -144,9 +144,9 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件专属配置
 			specificConfig: {
 				siteInfo: {
-					buildPlatform: "Astro 静态构建",
+					buildPlatform: "Astro 静态构建 · Debian + 宝塔 Nginx",
 					// 未能识别的构建平台回退显示文本，可自定义
-					unknownBuildPlatform: "Astro 静态构建",
+					unknownBuildPlatform: "Astro 静态构建 · Debian + 宝塔 Nginx",
 				},
 			},
 		},
@@ -320,9 +320,9 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件专属配置
 			specificConfig: {
 				siteInfo: {
-					buildPlatform: "Astro 静态构建",
+					buildPlatform: "Astro 静态构建 · Debian + 宝塔 Nginx",
 					// 未能识别的构建平台回退显示文本，可自定义
-					unknownBuildPlatform: "Astro 静态构建",
+					unknownBuildPlatform: "Astro 静态构建 · Debian + 宝塔 Nginx",
 				},
 			},
 		},

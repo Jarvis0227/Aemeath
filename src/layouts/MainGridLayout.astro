@@ -7,6 +7,7 @@ import Navbar from "@components/layout/Navbar.astro";
 import SideBar from "@components/layout/SideBar.astro";
 import type { MarkdownHeading } from "astro";
 import { Icon } from "astro-icon/components";
+import AiRecommendationNote from "@/components/common/AiRecommendationNote.astro";
 import ImageWrapper from "@/components/common/ImageWrapper.astro";
 import FloatingControls from "@/components/controls/FloatingControls.astro";
 import ScrollDownIndicator from "@/components/controls/ScrollDownIndicator.astro";
@@ -15,7 +16,6 @@ import CodeInteractionManager from "@/components/features/CodeInteractionManager
 import HomePortfolioIntro from "@/components/features/HomePortfolioIntro.astro";
 import HomeWallpaperDecor from "@/components/features/HomeWallpaperDecor.astro";
 import TypewriterText from "@/components/features/TypewriterText.astro";
-import AiRecommendationNote from "@/components/common/AiRecommendationNote.astro";
 import CategoryBar from "@/components/layout/CategoryBar.astro";
 import {
 	backgroundWallpaper,
@@ -23,6 +23,12 @@ import {
 	sidebarLayoutConfig,
 	siteConfig,
 } from "@/config";
+import {
+	alternateHomepageWallpaper,
+	homepageWallpaper,
+	mobileHomepageWallpaper,
+} from "@/config/backgroundWallpaper";
+import { nationalDayTheme } from "@/config/nationalDayTheme";
 import {
 	BANNER_HEIGHT,
 	BANNER_HEIGHT_EXTEND,
@@ -76,11 +82,39 @@ interface Props {
 }
 
 const backgroundImages = getBackgroundImages();
-const wallpaperFallbackImage =
-	backgroundImages.desktop[0] || backgroundImages.mobile[0] || "";
-const wallpaperFallbackStyle = wallpaperFallbackImage
-	? `background-image: url('${wallpaperFallbackImage}'); background-size: cover; background-position: ${backgroundWallpaper.banner?.position ?? "center"}; background-color: transparent;`
-	: "background-color: transparent;";
+const isNationalDayWallpaper = (src: string) =>
+	src === homepageWallpaper ||
+	src === alternateHomepageWallpaper ||
+	src === mobileHomepageWallpaper;
+const fallbackNormalDesktop =
+	backgroundImages.desktop.find((src) => !isNationalDayWallpaper(src)) ?? "";
+const fallbackNormalMobile =
+	backgroundImages.mobile.find((src) => !isNationalDayWallpaper(src)) ?? "";
+const fallbackNationalDesktop =
+	backgroundImages.desktop.find(isNationalDayWallpaper) ?? "";
+const fallbackNationalMobile =
+	backgroundImages.mobile.find(isNationalDayWallpaper) ?? "";
+const homepageWallpaperActiveByDefault =
+	nationalDayTheme.defaultEnabled && Boolean(fallbackNationalDesktop);
+const getWallpaperPosition = (src: string) => {
+	if (backgroundWallpaper.mode !== "fullscreen") {
+		return backgroundWallpaper.banner?.position ?? "center";
+	}
+return isNationalDayWallpaper(src)
+		? "center top"
+		: (backgroundWallpaper.fullscreen?.position ?? "center");
+};
+const wallpaperFallbackVars = [
+	["normal-desktop", fallbackNormalDesktop],
+	["normal-mobile", fallbackNormalMobile],
+	["national-desktop", fallbackNationalDesktop],
+	["national-mobile", fallbackNationalMobile],
+]
+	.map(
+		([device, src]) =>
+			`--wallpaper-fallback-${device}: ${src ? `url('${src}')` : "none"}; --wallpaper-fallback-${device}-position: ${src ? getWallpaperPosition(src) : "center"};`,
+	)
+	.join(" ");
 const wallpaperOverlayVars = `--overlay-opacity: ${backgroundWallpaper.overlay?.opacity ?? 0.8}; --overlay-z-index: ${backgroundWallpaper.overlay?.zIndex ?? -1}; --overlay-blur: ${backgroundWallpaper.overlay?.blur ?? 0}px;`;
 
 const {
@@ -136,12 +170,14 @@ const shouldRenderGradient =
 // 检查是否为首页
 const isHomePageCheck = isHomePage(Astro.url.pathname);
 
-const shouldRenderCategoryBar = !!siteConfig.categoryBar;
-
 // 检查是否在文章详情页
 const isPostPage = !!postSlug;
+const shouldRenderCategoryBar =
+	!!siteConfig.categoryBar && (isHomePageCheck || isPostPage);
 const enabledMobileBottomComponents =
-	sidebarLayoutConfig.mobileBottomComponents?.filter((component) => component.enable) ?? [];
+	sidebarLayoutConfig.mobileBottomComponents?.filter(
+		(component) => component.enable,
+	) ?? [];
 const hideMobileBottomOnPostPage =
 	enabledMobileBottomComponents.length > 0 &&
 	enabledMobileBottomComponents.every(
@@ -162,8 +198,7 @@ const randomSubtitle = getRandomSubtitle();
 // 主页横幅文本只在首页的横幅模式且全局开关为 true 时显示。
 // 全屏模式使用独立的 HomeWallpaperDecor，不能再叠加旧的横幅文案。
 const homeTextEnable = backgroundWallpaper.common?.homeText?.enable;
-const showHomeText =
-	isBannerMode && !!homeTextEnable && isHomePageCheck;
+const showHomeText = isBannerMode && !!homeTextEnable && isHomePageCheck;
 
 const showBannerPostMeta =
 	(isBannerMode || isFullscreenMode) &&
@@ -171,10 +206,9 @@ const showBannerPostMeta =
 	!isHomePageCheck &&
 	isPostPage &&
 	!!bannerPostMeta;
-const resolvedBannerPostAiSummary =
+const resolvedPostAiSummary =
 	bannerPostAiSummary?.trim() || description?.trim() || "";
-const showBannerPostAiSummary =
-	showBannerPostMeta && !!resolvedBannerPostAiSummary;
+const showPostAiSummary = isPostPage && !!resolvedPostAiSummary;
 
 const showBannerDim = (isBannerMode || isFullscreenMode) && isBackgroundEnabled;
 const dimOpacity = backgroundWallpaper.common?.dimOpacity ?? 0.15;
@@ -194,10 +228,13 @@ const mainPanelTop =
 		? `calc(${BANNER_HEIGHT}vh - ${MAIN_PANEL_OVERLAPS_BANNER_HEIGHT}rem)`
 		: "5.5rem";
 
-// 当banner模式被禁用时，主内容区域应该始终从顶栏下面开始
-// 非首页在小于1024px时会通过 mobile-main-no-banner CSS类覆盖top值为5.5rem
+// 非首页统一隐藏壁纸，并让主内容从导航栏下方开始
 const finalMainPanelTop =
-	isBannerMode && isBackgroundEnabled ? mainPanelTop : "5.5rem";
+	isHomePageCheck && isBannerMode && isBackgroundEnabled
+		? mainPanelTop
+		: "5.5rem";
+const initialMainPanelTop =
+	isHomePageCheck && isFullscreenMode ? "0" : finalMainPanelTop;
 
 // 获取响应式侧边栏配置
 const sidebarConfig = getResponsiveSidebarConfig();
@@ -363,60 +400,63 @@ const hasMultipleImages =
 <HomePortfolioIntro initialHome={isHomePageCheck} />
 
 {(isWallpaperSwitchable || isBannerMode || isFullscreenMode || isOverlayMode) && (
-<div id="wallpaper-wrapper" class:list={[
+<div id="wallpaper-wrapper" data-original-wallpaper-active={String(homepageWallpaperActiveByDefault)} class:list={[
 	[
 		"absolute z-10 w-full transition duration-700",
 		showBannerPageTitle ? "wallpaper-page-title" : "overflow-hidden",
 		mobileNonHomeBannerClass,
+		!isHomePageCheck && "non-home-wallpaper-hidden",
 	],
 	isOverlayMode ? 'wallpaper-overlay' : '',
 	isFullscreenMode ? 'wallpaper-fullscreen' : '',
 	isHomePageCheck && (isFullscreenMode || isWallpaperSwitchable) ? 'homepage-fullscreen-decor' : '',
 ]} style={
 	isOverlayMode
-		? `${wallpaperOverlayVars} ${wallpaperFallbackStyle}`
+		? `${wallpaperOverlayVars} ${wallpaperFallbackVars}`
 		: isFullscreenMode
-			? `${wallpaperOverlayVars} ${wallpaperFallbackStyle}`
-			: `top: -${BANNER_HEIGHT_EXTEND}vh; ${wallpaperOverlayVars} ${wallpaperFallbackStyle}`
+			? `${wallpaperOverlayVars} ${wallpaperFallbackVars}`
+			: `top: -${BANNER_HEIGHT_EXTEND}vh; ${wallpaperOverlayVars} ${wallpaperFallbackVars}`
 }>
     <!-- 背景图片显示 -->
     {hasMultipleImages ? (
     /* 轮播模式：渲染所有图片为 slide-item */
     <div class:list={["relative h-full w-full", `effect-${bannerCarouselEffect}`]} id="banner-images-container"
-         style={`z-index: 5; --carousel-interval: ${bannerCarouselInterval}ms; ${wallpaperFallbackStyle}`}
+         style={`z-index: 5; --carousel-interval: ${bannerCarouselInterval}ms;`}
          data-carousel-enabled={bannerCarouselEnabledDefault}
          data-carousel-switchable={bannerCarouselSwitchable}
          data-carousel-interval={bannerCarouselInterval}
          data-carousel-effect={bannerCarouselEffect}>
         {backgroundImages.mobile.map((src, index) => (
-            <div class:list={["slide-item block lg:hidden", index === 0 && "active"]} data-index={index}>
+            <div class:list={["slide-item block lg:hidden", index === 0 && "active"]} data-index={index} data-wallpaper-device="mobile" data-original-wallpaper={isNationalDayWallpaper(src) ? "true" : undefined}>
                 <ImageWrapper
                     alt="Mobile background image of the blog"
                     class="object-cover h-full w-full"
                     src={src}
-                    position={backgroundWallpaper.banner?.position}
+                    position={getWallpaperPosition(src)}
+                    plainImage={isNationalDayWallpaper(src)}
                     widths={[640, 750, 1080]}
                     sizes="100vw"
                     loading={index === 0 ? "eager" : "lazy"}
                     fetchpriority={index === 0 ? "high" : undefined}
-                    defer={index !== 0}
+                    defer={!isHomePageCheck || index !== 0 || isNationalDayWallpaper(src)}
                     quality={mobileQuality}
                 />
             </div>
         ))}
         {backgroundImages.desktop.map((src, index) => (
-            <div class:list={["slide-item hidden lg:block", index === 0 && "active"]} data-index={index}>
+            <div class:list={["slide-item hidden lg:block", index === 0 && "active"]} data-index={index} data-wallpaper-device="desktop" data-original-wallpaper={isNationalDayWallpaper(src) ? "true" : undefined}>
                 <ImageWrapper
                     id="banner"
                     alt="Desktop background image of the blog"
                     class="object-cover h-full"
                     src={src}
-                    position={backgroundWallpaper.banner?.position}
+                    position={getWallpaperPosition(src)}
+                    plainImage={isNationalDayWallpaper(src)}
                     widths={[1280, 1920, 2560]}
                     sizes="100vw"
                     loading={index === 0 ? "eager" : "lazy"}
                     fetchpriority={index === 0 ? "high" : undefined}
-                    defer={index !== 0}
+                    defer={!isHomePageCheck || index !== 0 || isNationalDayWallpaper(src)}
                     quality={configQuality}
                 />
             </div>
@@ -424,34 +464,38 @@ const hasMultipleImages =
     </div>
     ) : (
     /* 单图模式 */
-    <div class="relative h-full w-full" id="banner-images-container" style={wallpaperFallbackStyle}>
+    <div class="relative h-full w-full" id="banner-images-container">
         {backgroundImages.mobile.length > 0 && (
-            <div class="banner-image-slot-mobile absolute inset-0 block lg:hidden">
+            <div class="banner-image-slot-mobile absolute inset-0 block lg:hidden" data-original-wallpaper={isNationalDayWallpaper(backgroundImages.mobile[0]) ? "true" : undefined}>
                 <ImageWrapper
                     alt="Mobile background image of the blog"
                     class="object-cover h-full w-full"
                     src={backgroundImages.mobile[0]}
-                    position={backgroundWallpaper.banner?.position}
+                    position={getWallpaperPosition(backgroundImages.mobile[0])}
+                    plainImage={isNationalDayWallpaper(backgroundImages.mobile[0])}
                     widths={[640, 750, 1080]}
                     sizes="100vw"
                     loading="eager"
                     fetchpriority="high"
+                    defer={!isHomePageCheck}
                     quality={mobileQuality}
                 />
             </div>
         )}
         {backgroundImages.desktop.length > 0 && (
-            <div class="banner-image-slot-desktop absolute inset-0 hidden lg:block">
+            <div class="banner-image-slot-desktop absolute inset-0 hidden lg:block" data-original-wallpaper={isNationalDayWallpaper(backgroundImages.desktop[0]) ? "true" : undefined}>
                 <ImageWrapper
                     id="banner"
                     alt="Desktop background image of the blog"
                     class="object-cover h-full"
                     src={backgroundImages.desktop[0]}
-                    position={backgroundWallpaper.banner?.position}
+                    position={getWallpaperPosition(backgroundImages.desktop[0])}
+                    plainImage={isNationalDayWallpaper(backgroundImages.desktop[0])}
                     widths={[1280, 1920, 2560]}
                     sizes="100vw"
                     loading="eager"
                     fetchpriority="high"
+                    defer={!isHomePageCheck}
                     quality={configQuality}
                 />
             </div>
@@ -473,6 +517,14 @@ const hasMultipleImages =
             var effect = container.dataset.carouselEffect || 'fade';
             var FADE_MS = 800;
             var transitioning = false;
+            var wallpaperWrapper = document.getElementById('wallpaper-wrapper');
+
+            function syncOriginalWallpaperState(slide) {
+                if (!wallpaperWrapper) return;
+                wallpaperWrapper.dataset.originalWallpaperActive = String(
+                    !!(slide && slide.dataset.originalWallpaper === 'true')
+                );
+            }
 
             // 创建过渡遮罩（用于 kenburns 效果的 LQIP 桥接）
             var overlay = null;
@@ -493,9 +545,19 @@ const hasMultipleImages =
             }
 
             function isCarouselEnabled() {
-                if (!switchable) return defaultEnabled;
-                var stored = localStorage.getItem('bannerCarouselEnabled');
-                if (stored === null) return defaultEnabled;
+                var isNationalDay = document.documentElement.dataset.nationalDayTheme === 'true';
+                if (!switchable) return isNationalDay ? false : defaultEnabled;
+                var modeKey = 'bannerCarouselEnabledByTheme.' + (isNationalDay ? 'national-day' : 'normal');
+                var stored = null;
+                try {
+                    stored = localStorage.getItem(modeKey);
+                    if (stored === null && !isNationalDay) {
+                        stored = localStorage.getItem('bannerCarouselEnabled');
+                    }
+                } catch {
+                    return isNationalDay ? false : defaultEnabled;
+                }
+                if (stored === null) return isNationalDay ? false : defaultEnabled;
                 return stored === 'true';
             }
 
@@ -516,12 +578,19 @@ const hasMultipleImages =
                 var visible = [];
                 for (var i = 0; i < all.length; i++) {
                     var el = all[i];
+                    var isNationalDayWallpaper = el.dataset.originalWallpaper === 'true';
+                    var isNationalDayTheme = document.documentElement.dataset.nationalDayTheme === 'true';
+                    if (isNationalDayWallpaper !== isNationalDayTheme) continue;
                     if (isLg && el.classList.contains('lg:hidden')) continue;
                     if (!isLg && el.classList.contains('hidden') && !el.classList.contains('lg:hidden')) continue;
                     visible.push(el);
                 }
                 if (visible.length === 0) {
-                    for (var j = 0; j < all.length; j++) visible.push(all[j]);
+                    for (var j = 0; j < all.length; j++) {
+                        var isNationalDayWallpaper = all[j].dataset.originalWallpaper === 'true';
+                        var isNationalDayTheme = document.documentElement.dataset.nationalDayTheme === 'true';
+                        if (isNationalDayWallpaper === isNationalDayTheme) visible.push(all[j]);
+                    }
                 }
                 return visible;
             }
@@ -533,11 +602,77 @@ const hasMultipleImages =
                 return 0;
             }
 
+            function hasStoredWallpaperSelection(slides) {
+                if (document.documentElement.dataset.nationalDayTheme !== 'true') return false;
+                try {
+                    if (localStorage.getItem('bannerCarouselEnabledByTheme.national-day') === 'true') {
+                        return false;
+                    }
+                    var storedSource = localStorage.getItem('selectedWallpaperSourceByTheme.national-day');
+                    if (!storedSource) return false;
+                    return Array.prototype.some.call(slides, function(slide) {
+                        var img = slide.querySelector('img, picture img');
+                        return img && (
+                            img.getAttribute('data-src') === storedSource ||
+                            img.getAttribute('src') === storedSource
+                        );
+                    });
+                } catch {
+                    return false;
+                }
+            }
+
+            function syncWallpaperFallback(slide) {
+                if (!wallpaperWrapper || !slide) return;
+                var img = slide.querySelector('img, picture img');
+                var src = img && (img.getAttribute('data-src') || img.getAttribute('src'));
+                var device = slide.dataset.wallpaperDevice;
+                if (!src || !device) return;
+                var theme = slide.dataset.originalWallpaper === 'true' ? 'national' : 'normal';
+                wallpaperWrapper.style.setProperty(
+                    '--wallpaper-fallback-' + theme + '-' + device,
+                    'url("' + src + '")'
+                );
+            }
+
+            function randomizeNationalDayDesktopWallpaper() {
+                if (document.documentElement.dataset.nationalDayTheme !== 'true') return false;
+                var desktopSlides = Array.prototype.filter.call(
+                    container.querySelectorAll('.slide-item'),
+                    function(slide) {
+                        return slide.dataset.wallpaperDevice === 'desktop' &&
+                            slide.dataset.originalWallpaper === 'true';
+                    }
+                );
+                if (desktopSlides.length <= 1 || hasStoredWallpaperSelection(desktopSlides)) return false;
+                var randomIndex = Math.floor(Math.random() * desktopSlides.length);
+                desktopSlides.forEach(function(slide, index) {
+                    slide.classList.toggle('active', index === randomIndex);
+                    slide.classList.remove('prev-waiting');
+                });
+                var selectedSlide = desktopSlides[randomIndex];
+                syncWallpaperFallback(selectedSlide);
+                if (window.innerWidth >= 1024) loadSlideImage(selectedSlide);
+                syncOriginalWallpaperState(selectedSlide);
+                return true;
+            }
+
+            randomizeNationalDayDesktopWallpaper();
+            var initialSlides = getVisibleSlides();
+            if (initialSlides.length && !initialSlides.some(function(slide) {
+                return slide.classList.contains('active');
+            })) {
+                applySlideChange(initialSlides, 0);
+            }
+            loadSlideImage(initialSlides[getCurrentIndex(initialSlides)]);
+            syncOriginalWallpaperState(initialSlides[getCurrentIndex(initialSlides)]);
+
             function getSlideImage(slide) {
                 return slide ? slide.querySelector('img, picture img') : null;
             }
 
             function loadSlideImage(slide) {
+                if (wallpaperWrapper?.classList.contains('non-home-wallpaper-hidden')) return null;
                 var img = getSlideImage(slide);
                 if (!img) return null;
                 var deferredSrc = img.getAttribute('data-src');
@@ -546,6 +681,14 @@ const hasMultipleImages =
                     img.removeAttribute('data-src');
                 }
                 return img;
+            }
+
+            if (wallpaperWrapper) {
+                new MutationObserver(function() {
+                    if (wallpaperWrapper.classList.contains('non-home-wallpaper-hidden')) return;
+                    var slides = getVisibleSlides();
+                    loadSlideImage(slides[getCurrentIndex(slides)]);
+                }).observe(wallpaperWrapper, { attributes: true, attributeFilter: ['class'] });
             }
 
             function prepareNextSlide() {
@@ -585,6 +728,8 @@ const hasMultipleImages =
                     if (j === nextIndex) slides[j].classList.add('active');
                     else slides[j].classList.remove('active');
                 }
+                loadSlideImage(slides[nextIndex]);
+                syncOriginalWallpaperState(slides[nextIndex]);
             }
 
             function changeToSlide(targetIndex, resetProgress) {
@@ -638,6 +783,7 @@ const hasMultipleImages =
                 if (isFixedWallpaperSelected()) return;
                 if (!isCarouselEnabled()) return;
                 if (!isBannerWallpaperMode()) return;
+                if (getVisibleSlides().length <= 1) return;
 
                 appState.isPlaying = true;
                 prepareNextSlide();
@@ -714,15 +860,67 @@ const hasMultipleImages =
             });
             window.addEventListener('selectedWallpaperChange', function(e) {
                 if (e.detail && e.detail.selected) {
+                    var selectedSlides = getVisibleSlides();
+                    var selectedDisplayIndex = typeof e.detail.displayIndex === 'number'
+                        ? e.detail.displayIndex
+                        : e.detail.index;
+                    var selectedSlide = selectedSlides.find(function(slide) {
+                        return parseInt(slide.dataset.index || '-1', 10) === selectedDisplayIndex;
+                    });
+                    syncOriginalWallpaperState(selectedSlide);
                     stopAutoPlay();
                     return;
                 }
+                var slides = getVisibleSlides();
+                syncOriginalWallpaperState(slides[getCurrentIndex(slides)]);
                 if (isCarouselEnabled() && isBannerWallpaperMode()) {
                     startAutoPlay();
                 }
             });
 
-            // 首张固定使用配置列表第一张，避免首次进入时先渲染再随机切换造成闪黑。
+            window.addEventListener('nationalDayThemeChange', function() {
+                randomizeNationalDayDesktopWallpaper();
+                var themeSlides = getVisibleSlides();
+                if (themeSlides.length && !themeSlides.some(function(slide) {
+                    return slide.classList.contains('active');
+                })) {
+                    applySlideChange(themeSlides, 0);
+                    syncWallpaperFallback(themeSlides[0]);
+                }
+                loadSlideImage(themeSlides[getCurrentIndex(themeSlides)]);
+                syncOriginalWallpaperState(themeSlides[getCurrentIndex(themeSlides)]);
+                if (!isFixedWallpaperSelected() && isCarouselEnabled() && isBannerWallpaperMode()) {
+                    startAutoPlay();
+                } else {
+                    stopAutoPlay();
+                }
+            });
+
+            window.addEventListener('resize', function() {
+                var slides = getVisibleSlides();
+                if (isFixedWallpaperSelected()) {
+                    var selectedOrdinal = parseInt(
+                        wallpaperWrapper.getAttribute('data-selected-wallpaper-ordinal') || '0',
+                        10
+                    );
+                    if (slides.length) {
+                        applySlideChange(slides, Math.min(Math.max(selectedOrdinal, 0), slides.length - 1));
+                    }
+                } else if (slides.length && !slides.some(function(slide) {
+                    return slide.classList.contains('active');
+                })) {
+                    applySlideChange(slides, 0);
+                }
+                loadSlideImage(slides[getCurrentIndex(slides)]);
+                syncOriginalWallpaperState(slides[getCurrentIndex(slides)]);
+                if (!isFixedWallpaperSelected() && isCarouselEnabled() && isBannerWallpaperMode()) {
+                    startAutoPlay();
+                } else {
+                    stopAutoPlay();
+                }
+            });
+
+            // 国庆桌面默认壁纸已在首次初始化时随机选择，后续设置恢复会保留当前图片。
 
             // 启动
             if (!isFixedWallpaperSelected() && isCarouselEnabled() && isBannerWallpaperMode()) {
@@ -862,24 +1060,6 @@ const hasMultipleImages =
                             </span>
                         )}
                     </div>
-                    {showBannerPostAiSummary && (
-                        <div class="banner-post-ai-summary" role="note" aria-label="AI摘要，由 ChatGPT Sol 5.6 Max 提供">
-                            <div class="banner-post-ai-summary__label">
-                                <Icon is:inline name="material-symbols:auto-awesome-rounded" class="text-[1.05em]" />
-                                <span>AI摘要</span>
-                                <span class="banner-post-ai-summary__provider">由 ChatGPT Sol 5.6 Max 提供</span>
-                            </div>
-                            <p aria-live="polite" aria-label={resolvedBannerPostAiSummary}>
-                                <TypewriterText
-                                    text={resolvedBannerPostAiSummary}
-                                    speed={20}
-                                    class="banner-post-ai-summary__typewriter"
-                                />
-                                <noscript>{resolvedBannerPostAiSummary}</noscript>
-                            </p>
-                            <div class="banner-post-ai-summary__disclaimer">本文已使用Ai进行辅助创作，注意甄别</div>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
@@ -960,7 +1140,7 @@ const hasMultipleImages =
 )}
 
 <!-- Main content -->
-<div class={`absolute w-full z-30 pointer-events-none ${mobileNonHomeBannerClass ? 'mobile-main-no-banner' : ''} ${!(isBannerMode && isBackgroundEnabled) ? 'no-banner-layout' : ''}`} style={isFullscreenMode ? 'top: 0;' : `top: ${finalMainPanelTop}`}>
+<div class={`absolute w-full z-30 pointer-events-none ${mobileNonHomeBannerClass ? 'mobile-main-no-banner' : ''} ${!isHomePageCheck || !(isBannerMode && isBackgroundEnabled) ? 'no-banner-layout' : ''} ${!isHomePageCheck ? 'non-home-main-layout' : ''}`} style={`top: ${initialMainPanelTop}`}>
     <!-- The pointer-events-none here prevent blocking the click event of the TOC -->
     <div class="relative w-full xl:w-[92vw] max-w-(--page-width) mx-auto pointer-events-auto">
         <div id="main-grid"
@@ -1005,34 +1185,34 @@ const hasMultipleImages =
                     
             {/* 主内容区包装器 - 包含静态栏位和swup容器，作为单个grid item */}
             <div class={staticBarClass}>
-                {/* 分类导航栏 - 全站渲染并显示 */}
-                {shouldRenderCategoryBar && <div id="category-bar-wrapper"><CategoryBar currentPostCategory={postCategory} /></div>}
                 {/* 主内容区 - 始终渲染，确保 Swup 容器存在 */}
                 <main
                     id="swup-container"
                     class="transition-main"
                     data-current-post-category={postCategory || ""}
                 >
+                {/* 分类导航栏只在首页和文章详情页显示，并随页面内容一起切换 */}
+                {shouldRenderCategoryBar && <div id="category-bar-wrapper"><CategoryBar currentPostCategory={postCategory} /></div>}
                 {/* 携带网格布局类名，用于JS更新父容器 */}
                 <div id="grid-class-carrier" data-grid-class={gridCols} class="hidden"></div>
                 {/* 为每个页面提供一个隐藏的h1标题，用于SEO和可访问性 */}
                 <h1 class="sr-only">{title}</h1>
                 <div id="content-wrapper" class="onload-animation transition-leaving">
-                    {showBannerPostAiSummary && (
-                        <div class="mobile-post-ai-summary-shell">
-                            <div class="banner-post-ai-summary mobile-post-ai-summary" role="note" aria-label="AI摘要，由 ChatGPT Sol 5.6 Max 提供">
+                    {showPostAiSummary && (
+                        <div class="post-ai-summary-shell">
+                            <div class="banner-post-ai-summary post-ai-summary-inline mobile-post-ai-summary" role="note" aria-label="AI摘要，由 ChatGPT Sol 5.6 Max 提供">
                                 <div class="banner-post-ai-summary__label">
                                     <Icon is:inline name="material-symbols:auto-awesome-rounded" class="text-[1.05em]" />
                                     <span>AI摘要</span>
                                     <span class="banner-post-ai-summary__provider">由 ChatGPT Sol 5.6 Max 提供</span>
                                 </div>
-                                <p aria-live="polite" aria-label={resolvedBannerPostAiSummary}>
+                                <p aria-live="polite" aria-label={resolvedPostAiSummary}>
                                     <TypewriterText
-                                        text={resolvedBannerPostAiSummary}
+                                        text={resolvedPostAiSummary}
                                         speed={20}
                                         class="banner-post-ai-summary__typewriter"
                                     />
-                                    <noscript>{resolvedBannerPostAiSummary}</noscript>
+                                    <noscript>{resolvedPostAiSummary}</noscript>
                                 </p>
                                 <div class="banner-post-ai-summary__disclaimer">本文已使用Ai进行辅助创作，注意甄别</div>
                             </div>
@@ -1104,6 +1284,107 @@ const hasMultipleImages =
 </Layout>
 
 <style is:global>
+  #wallpaper-wrapper.non-home-wallpaper-hidden {
+    display: none !important;
+  }
+
+  /* Keep the original load animation from replaying when route classes clear. */
+  #content-wrapper.onload-animation.route-motion-handled {
+    animation: none;
+    opacity: 1;
+  }
+
+  html:is(.route-home-to-inner, .route-inner-to-home).route-content-ready #content-wrapper {
+    animation: route-content-enter 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  html.route-home-to-inner :is(#left-sidebar, #right-sidebar) {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  /* Only departing widgets fade; the shared cards slide into the freed space. */
+  html.route-sidebar-reflow :is(#left-sidebar, #right-sidebar) .widget-hide-on-post:not(.hidden) {
+    opacity: 0;
+    transition: opacity 180ms ease-out;
+  }
+
+  html.route-inner-to-home.is-animating.is-leaving :is(#left-sidebar, #swup-container, #right-sidebar) {
+    animation: route-shell-exit 320ms cubic-bezier(0.55, 0.055, 0.675, 0.19) both !important;
+  }
+
+  @keyframes route-shell-exit {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(-20px) scale(0.985); }
+  }
+
+  #route-white-screen {
+    position: fixed;
+    inset: 4.5rem 0 0;
+    z-index: 70;
+    background: #fff;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  html.route-white-cover #route-white-screen {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  html.route-white-cover #top-row {
+    z-index: 80;
+  }
+
+  html.route-white-cover.route-white-reveal #route-white-screen {
+    opacity: 0;
+    transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes route-content-enter {
+    from { opacity: 0.5; transform: translateY(14px) scale(0.99); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Restore the shared homepage wallpaper after an inner-page navigation. */
+  html.route-inner-to-home #wallpaper-wrapper {
+    opacity: 0 !important;
+    transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  html.route-inner-to-home.route-content-ready #wallpaper-wrapper {
+    opacity: 1 !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html.route-inner-to-home.is-animating.is-leaving :is(#left-sidebar, #swup-container, #right-sidebar) {
+      animation: none !important;
+    }
+
+    html.route-white-cover.route-white-reveal #route-white-screen {
+      transition: none;
+    }
+
+    html:is(.route-home-to-inner, .route-inner-to-home).route-content-ready #content-wrapper {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+
+    html.route-inner-to-home #wallpaper-wrapper {
+      opacity: 1 !important;
+      transition: none !important;
+    }
+  }
+
+  .non-home-main-layout #main-grid {
+    transform: none !important;
+  }
+
   /* Page-title content may extend below the banner, but animated waves must
      never widen the document. A direct refresh otherwise creates a horizontal
      scroll range while an in-site Swup navigation does not. */

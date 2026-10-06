@@ -7,6 +7,7 @@ interface Props {
 	href?: string;
 	target?: string;
 	isActive?: boolean;
+	navActivePaths?: string;
 	isLast?: boolean;
 	class?: string;
 	onclick?: string;
@@ -16,6 +17,7 @@ const {
 	href,
 	target,
 	isActive = false,
+	navActivePaths,
 	isLast = false,
 	class: className,
 	onclick,
@@ -35,6 +37,8 @@ const Tag = href ? "a" : "button";
 	href={href}
 	target={target}
 	class={allClasses}
+	data-nav-active-paths={navActivePaths}
+	aria-current={isActive ? "page" : undefined}
 	onclick={onclick}
 >
 	<slot />

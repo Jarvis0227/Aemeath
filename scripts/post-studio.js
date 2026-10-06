@@ -12,7 +12,7 @@ const html = String.raw`<!doctype html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Firefly Post Studio</title>
+  <title>Aemeath Post Studio</title>
   <style>
     :root {
       color-scheme: light;
@@ -192,7 +192,7 @@ const html = String.raw`<!doctype html>
   <header>
     <div>
       <h1>Post Studio</h1>
-      <div class="subtitle">给 Firefly 写文章的小工作台。填写元信息，保存后会在 <code>src/content/posts</code> 下生成 Markdown 或 MDX。</div>
+      <div class="subtitle">给 Aemeath 写文章的小工作台。填写元信息，保存后会在 <code>src/content/posts</code> 下生成 Markdown 或 MDX。</div>
     </div>
     <button class="secondary" id="newBtn" type="button">新文章</button>
   </header>
@@ -223,7 +223,7 @@ const html = String.raw`<!doctype html>
           <input name="category" placeholder="生活 / 技术 / 随笔" />
         </label>
         <label>标签
-          <input name="tags" placeholder="Markdown, Firefly, 日常" />
+          <input name="tags" placeholder="Markdown, Aemeath, 日常" />
           <span>用逗号分隔</span>
         </label>
         <label>语言
@@ -562,5 +562,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-	console.log(`Firefly Post Studio: http://localhost:${port}`);
+	console.log(`Aemeath Post Studio: http://localhost:${port}`);
 });

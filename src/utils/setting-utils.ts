@@ -16,7 +16,16 @@ import {
 	sakuraConfig,
 	siteConfig,
 } from "../config";
-import { isHomePage as checkIsHomePage } from "./layout-utils";
+import {
+	alternateHomepageWallpaper,
+	homepageWallpaper,
+	mobileHomepageWallpaper,
+} from "../config/backgroundWallpaper";
+import { nationalDayTheme } from "../config/nationalDayTheme";
+import {
+	getBackgroundImages,
+	isHomePage as checkIsHomePage,
+} from "./layout-utils";
 
 // Declare global functions
 declare global {
@@ -27,20 +36,185 @@ declare global {
 }
 
 const SELECTED_WALLPAPER_INDEX_KEY = "selectedWallpaperIndex";
+const SELECTED_WALLPAPER_INDEX_SCHEMA_KEY = "selectedWallpaperIndexSchemaVersion";
+const SELECTED_WALLPAPER_SCHEMA_VERSION = "3";
+const SELECTED_WALLPAPER_SOURCE_KEY = "selectedWallpaperSourceByTheme";
 const LEGACY_CUSTOM_WALLPAPER_KEY = "customWallpaper";
+const CARD_DECORATION_MODE_KEY = "cardDecorationMode";
+// The previous key stored "auto" even when it was the default. Use a new key
+// so existing visitors receive the new expanded default once.
+const NAVBAR_BEHAVIOR_KEY = "navbarBehaviorV2";
+const NATIONAL_DAY_THEME_KEY = "nationalDayThemeEnabled";
+const BANNER_CAROUSEL_KEY = "bannerCarouselEnabled";
+const BANNER_CAROUSEL_MODE_KEY = "bannerCarouselEnabledByTheme";
 
-function getConfiguredWallpaperCount(): number {
-	const src = backgroundWallpaper.src;
-	if (Array.isArray(src)) return src.length;
-	if (typeof src === "string") return 1;
-	if (src && typeof src === "object") {
-		const desktop = src.desktop;
-		const mobile = src.mobile;
-		const desktopCount = Array.isArray(desktop) ? desktop.length : desktop ? 1 : 0;
-		const mobileCount = Array.isArray(mobile) ? mobile.length : mobile ? 1 : 0;
-		return Math.max(desktopCount, mobileCount);
+function isNationalDayWallpaperSource(source: string): boolean {
+	return (
+		source === homepageWallpaper ||
+		source === alternateHomepageWallpaper ||
+		source === mobileHomepageWallpaper
+	);
+}
+
+function isNationalDayWallpaperIndex(index: number): boolean {
+	return isNationalDayWallpaperSource(getBackgroundImages().desktop[index] ?? "");
+}
+
+function getSelectedWallpaperSourceKey(isNationalDayEnabled: boolean): string {
+	return `${SELECTED_WALLPAPER_SOURCE_KEY}.${isNationalDayEnabled ? "national-day" : "normal"}`;
+}
+
+function getWallpaperThemeOrdinal(index: number): number {
+	const desktopImages = getBackgroundImages().desktop;
+	const source = desktopImages[index];
+	if (!source) return -1;
+	const isNationalDay = isNationalDayWallpaperSource(source);
+	return (
+		desktopImages
+			.slice(0, index + 1)
+			.filter((image) => isNationalDayWallpaperSource(image) === isNationalDay)
+			.length - 1
+	);
+}
+
+function isWallpaperIndexAllowedForCurrentTheme(index: number): boolean {
+	const source = getBackgroundImages().desktop[index];
+	return Boolean(source) &&
+		(isNationalDayWallpaperIndex(index) === getNationalDayThemeEnabled());
+}
+
+function getWallpaperMobileIndex(index: number): number {
+	const desktopSource = getBackgroundImages().desktop[index];
+	if (!desktopSource) return index;
+	const isNationalDay = isNationalDayWallpaperSource(desktopSource);
+	const mobileIndices = getBackgroundImages().mobile.flatMap((source, mobileIndex) =>
+		isNationalDayWallpaperSource(source) === isNationalDay
+			? [mobileIndex]
+			: [],
+	);
+	const ordinal = getWallpaperThemeOrdinal(index);
+	return mobileIndices[Math.min(ordinal, mobileIndices.length - 1)] ?? index;
+}
+
+function getWallpaperDisplayIndex(index: number): number {
+	return typeof window !== "undefined" && window.innerWidth < 1024
+		? getWallpaperMobileIndex(index)
+		: index;
+}
+
+function getBannerCarouselModeKey(isNationalDayEnabled: boolean): string {
+	return `${BANNER_CAROUSEL_MODE_KEY}.${isNationalDayEnabled ? "national-day" : "normal"}`;
+}
+
+export type CardDecorationMode = "soft" | "flat";
+export type NavbarBehavior = "auto" | "static";
+
+export function getStoredNavbarBehavior(): NavbarBehavior {
+	if (typeof window === "undefined") return "static";
+	try {
+		return window.localStorage.getItem(NAVBAR_BEHAVIOR_KEY) === "auto"
+			? "auto"
+			: "static";
+	} catch {
+		return "static";
 	}
-	return 0;
+}
+
+export function setNavbarBehavior(behavior: NavbarBehavior): void {
+	const safeBehavior: NavbarBehavior =
+		behavior === "static" ? "static" : "auto";
+	if (typeof document !== "undefined") {
+		document.documentElement.setAttribute("data-navbar-behavior", safeBehavior);
+	}
+	if (typeof window === "undefined") return;
+	try {
+		window.localStorage.setItem(NAVBAR_BEHAVIOR_KEY, safeBehavior);
+	} catch {
+		// Keep the selected behavior active for the current page.
+	}
+	window.dispatchEvent(
+		new CustomEvent("navbarBehaviorChange", {
+			detail: { behavior: safeBehavior },
+		}),
+	);
+}
+
+export function getStoredCardDecorationMode(): CardDecorationMode {
+	if (typeof window === "undefined") return "flat";
+	try {
+		return window.localStorage.getItem(CARD_DECORATION_MODE_KEY) === "soft"
+			? "soft"
+			: "flat";
+	} catch {
+		return "flat";
+	}
+}
+
+export function setCardDecorationMode(mode: CardDecorationMode): void {
+	const safeMode: CardDecorationMode = mode === "flat" ? "flat" : "soft";
+	if (typeof document !== "undefined") {
+		document.documentElement.setAttribute("data-card-decoration", safeMode);
+	}
+	try {
+		if (typeof window !== "undefined") {
+			window.localStorage.setItem(CARD_DECORATION_MODE_KEY, safeMode);
+		}
+	} catch {
+		// The appearance change still applies for this page when storage is unavailable.
+	}
+}
+
+function migrateSelectedWallpaperIndex(): void {
+	if (
+		typeof localStorage === "undefined" ||
+		typeof localStorage.getItem !== "function" ||
+		typeof localStorage.setItem !== "function" ||
+		typeof localStorage.removeItem !== "function"
+	) {
+		return;
+	}
+	try {
+		const schemaVersion = localStorage.getItem(
+			SELECTED_WALLPAPER_INDEX_SCHEMA_KEY,
+		);
+		if (schemaVersion === SELECTED_WALLPAPER_SCHEMA_VERSION) {
+			return;
+		}
+		const storedIndex = localStorage.getItem(SELECTED_WALLPAPER_INDEX_KEY);
+		const parsedIndex = storedIndex === null ? null : Number.parseInt(storedIndex, 10);
+		if (parsedIndex !== null && Number.isInteger(parsedIndex) && parsedIndex >= 0) {
+			const desktopImages = getBackgroundImages().desktop;
+			const firstNormalIndex = desktopImages.findIndex(
+				(source) => !isNationalDayWallpaperSource(source),
+			);
+			const insertedCount = Math.max(firstNormalIndex, 0);
+			// Schema 2 shifted old indices above zero by one, but left old zero unchanged.
+			const nextIndex =
+				schemaVersion === "2"
+					? parsedIndex === 1
+						? 1
+						: parsedIndex === 0
+							? insertedCount
+							: parsedIndex + insertedCount - 1
+					: parsedIndex + insertedCount;
+			const source = desktopImages[nextIndex];
+			if (source) {
+				const key = getSelectedWallpaperSourceKey(
+					isNationalDayWallpaperSource(source),
+				);
+				if (localStorage.getItem(key) === null) {
+					localStorage.setItem(key, source);
+				}
+			}
+		}
+		localStorage.removeItem(SELECTED_WALLPAPER_INDEX_KEY);
+		localStorage.setItem(
+			SELECTED_WALLPAPER_INDEX_SCHEMA_KEY,
+			SELECTED_WALLPAPER_SCHEMA_VERSION,
+		);
+	} catch {
+		// Keep the existing selection when browser storage is unavailable.
+	}
 }
 
 export function getDefaultHue(): number {
@@ -84,6 +258,43 @@ export function getHue(): number {
 	}
 	const stored = localStorage.getItem("hue");
 	return stored ? Number.parseInt(stored, 10) : getDefaultHue();
+}
+
+export function getNationalDayThemeEnabled(): boolean {
+	if (typeof window === "undefined") {
+		return nationalDayTheme.defaultEnabled;
+	}
+	try {
+		const stored = window.localStorage.getItem(NATIONAL_DAY_THEME_KEY);
+		return stored === null ? nationalDayTheme.defaultEnabled : stored === "true";
+	} catch {
+		return document.documentElement.dataset.nationalDayTheme !== "false";
+	}
+}
+
+export function setNationalDayThemeEnabled(enabled: boolean): void {
+	if (typeof document !== "undefined") {
+		document.documentElement.dataset.nationalDayTheme = String(enabled);
+		if (enabled) {
+			document
+				.querySelectorAll<HTMLImageElement>("img[data-national-day-src]")
+				.forEach((image) => {
+					const src = image.dataset.nationalDaySrc;
+					if (src && image.getAttribute("src") !== src) {
+						image.setAttribute("src", src);
+					}
+				});
+		}
+	}
+	if (typeof window === "undefined") return;
+	try {
+		window.localStorage.setItem(NATIONAL_DAY_THEME_KEY, String(enabled));
+	} catch {
+		// Keep the selected theme active for this page when storage is unavailable.
+	}
+	window.dispatchEvent(
+		new CustomEvent("nationalDayThemeChange", { detail: { enabled } }),
+	);
 }
 
 export function setHue(hue: number): void {
@@ -161,7 +372,9 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE): void {
 		startViewTransition?: (callback: () => void) => { finished: Promise<void> };
 	};
 	const transitionDocument = document as ThemeTransitionDocument;
-	const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+	const reducedMotion = window.matchMedia?.(
+		"(prefers-reduced-motion: reduce)",
+	).matches;
 
 	if (!reducedMotion && transitionDocument.startViewTransition) {
 		root.classList.add("is-theme-transitioning", "use-view-transition");
@@ -175,28 +388,11 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE): void {
 	root.classList.add("is-theme-transitioning");
 	window.requestAnimationFrame(() => {
 		commitTheme();
-		window.setTimeout(() => root.classList.remove("is-theme-transitioning"), 360);
+		window.setTimeout(
+			() => root.classList.remove("is-theme-transitioning"),
+			360,
+		);
 	});
-	return;
-	// @ts-ignore -- retained legacy branch is bypassed by the transition path above.
-
-	// 批量 DOM 操作，减少重绘
-	if (needsThemeChange) {
-		// 添加过渡保护类（但会导致大量重绘，所以使用更轻量的方式）
-		// document.documentElement.classList.add("is-theme-transitioning");
-
-		// 直接切换主题，利用 CSS 变量的特性让浏览器优化过渡
-		if (targetIsDark) {
-			document.documentElement.classList.add("dark");
-		} else {
-			document.documentElement.classList.remove("dark");
-		}
-	}
-
-	// Set the theme for Expressive Code based on current mode
-	if (needsCodeThemeUpdate) {
-		document.documentElement.setAttribute("data-theme", expectedTheme);
-	}
 }
 
 // 系统主题监听器引用
@@ -250,24 +446,6 @@ export function setupSystemThemeListener(): void {
 		}
 
 		applyThemeToDocument(SYSTEM_MODE);
-		return;
-		// @ts-ignore -- retained legacy branch is bypassed by the transition path above.
-
-		// 直接应用系统主题，不使用过渡保护类以避免大量重绘
-		if (isDark) {
-			document.documentElement.classList.add("dark");
-		} else {
-			document.documentElement.classList.remove("dark");
-		}
-
-		// Set the theme for Expressive Code
-		const expressiveTheme = isDark
-			? expressiveCodeConfig.darkTheme
-			: expressiveCodeConfig.lightTheme;
-		document.documentElement.setAttribute("data-theme", expressiveTheme);
-
-		// 触发自定义事件通知其他组件（仅在真正切换时触发）
-		window.dispatchEvent(new CustomEvent("theme-change"));
 	};
 
 	// 立即调用一次以设置初始状态
@@ -462,14 +640,13 @@ function showBannerMode(animate = false) {
 
 		// 检查当前是否为首页
 		const isHomePage = checkIsHomePage(window.location.pathname);
-		const isMobile = window.innerWidth < 1024;
 
-		// 移动端非首页时，不显示banner；桌面端始终显示
-		if (isMobile && !isHomePage) {
-			wallpaperWrapper.style.display = "none";
+		// 非首页使用导航栏下方的紧凑布局，不保留横幅占位。
+		if (!isHomePage) {
+			wallpaperWrapper.style.setProperty("display", "none", "important");
 			wallpaperWrapper.classList.add("mobile-hide-banner");
 		} else {
-			// 首页或桌面端：先设置display，然后使用requestAnimationFrame确保渲染
+			// 首页先设置 display，再在下一帧恢复壁纸可见状态。
 			wallpaperWrapper.style.display = "block";
 			wallpaperWrapper.style.setProperty("display", "block", "important");
 			requestAnimationFrame(() => {
@@ -545,7 +722,6 @@ function showBannerMode(animate = false) {
 function showFullscreenMode(animate = false) {
 	// 显示 wallpaper-wrapper 并切换为全屏壁纸模式
 	const wallpaperWrapper = document.getElementById("wallpaper-wrapper");
-	const isMobile = window.innerWidth < 1024;
 	const isHomePage = checkIsHomePage(window.location.pathname);
 	if (wallpaperWrapper) {
 		// 移除 overlay 模式类
@@ -553,9 +729,9 @@ function showFullscreenMode(animate = false) {
 		// 添加全屏壁纸模式类
 		wallpaperWrapper.classList.add("wallpaper-fullscreen");
 
-		if (isMobile && !isHomePage) {
-			// 移动端非首页时隐藏壁纸
-			wallpaperWrapper.style.display = "none";
+		if (!isHomePage) {
+			// 非首页统一隐藏壁纸，避免桌面端保留全屏占位。
+			wallpaperWrapper.style.setProperty("display", "none", "important");
 			wallpaperWrapper.classList.add("mobile-hide-banner");
 		} else {
 			// 显示壁纸
@@ -610,16 +786,21 @@ function showOverlayMode() {
 		// 添加 overlay 模式类，移除全屏壁纸模式类
 		wallpaperWrapper.classList.remove("wallpaper-fullscreen");
 		wallpaperWrapper.classList.add("wallpaper-overlay");
-		// 显示壁纸
-		wallpaperWrapper.style.display = "block";
-		wallpaperWrapper.style.setProperty("display", "block", "important");
+		const isHomePage = checkIsHomePage(window.location.pathname);
+		wallpaperWrapper.style.setProperty(
+			"display",
+			isHomePage ? "block" : "none",
+			"important",
+		);
 		wallpaperWrapper.style.top = "";
-		requestAnimationFrame(() => {
-			wallpaperWrapper.classList.remove("hidden");
-			wallpaperWrapper.classList.remove("opacity-0");
-			wallpaperWrapper.classList.add("opacity-100");
-			wallpaperWrapper.classList.remove("mobile-hide-banner");
-		});
+		if (isHomePage) {
+			requestAnimationFrame(() => {
+				wallpaperWrapper.classList.remove("hidden");
+				wallpaperWrapper.classList.remove("opacity-0");
+				wallpaperWrapper.classList.add("opacity-100");
+				wallpaperWrapper.classList.remove("mobile-hide-banner");
+			});
+		}
 	}
 
 	// 隐藏横幅首页文本
@@ -738,6 +919,24 @@ function adjustMainContentPosition(
 		clearTimeout(fullscreenAnimationTimeout);
 		fullscreenAnimationTimeout = null;
 	}
+
+	if (!checkIsHomePage(window.location.pathname)) {
+		mainContent.classList.add("non-home-main-layout", "no-banner-layout");
+		mainContent.classList.toggle(
+			"mobile-main-no-banner",
+			window.innerWidth < 1024,
+		);
+		mainContent.style.setProperty("top", "5.5rem", "important");
+		mainContent.style.setProperty("margin-top", "0", "important");
+		mainContent.style.position = "";
+		mainContent.style.zIndex = "";
+		mainContent.style.minHeight = "";
+		mainContent.style.transition = "";
+		mainContent.style.visibility = "visible";
+		document.body.classList.add("wallpaper-initialized");
+		return;
+	}
+	mainContent.classList.remove("non-home-main-layout");
 
 	// 移除现有的位置类
 	mainContent.classList.remove("mobile-main-no-banner", "no-banner-layout");
@@ -930,53 +1129,66 @@ export function getStoredWallpaperMode(): WALLPAPER_MODE {
 }
 
 export function getStoredSelectedWallpaperIndex(): number | null {
+	migrateSelectedWallpaperIndex();
 	if (
 		typeof localStorage === "undefined" ||
 		typeof localStorage.getItem !== "function"
 	) {
 		return null;
 	}
-	const stored = localStorage.getItem(SELECTED_WALLPAPER_INDEX_KEY);
-	if (stored === null) {
+	const sourceKey = getSelectedWallpaperSourceKey(getNationalDayThemeEnabled());
+	const storedSource = localStorage.getItem(sourceKey);
+	if (storedSource === null) return null;
+	const index = getBackgroundImages().desktop.indexOf(storedSource);
+	if (index < 0 || !isWallpaperIndexAllowedForCurrentTheme(index)) {
+		localStorage.removeItem(sourceKey);
 		return null;
 	}
-	const parsed = Number.parseInt(stored, 10);
-	const wallpaperCount = getConfiguredWallpaperCount();
-	if (
-		Number.isNaN(parsed) ||
-		parsed < 0 ||
-		(wallpaperCount > 0 && parsed >= wallpaperCount)
-	) {
-		localStorage.removeItem(SELECTED_WALLPAPER_INDEX_KEY);
-		return null;
-	}
-	return parsed;
+	return index;
 }
 
 export function setSelectedWallpaperIndex(index: number): void {
+	migrateSelectedWallpaperIndex();
+	if (!isWallpaperIndexAllowedForCurrentTheme(index)) {
+		return;
+	}
 	if (
 		typeof localStorage === "undefined" ||
 		typeof localStorage.setItem !== "function"
 	) {
 		return;
 	}
+	const source = getBackgroundImages().desktop[index];
+	if (!source) return;
 	localStorage.removeItem(LEGACY_CUSTOM_WALLPAPER_KEY);
-	localStorage.setItem(SELECTED_WALLPAPER_INDEX_KEY, String(index));
+	localStorage.setItem(
+		getSelectedWallpaperSourceKey(getNationalDayThemeEnabled()),
+		source,
+	);
+	localStorage.removeItem(SELECTED_WALLPAPER_INDEX_KEY);
 	applySelectedWallpaperToDocument(index);
 	if (typeof window !== "undefined") {
 		window.dispatchEvent(
 			new CustomEvent("selectedWallpaperChange", {
-				detail: { selected: true, index },
+				detail: {
+					selected: true,
+					index,
+					displayIndex: getWallpaperDisplayIndex(index),
+				},
 			}),
 		);
 	}
 }
 
 export function clearSelectedWallpaper(): void {
+	migrateSelectedWallpaperIndex();
 	if (
 		typeof localStorage !== "undefined" &&
 		typeof localStorage.removeItem === "function"
 	) {
+		localStorage.removeItem(
+			getSelectedWallpaperSourceKey(getNationalDayThemeEnabled()),
+		);
 		localStorage.removeItem(SELECTED_WALLPAPER_INDEX_KEY);
 		localStorage.removeItem(LEGACY_CUSTOM_WALLPAPER_KEY);
 	}
@@ -991,14 +1203,14 @@ export function clearSelectedWallpaper(): void {
 }
 
 export function applyStoredSelectedWallpaper(): void {
+	const index = getStoredSelectedWallpaperIndex();
 	if (
 		typeof localStorage !== "undefined" &&
 		typeof localStorage.removeItem === "function"
 	) {
 		localStorage.removeItem(LEGACY_CUSTOM_WALLPAPER_KEY);
 		if (getStoredBannerCarouselEnabled()) {
-			localStorage.removeItem(SELECTED_WALLPAPER_INDEX_KEY);
-			clearSelectedWallpaperFromDocument();
+			clearSelectedWallpaperFromDocument(true);
 			if (typeof window !== "undefined") {
 				window.dispatchEvent(
 					new CustomEvent("selectedWallpaperChange", {
@@ -1009,21 +1221,65 @@ export function applyStoredSelectedWallpaper(): void {
 			return;
 		}
 	}
-	const index = getStoredSelectedWallpaperIndex();
 	if (index !== null) {
 		applySelectedWallpaperToDocument(index);
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
 				new CustomEvent("selectedWallpaperChange", {
-					detail: { selected: true, index },
+					detail: {
+						selected: true,
+						index,
+						displayIndex: getWallpaperDisplayIndex(index),
+					},
+				}),
+			);
+		}
+	} else {
+		clearSelectedWallpaperFromDocument(true);
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("selectedWallpaperChange", {
+					detail: { selected: false },
 				}),
 			);
 		}
 	}
 }
 
+function loadWallpaperSlideImage(slide: HTMLElement | null): void {
+	const image = slide?.querySelector<HTMLImageElement>("img");
+	if (!image) return;
+	const deferredSrc = image.getAttribute("data-src");
+	if (deferredSrc && !image.getAttribute("src")) {
+		image.setAttribute("src", deferredSrc);
+		image.removeAttribute("data-src");
+	}
+	image.style.opacity = "1";
+	image.parentElement
+		?.querySelector<HTMLElement>(".lqip-placeholder")
+		?.classList.add("loaded");
+}
+
+function syncWallpaperFallbackToSlide(
+	wallpaperWrapper: HTMLElement,
+	slide: HTMLElement | null,
+): void {
+	const image = slide?.querySelector<HTMLImageElement>("img");
+	const source = image?.getAttribute("data-src") || image?.getAttribute("src");
+	const device = slide?.dataset.wallpaperDevice;
+	if (!source || !device) return;
+	const theme = slide.dataset.originalWallpaper === "true" ? "national" : "normal";
+	wallpaperWrapper.style.setProperty(
+		`--wallpaper-fallback-${theme}-${device}`,
+		`url("${source}")`,
+	);
+}
+
 export function applySelectedWallpaperToDocument(index: number): void {
-	if (typeof document === "undefined") {
+	if (
+		typeof document === "undefined" ||
+		!isWallpaperIndexAllowedForCurrentTheme(index)
+	) {
 		return;
 	}
 
@@ -1032,35 +1288,44 @@ export function applySelectedWallpaperToDocument(index: number): void {
 		return;
 	}
 
+	const mobileIndex = getWallpaperMobileIndex(index);
+	const ordinal = getWallpaperThemeOrdinal(index);
 	wallpaperWrapper.setAttribute("data-selected-wallpaper", String(index));
+	wallpaperWrapper.setAttribute("data-selected-wallpaper-ordinal", String(ordinal));
 	wallpaperWrapper.removeAttribute("data-custom-wallpaper");
 
-	const slides = wallpaperWrapper.querySelectorAll<HTMLElement>(".slide-item");
-	if (slides.length > 0) {
-		slides.forEach((slide) => {
-			const slideIndex = Number.parseInt(slide.dataset.index || "0", 10);
-			slide.classList.toggle("active", slideIndex === index);
-			slide.classList.remove("prev-waiting");
-		});
-	}
-
-	const activeImages = wallpaperWrapper.querySelectorAll<HTMLImageElement>(
-		slides.length > 0 ? `.slide-item[data-index="${index}"] img` : "img",
+	const slides = Array.from(
+		wallpaperWrapper.querySelectorAll<HTMLElement>(".slide-item"),
 	);
-	activeImages.forEach((img) => {
-		const deferredSrc = img.getAttribute("data-src");
-		if (deferredSrc && !img.getAttribute("src")) {
-			img.setAttribute("src", deferredSrc);
-			img.removeAttribute("data-src");
-		}
-		img.style.opacity = "1";
-		const placeholder =
-			img.parentElement?.querySelector<HTMLElement>(".lqip-placeholder");
-		placeholder?.classList.add("loaded");
+	const desktopSlide = slides.find(
+		(slide) =>
+			slide.dataset.wallpaperDevice === "desktop" &&
+			Number.parseInt(slide.dataset.index ?? "-1", 10) === index,
+	);
+	const mobileSlide = slides.find(
+		(slide) =>
+			slide.dataset.wallpaperDevice === "mobile" &&
+			Number.parseInt(slide.dataset.index ?? "-1", 10) === mobileIndex,
+	);
+	slides.forEach((slide) => {
+		slide.classList.toggle("active", slide === desktopSlide || slide === mobileSlide);
+		slide.classList.remove("prev-waiting");
 	});
+	const activeSlide =
+		typeof window !== "undefined" && window.innerWidth < 1024
+			? mobileSlide
+			: desktopSlide;
+	loadWallpaperSlideImage(activeSlide ?? null);
+	syncWallpaperFallbackToSlide(wallpaperWrapper, desktopSlide ?? null);
+	syncWallpaperFallbackToSlide(wallpaperWrapper, mobileSlide ?? null);
+	wallpaperWrapper.dataset.originalWallpaperActive = String(
+		activeSlide?.dataset.originalWallpaper === "true",
+	);
 }
 
-export function clearSelectedWallpaperFromDocument(): void {
+export function clearSelectedWallpaperFromDocument(
+	preserveCurrentWallpaper = false,
+): void {
 	if (typeof document === "undefined") {
 		return;
 	}
@@ -1071,25 +1336,59 @@ export function clearSelectedWallpaperFromDocument(): void {
 	}
 
 	wallpaperWrapper.removeAttribute("data-selected-wallpaper");
-	const slides = wallpaperWrapper.querySelectorAll<HTMLElement>(".slide-item");
-	slides.forEach((slide, index) => {
-		slide.classList.toggle("active", index === 0);
+	wallpaperWrapper.removeAttribute("data-selected-wallpaper-ordinal");
+	const slides = Array.from(
+		wallpaperWrapper.querySelectorAll<HTMLElement>(".slide-item"),
+	);
+	if (slides.length === 0) {
+		wallpaperWrapper.dataset.originalWallpaperActive = "false";
+		return;
+	}
+	const isNationalDay = getNationalDayThemeEnabled();
+	const desktopSlides = slides.filter(
+		(slide) =>
+			slide.dataset.wallpaperDevice === "desktop" &&
+			(slide.dataset.originalWallpaper === "true") === isNationalDay,
+	);
+	const mobileSlides = slides.filter(
+		(slide) =>
+			slide.dataset.wallpaperDevice === "mobile" &&
+			(slide.dataset.originalWallpaper === "true") === isNationalDay,
+	);
+	const currentDesktopSlide = desktopSlides.find((slide) =>
+		slide.classList.contains("active"),
+	);
+	const desktopOrdinal =
+		preserveCurrentWallpaper && currentDesktopSlide
+			? getWallpaperThemeOrdinal(
+					Number.parseInt(currentDesktopSlide.dataset.index ?? "-1", 10),
+				)
+			: isNationalDay && desktopSlides.length > 1
+				? Math.floor(Math.random() * desktopSlides.length)
+				: 0;
+	const desktopSlide =
+		(preserveCurrentWallpaper ? currentDesktopSlide : null) ??
+		desktopSlides[desktopOrdinal] ??
+		desktopSlides[0] ??
+		null;
+	const mobileSlide =
+		mobileSlides[Math.min(Math.max(desktopOrdinal, 0), mobileSlides.length - 1)] ??
+		mobileSlides[0] ??
+		null;
+	slides.forEach((slide) => {
+		slide.classList.toggle("active", slide === desktopSlide || slide === mobileSlide);
 		slide.classList.remove("prev-waiting");
 	});
-
 	const activeSlide =
-		wallpaperWrapper.querySelector<HTMLElement>(".slide-item.active");
-	const activeImage =
-		activeSlide?.querySelector<HTMLImageElement>("img") ??
-		wallpaperWrapper.querySelector<HTMLImageElement>("img");
-	if (activeImage) {
-		activeImage.style.opacity = "1";
-		const placeholder =
-			activeImage.parentElement?.querySelector<HTMLElement>(
-				".lqip-placeholder",
-			);
-		placeholder?.classList.add("loaded");
-	}
+		typeof window !== "undefined" && window.innerWidth < 1024
+			? mobileSlide
+			: desktopSlide;
+	loadWallpaperSlideImage(activeSlide ?? null);
+	syncWallpaperFallbackToSlide(wallpaperWrapper, desktopSlide);
+	syncWallpaperFallbackToSlide(wallpaperWrapper, mobileSlide);
+	wallpaperWrapper.dataset.originalWallpaperActive = String(
+		activeSlide?.dataset.originalWallpaper === "true",
+	);
 }
 
 // Overlay settings functions
@@ -1391,6 +1690,7 @@ export function getDefaultBannerTitleEnabled(): boolean {
 }
 
 export function getDefaultBannerCarouselEnabled(): boolean {
+	if (getNationalDayThemeEnabled()) return false;
 	return backgroundWallpaper.common?.carousel?.enable ?? false;
 }
 
@@ -1420,10 +1720,19 @@ export function getStoredBannerCarouselEnabled(): boolean {
 	) {
 		return getDefaultBannerCarouselEnabled();
 	}
-	const stored = localStorage.getItem("bannerCarouselEnabled");
-	if (stored === null) {
-		return getDefaultBannerCarouselEnabled();
+	const isNationalDayEnabled = getNationalDayThemeEnabled();
+	const modeKey = getBannerCarouselModeKey(isNationalDayEnabled);
+	const normalModeKey = getBannerCarouselModeKey(false);
+	const legacyStored = localStorage.getItem(BANNER_CAROUSEL_KEY);
+	if (legacyStored !== null) {
+		// The legacy setting predates the seasonal theme and belongs to normal mode.
+		if (localStorage.getItem(normalModeKey) === null) {
+			localStorage.setItem(normalModeKey, legacyStored);
+		}
+		localStorage.removeItem(BANNER_CAROUSEL_KEY);
 	}
+	const stored = localStorage.getItem(modeKey);
+	if (stored === null) return getDefaultBannerCarouselEnabled();
 	return stored === "true";
 }
 
@@ -1447,7 +1756,10 @@ export function setBannerCarouselEnabled(enabled: boolean): void {
 		typeof localStorage !== "undefined" &&
 		typeof localStorage.setItem === "function"
 	) {
-		localStorage.setItem("bannerCarouselEnabled", String(safeEnabled));
+		localStorage.setItem(
+			getBannerCarouselModeKey(getNationalDayThemeEnabled()),
+			String(safeEnabled),
+		);
 	}
 	applyBannerCarouselEnabledToDocument(safeEnabled);
 	if (typeof window !== "undefined") {

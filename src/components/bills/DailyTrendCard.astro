@@ -1,0 +1,562 @@
+---
+interface Props {
+	year: number;
+	month: number;
+	highlightDay: number;
+	data: { day: string; income: number | null; expense: number | null }[];
+}
+
+const { year, month, highlightDay, data } = Astro.props;
+const values: number[] = [];
+for (const point of data) {
+	if (point.income !== null) values.push(point.income);
+	if (point.expense !== null) values.push(point.expense);
+}
+const maxVal = Math.max(...values, 1);
+const minVal = Math.min(...values, 0);
+const width = 640;
+const height = 180;
+const pad = { l: 28, r: 12, t: 12, b: 22 };
+const innerW = width - pad.l - pad.r;
+const innerH = height - pad.t - pad.b;
+const stepX = innerW / Math.max(1, data.length - 1);
+function xFor(i: number) {
+	return pad.l + stepX * i;
+}
+function yFor(v: number) {
+	return pad.t + ((maxVal - v) / (maxVal - minVal || 1)) * innerH;
+}
+const incomePoints = data
+	.reduce<string[]>((points, point, index) => {
+		if (point.income !== null)
+			points.push(`${xFor(index)},${yFor(point.income)}`);
+		return points;
+	}, [])
+	.join(" ");
+const expensePoints = data
+	.reduce<string[]>((points, point, index) => {
+		if (point.expense !== null)
+			points.push(`${xFor(index)},${yFor(point.expense)}`);
+		return points;
+	}, [])
+	.join(" ");
+const midIdx = Math.max(0, Math.min(highlightDay - 1, data.length - 1));
+const selectedDay = data[midIdx];
+const midX = xFor(midIdx);
+const futureStartX =
+	midIdx < data.length - 1 ? xFor(midIdx) + stepX / 2 : width - pad.r;
+const futureWidth = Math.max(0, width - pad.r - futureStartX);
+const xLabelIndices = data
+	.map((_, index) => index)
+	.filter(
+		(index) =>
+			index === midIdx || (index % 3 === 0 && Math.abs(index - midIdx) > 2),
+	);
+function hitStart(i: number) {
+	return i === 0 ? pad.l : xFor(i) - stepX / 2;
+}
+function hitWidth(i: number) {
+	return i === 0 || i === data.length - 1 ? stepX / 2 : stepX;
+}
+const cutoffLabel = `${String(month).padStart(2, "0")}.${String(highlightDay).padStart(2, "0")}`;
+---
+<div
+	class="trend-card"
+	data-daily-trend
+	data-default-index={midIdx}
+	data-svg-width={width}
+>
+	<div class="trend-head">
+		<h3 class="trend-title">{year}年{month}月每日净收支</h3>
+		<span class="trend-head-note">统计至 {cutoffLabel} · 灰区未统计</span>
+	</div>
+	<div class="trend-chart-wrap">
+		<svg
+			viewBox={`0 0 ${width} ${height}`}
+			class="trend-svg"
+			role="group"
+			aria-label={`${year}年${month}月每日净收支，聚焦或点击日期查看金额`}
+	>
+			<line
+				x1={pad.l}
+				y1={pad.t + innerH / 2}
+				x2={width - pad.r}
+				y2={pad.t + innerH / 2}
+				stroke="var(--guestbook-line)"
+				stroke-width="1"
+				stroke-dasharray="3 4"
+				opacity="0.6"
+			/>
+			<line
+				x1={pad.l}
+				y1={pad.t}
+				x2={width - pad.r}
+				y2={pad.t}
+				stroke="var(--guestbook-line)"
+				stroke-width="1"
+				stroke-dasharray="3 4"
+				opacity="0.35"
+			/>
+			<line
+				x1={pad.l}
+				y1={pad.t + innerH}
+				x2={width - pad.r}
+				y2={pad.t + innerH}
+				stroke="var(--guestbook-line)"
+				stroke-width="1"
+				stroke-dasharray="3 4"
+				opacity="0.35"
+			/>
+			{futureWidth > 0 && (
+				<>
+					<rect
+						class="trend-future-zone"
+						x={futureStartX}
+						y={pad.t}
+						width={futureWidth}
+						height={innerH}
+					/>
+					<text
+						class="trend-future-label"
+						x={futureStartX + futureWidth / 2}
+						y={pad.t + 12}
+						text-anchor="middle"
+					>
+						未统计
+					</text>
+				</>
+			)}
+			<line
+				x1={pad.l}
+				y1={yFor(0)}
+				x2={width - pad.r}
+				y2={yFor(0)}
+				stroke="#f43f5e"
+				stroke-width="1.8"
+				opacity="0.95"
+			/>
+			<polyline
+				fill="none"
+				stroke="#f97316"
+				stroke-width="1.6"
+				opacity="0.9"
+				points={incomePoints}
+			/>
+			<polyline
+				fill="none"
+				stroke="#14b8a6"
+				stroke-width="1.6"
+				opacity="0.9"
+				points={expensePoints}
+			/>
+			{data.map((point, index) => (
+				<>
+					{point.income !== null && point.income > 0 && (
+						<circle
+							class="trend-point trend-point-income"
+							cx={xFor(index)}
+							cy={yFor(point.income)}
+							r="2.8"
+						/>
+					)}
+					{point.expense !== null && point.expense > 0 && (
+						<circle
+							class="trend-point trend-point-expense"
+							cx={xFor(index)}
+							cy={yFor(point.expense)}
+							r="2.8"
+						/>
+					)}
+				</>
+			))}
+			<line
+				class="trend-active-line"
+				data-trend-active-line
+				x1={midX}
+				y1={pad.t}
+				x2={midX}
+				y2={pad.t + innerH}
+			/>
+			<circle
+				class="trend-active-marker trend-active-marker-expense"
+				data-trend-active-expense
+				cx={midX}
+				cy={yFor(selectedDay?.expense ?? 0)}
+				r="5"
+			/>
+			<circle
+				class="trend-active-marker trend-active-marker-income"
+				data-trend-active-income
+				cx={midX}
+				cy={yFor(selectedDay?.income ?? 0)}
+				r="3.5"
+			/>
+			<text x="2" y={yFor(0) + 3} font-size="10" fill="var(--guestbook-muted)">
+				0
+			</text>
+			{data.map((point, index) =>
+				point.income !== null && point.expense !== null ? (
+					<g
+						class="trend-hit-area"
+						data-trend-index={index}
+						data-trend-x={xFor(index)}
+						data-trend-day={point.day}
+						data-trend-income={point.income.toFixed(2)}
+						data-trend-expense={point.expense.toFixed(2)}
+						data-trend-income-y={yFor(point.income)}
+						data-trend-expense-y={yFor(point.expense)}
+						role="button"
+						tabindex="0"
+						aria-label={`${point.day}，收入 ${point.income.toFixed(2)} 元，净支出 ${point.expense.toFixed(2)} 元`}
+					>
+						<rect
+							x={hitStart(index)}
+							y={pad.t}
+							width={hitWidth(index)}
+							height={innerH}
+						/>
+					</g>
+				) : null,
+			)}
+		</svg>
+		<div
+			class="trend-tooltip"
+			data-trend-tooltip
+			role="status"
+			aria-live="polite"
+			style={`left: clamp(0px, calc(${(midX / width) * 100}% - 54px), calc(100% - 110px))`}
+		>
+			<div class="tooltip-date" data-trend-tooltip-day>{selectedDay?.day}</div>
+			<div class="tooltip-row">
+				<span class="dot dot-income"></span>
+				收入 <span data-trend-tooltip-income>{(selectedDay?.income ?? 0).toFixed(2)}</span>
+			</div>
+			<div class="tooltip-row">
+				<span class="dot dot-expense"></span>
+				净支出 <span data-trend-tooltip-expense>{(selectedDay?.expense ?? 0).toFixed(2)}</span>
+			</div>
+			<div
+				class="tooltip-empty"
+				data-trend-empty
+				hidden={selectedDay?.income !== 0 || selectedDay?.expense !== 0}
+			>
+				当天没有收支记录
+			</div>
+		</div>
+		<div class="trend-xlabels">
+			{xLabelIndices.map((index) => (
+				<span
+					class:list={{
+						"x-hl": index === midIdx,
+						"x-future": data[index]?.income === null,
+					}}
+					data-trend-label-index={index}
+					data-edge={index === 0 ? "start" : index === data.length - 1 ? "end" : undefined}
+					style={`left: ${(xFor(index) / width) * 100}%`}
+				>
+					{data[index]?.day}
+				</span>
+			))}
+		</div>
+	</div>
+</div>
+
+<script>
+	function initDailyTrendCards() {
+		document.querySelectorAll<HTMLElement>("[data-daily-trend]").forEach((card) => {
+			if (card.dataset.trendInit === "true") return;
+
+			const svg = card.querySelector<SVGSVGElement>(".trend-svg");
+			const tooltip = card.querySelector<HTMLElement>("[data-trend-tooltip]");
+			const activeLine = svg?.querySelector<SVGLineElement>("[data-trend-active-line]");
+			const activeIncome = svg?.querySelector<SVGCircleElement>("[data-trend-active-income]");
+			const activeExpense = svg?.querySelector<SVGCircleElement>("[data-trend-active-expense]");
+			const incomeLabel = tooltip?.querySelector<HTMLElement>("[data-trend-tooltip-income]");
+			const expenseLabel = tooltip?.querySelector<HTMLElement>("[data-trend-tooltip-expense]");
+			const dayLabel = tooltip?.querySelector<HTMLElement>("[data-trend-tooltip-day]");
+			const emptyLabel = tooltip?.querySelector<HTMLElement>("[data-trend-empty]");
+			if (!svg || !tooltip || !activeLine || !activeIncome || !activeExpense) return;
+			const chartTooltip = tooltip;
+			const chartActiveLine = activeLine;
+			const chartActiveIncome = activeIncome;
+			const chartActiveExpense = activeExpense;
+
+			const hitAreas = Array.from(svg.querySelectorAll<SVGGElement>("[data-trend-index]"));
+			const defaultIndex = Number(card.dataset.defaultIndex) || 0;
+			const svgWidth = Number(card.dataset.svgWidth) || 640;
+
+			function activate(index: number) {
+				const hitArea = hitAreas.find((area) => Number(area.dataset.trendIndex) === index);
+				if (!hitArea) return;
+
+				const x = Number(hitArea.dataset.trendX);
+				const income = Number(hitArea.dataset.trendIncome) || 0;
+				const expense = Number(hitArea.dataset.trendExpense) || 0;
+				chartActiveLine.setAttribute("x1", String(x));
+				chartActiveLine.setAttribute("x2", String(x));
+				chartActiveIncome.setAttribute("cx", String(x));
+				chartActiveIncome.setAttribute("cy", hitArea.dataset.trendIncomeY || "0");
+				chartActiveExpense.setAttribute("cx", String(x));
+				chartActiveExpense.setAttribute("cy", hitArea.dataset.trendExpenseY || "0");
+				chartTooltip.style.left = `clamp(0px, calc(${(x / svgWidth) * 100}% - 54px), calc(100% - 110px))`;
+				if (incomeLabel) incomeLabel.textContent = income.toFixed(2);
+				if (expenseLabel) expenseLabel.textContent = expense.toFixed(2);
+				if (dayLabel) dayLabel.textContent = hitArea.dataset.trendDay || "";
+				if (emptyLabel) emptyLabel.hidden = income !== 0 || expense !== 0;
+
+				card.querySelectorAll<HTMLElement>("[data-trend-label-index]").forEach((label) => {
+					label.classList.toggle("x-hl", Number(label.dataset.trendLabelIndex) === index);
+				});
+			}
+
+			function targetArea(target: EventTarget | null) {
+				return target instanceof Element
+					? target.closest<SVGGElement>("[data-trend-index]")
+					: null;
+			}
+
+			svg.addEventListener("pointerover", (event) => {
+				if (event.pointerType !== "mouse") return;
+				const hitArea = targetArea(event.target);
+				if (hitArea) activate(Number(hitArea.dataset.trendIndex));
+			});
+			svg.addEventListener("click", (event) => {
+				const hitArea = targetArea(event.target);
+				if (hitArea) activate(Number(hitArea.dataset.trendIndex));
+			});
+			svg.addEventListener("focusin", (event) => {
+				const hitArea = targetArea(event.target);
+				if (hitArea) activate(Number(hitArea.dataset.trendIndex));
+			});
+			svg.addEventListener("keydown", (event) => {
+				if (event.key !== "Enter" && event.key !== " ") return;
+				const hitArea = targetArea(event.target);
+				if (!hitArea) return;
+				event.preventDefault();
+				activate(Number(hitArea.dataset.trendIndex));
+			});
+			card.addEventListener("pointerleave", (event) => {
+				if (event.pointerType === "mouse") activate(defaultIndex);
+			});
+
+			card.dataset.trendInit = "true";
+			activate(defaultIndex);
+		});
+	}
+
+	initDailyTrendCards();
+	document.addEventListener("astro:page-load", initDailyTrendCards);
+	document.addEventListener("swup:contentReplaced", initDailyTrendCards);
+	document.addEventListener("swup:page:view", initDailyTrendCards);
+</script>
+
+<style>
+	@reference "../../styles/main.css";
+	.trend-card {
+		background: #fff;
+		border: 1px solid oklch(0 0 0 / 0.06);
+		border-radius: 0.75rem;
+		padding: 0.75rem 0.85rem 0.6rem;
+		min-height: 15.5rem;
+		display: flex;
+		flex-direction: column;
+	}
+	:root.dark .trend-card {
+		background: oklch(0.16 0 0 / 0.86);
+		border-color: oklch(1 0 0 / 0.08);
+	}
+	.trend-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		margin-bottom: 0.35rem;
+	}
+	.trend-title {
+		font-size: 0.82rem;
+		font-weight: 700;
+	}
+	:root.dark .trend-title {
+		color: oklch(0.9 0 0);
+	}
+	.trend-head-note {
+		color: var(--guestbook-muted);
+		font-size: 0.58rem;
+		white-space: nowrap;
+	}
+	.trend-chart-wrap {
+		position: relative;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+	}
+	.trend-svg {
+		width: 100%;
+		height: auto;
+		display: block;
+		flex: 1;
+		min-height: 0;
+		overflow: visible;
+	}
+	.trend-future-zone {
+		fill: var(--primary);
+		opacity: 0.07;
+		pointer-events: none;
+	}
+	.trend-future-label {
+		fill: var(--guestbook-muted);
+		font-size: 8px;
+		pointer-events: none;
+	}
+	.trend-point {
+		stroke: #fff;
+		stroke-width: 1.2;
+		pointer-events: none;
+	}
+	.trend-point-income {
+		fill: #f97316;
+	}
+	.trend-point-expense {
+		fill: #14b8a6;
+	}
+	.trend-active-line {
+		stroke: #94a3b8;
+		stroke-width: 1;
+		opacity: 0.55;
+		pointer-events: none;
+	}
+	.trend-active-marker {
+		stroke: #fff;
+		stroke-width: 2;
+		pointer-events: none;
+	}
+	.trend-active-marker-income {
+		fill: #f97316;
+	}
+	.trend-active-marker-expense {
+		fill: #14b8a6;
+	}
+	.trend-hit-area {
+		cursor: crosshair;
+	}
+	.trend-hit-area rect {
+		fill: transparent;
+		pointer-events: all;
+	}
+	.trend-hit-area:focus {
+		outline: none;
+	}
+	.trend-hit-area:focus-visible rect {
+		stroke: var(--primary);
+		stroke-width: 1;
+		fill: var(--primary);
+		fill-opacity: 0.08;
+	}
+	.trend-tooltip {
+		position: absolute;
+		top: 6px;
+		z-index: 1;
+		min-width: 110px;
+		box-sizing: border-box;
+		background: #2d2d2d;
+		color: #fff;
+		font-size: 0.62rem;
+		border-radius: 0.4rem;
+		padding: 0.4rem 0.55rem;
+		line-height: 1.3;
+		pointer-events: none;
+		font-variant-numeric: tabular-nums;
+	}
+	.trend-tooltip::after {
+		content: "";
+		position: absolute;
+		left: 50%;
+		bottom: -5px;
+		transform: translateX(-50%);
+		width: 0;
+		height: 0;
+		border-left: 5px solid transparent;
+		border-right: 5px solid transparent;
+		border-top: 5px solid #2d2d2d;
+	}
+	.tooltip-date {
+		font-weight: 700;
+		margin-bottom: 0.18rem;
+		padding-bottom: 0.14rem;
+		border-bottom: 1px solid rgb(255 255 255 / 0.18);
+	}
+	.tooltip-row {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		white-space: nowrap;
+	}
+	.dot {
+		width: 0.5rem;
+		height: 0.5rem;
+		flex: 0 0 auto;
+		border-radius: 9999px;
+		border: 1.5px solid #fff;
+	}
+	.dot-income {
+		background: #f97316;
+	}
+	.dot-expense {
+		background: #14b8a6;
+	}
+	.tooltip-empty {
+		margin-top: 0.16rem;
+		color: rgb(255 255 255 / 0.72);
+		font-size: 0.56rem;
+	}
+	.trend-xlabels {
+		position: relative;
+		display: block;
+		height: 1.1rem;
+		font-size: 0.6rem;
+		line-height: 1rem;
+		color: var(--guestbook-muted);
+		margin-top: 0.15rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.trend-xlabels span {
+		position: absolute;
+		top: 0;
+		height: 1rem;
+		display: inline-flex;
+		align-items: center;
+		line-height: 1;
+		transform: translateX(-50%);
+		white-space: nowrap;
+	}
+	.trend-xlabels span[data-edge="start"] {
+		transform: translateX(0);
+	}
+	.trend-xlabels span[data-edge="end"] {
+		transform: translateX(-100%);
+	}
+	.trend-xlabels .x-future {
+		opacity: 0.42;
+	}
+	.x-hl {
+		box-sizing: border-box;
+		height: 1rem;
+		background: #fff;
+		border: 1px solid oklch(0 0 0 / 0.08);
+		border-radius: 0.3rem;
+		padding: 0 0.3rem;
+		color: var(--deep-text);
+		font-weight: 600;
+		box-shadow: 0 1px 4px oklch(0 0 0 / 0.06);
+	}
+	:root.dark .x-hl {
+		background: oklch(0.22 0 0);
+		border-color: oklch(1 0 0 / 0.1);
+		color: oklch(0.88 0 0);
+	}
+	@media (max-width: 640px) {
+		.trend-head-note {
+			font-size: 0.52rem;
+		}
+	}
+</style>

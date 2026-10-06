@@ -1,0 +1,251 @@
+---
+import BalanceCard from "@/components/bills/BalanceCard.astro";
+import BillCalendarCard from "@/components/bills/BillCalendarCard.astro";
+import DailyTrendCard from "@/components/bills/DailyTrendCard.astro";
+import ExpenseRankCard from "@/components/bills/ExpenseRankCard.astro";
+import IncomeCategoryCard from "@/components/bills/IncomeCategoryCard.astro";
+import MonthlyFlowCard from "@/components/bills/MonthlyFlowCard.astro";
+import MonthlySummaryCard from "@/components/bills/MonthlySummaryCard.astro";
+import YearlyFlowCard from "@/components/bills/YearlyFlowCard.astro";
+import billSummary from "@/data/billsSummary.json";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { getCalendarObservances } from "@/utils/calendar-observances";
+
+const hasBillData =
+	!billSummary.templateMode &&
+	billSummary.months.length > 0 &&
+	billSummary.years.length > 0;
+const latestKey = billSummary.latestMonth;
+const monthlySummary =
+	billSummary.months.find((item) => item.key === latestKey) ??
+	billSummary.months[billSummary.months.length - 1];
+if (!monthlySummary) throw new Error("The empty bills template must include a month shape.");
+const year = monthlySummary.year;
+const asOfDay = Number(monthlySummary.asOfDate.slice(-2));
+const yearSummary =
+	billSummary.years.find((item) => item.year === year) ??
+	billSummary.years[billSummary.years.length - 1];
+if (!yearSummary) throw new Error("The empty bills template must include a year shape.");
+
+const lunarFormatter = new Intl.DateTimeFormat("zh-CN-u-ca-chinese", {
+	month: "long",
+	day: "numeric",
+});
+const chineseDigits = [
+	"零",
+	"一",
+	"二",
+	"三",
+	"四",
+	"五",
+	"六",
+	"七",
+	"八",
+	"九",
+];
+const lunarDayLabel = (day: number) => {
+	if (day <= 10) return `初${day === 10 ? "十" : chineseDigits[day]}`;
+	if (day < 20) return `十${chineseDigits[day - 10]}`;
+	if (day === 20) return "二十";
+	if (day < 30) return `廿${chineseDigits[day - 20]}`;
+	return "三十";
+};
+const getLunarLabel = (date: Date) => {
+	const parts = lunarFormatter.formatToParts(date);
+	const day = Number(parts.find((part) => part.type === "day")?.value ?? 1);
+	const lunarMonth = (
+		parts.find((part) => part.type === "month")?.value ?? ""
+	).replace(/月$/, "");
+	return day === 1 ? `${lunarMonth}月` : lunarDayLabel(day);
+};
+type CalendarCell = {
+	day: number;
+	lunar: string;
+	observances: ReturnType<typeof getCalendarObservances>;
+	inMonth: boolean;
+	income: number;
+	expense: number;
+	dateKey: string;
+};
+const calendarCells: CalendarCell[] = [];
+const daysInMonth = new Date(year, monthlySummary.month, 0).getDate();
+const firstDayOffset = new Date(year, monthlySummary.month - 1, 1).getDay();
+const appendDay = (date: Date, inMonth: boolean) => {
+	const day = date.getDate();
+	const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+	const daily = inMonth ? monthlySummary.days[day - 1] : undefined;
+	calendarCells.push({
+		day,
+		lunar: getLunarLabel(date),
+		observances: getCalendarObservances(date),
+		inMonth,
+		income: daily?.income ?? 0,
+		expense: daily?.expense ?? 0,
+		dateKey,
+	});
+};
+for (let offset = firstDayOffset; offset > 0; offset--) {
+	appendDay(new Date(year, monthlySummary.month - 1, 1 - offset), false);
+}
+for (let day = 1; day <= daysInMonth; day++) {
+	appendDay(new Date(year, monthlySummary.month - 1, day), true);
+}
+let nextMonthDay = 1;
+while (calendarCells.length % 7 !== 0) {
+	appendDay(
+		new Date(year, monthlySummary.month - 1, daysInMonth + nextMonthDay),
+		false,
+	);
+	nextMonthDay++;
+}
+const calendarWeeks: CalendarCell[][] = [];
+for (let index = 0; index < calendarCells.length; index += 7) {
+	calendarWeeks.push(calendarCells.slice(index, index + 7));
+}
+const calendarMonth = {
+	key: latestKey,
+	label: monthlySummary.label,
+	asOfDate: monthlySummary.asOfDate,
+	weeks: calendarWeeks,
+};
+
+const formatDate = (value: string) => value.replace(/-/g, ".");
+---
+
+<MainGridLayout title="账单" description={hasBillData ? formatDate(billSummary.source.periodStart) + " 至 " + formatDate(billSummary.source.periodEnd) + " 的收支汇总" : "账单数据未配置"}>
+	{hasBillData ? (
+	<div class="bills-page" data-pagefind-body>
+		<div class="bills-grid">
+			<div class="bills-col">
+				<div class="order-net"><BalanceCard year={year} income={yearSummary.income} expense={yearSummary.expense} balance={yearSummary.balance} /></div>
+			</div>
+			<div class="bills-col">
+				<div class="order-monthly">
+					<MonthlySummaryCard label={`${monthlySummary.label}收支情况`} income={monthlySummary.income} expense={monthlySummary.expense} balance={monthlySummary.balance} />
+				</div>
+			</div>
+		</div>
+		<p class="bills-source-note">
+			统计至 {formatDate(billSummary.source.periodEnd)} · {billSummary.source.basis} 流水仅展示分类、时间和金额
+		</p>
+		<div class="order-today">
+			<MonthlyFlowCard days={billSummary.latestFlow.days} />
+		</div>
+		<div class="order-cal">
+			<BillCalendarCard months={[calendarMonth]} currentMonth={latestKey} />
+		</div>
+		<div class="bills-grid">
+			<div class="bills-col">
+				<div class="order-daily">
+					<DailyTrendCard
+						year={monthlySummary.year}
+						month={monthlySummary.month}
+						highlightDay={asOfDay}
+						data={monthlySummary.days.map((item) => ({
+							day: `${String(monthlySummary.month).padStart(2, "0")}.${String(item.day).padStart(2, "0")}`,
+							income: item.day <= asOfDay ? item.income : null,
+							expense: item.day <= asOfDay ? item.expense : null,
+						}))}
+					/>
+				</div>
+				<div class="order-income">
+					<IncomeCategoryCard periodLabel={monthlySummary.label} data={monthlySummary.categories.income} totalCount={monthlySummary.incomeCount} totalIncome={monthlySummary.income} />
+				</div>
+			</div>
+			<div class="bills-col">
+				<div class="order-yearly">
+					<YearlyFlowCard
+						year={yearSummary.year}
+						startMonth={yearSummary.startMonth}
+						endMonth={yearSummary.endMonth}
+						highlightMonth={yearSummary.endMonth}
+						activeMonths={yearSummary.activeMonths}
+						data={yearSummary.months}
+					/>
+				</div>
+				<div class="order-expense">
+					<ExpenseRankCard periodLabel={monthlySummary.label} data={monthlySummary.categories.expense} totalCount={monthlySummary.expenseCount} totalExpense={monthlySummary.expense} />
+				</div>
+			</div>
+		</div>
+	</div>
+) : (
+	<section class="bills-empty card-base" aria-labelledby="bills-empty-title">
+		<p class="bills-empty__eyebrow">PRIVATE DATA OMITTED</p>
+		<h2 id="bills-empty-title">账单页面已就绪，数据尚未配置</h2>
+		<p>公开仓库只保留页面与组件，不附带个人账单记录。请在本地填写 <code>src/data/billsSummary.json</code>；提交前确认没有真实收支数据。</p>
+	</section>
+)}
+</MainGridLayout>
+
+<style>
+	@reference "../styles/main.css";
+		.bills-empty {
+		margin: 0.6rem 0 1rem;
+		padding: 1.5rem;
+	}
+	.bills-empty__eyebrow {
+		margin: 0 0 0.6rem;
+		color: var(--primary);
+		font-size: 0.7rem;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+	}
+	.bills-empty h2 {
+		margin: 0;
+		font-size: 1.1rem;
+	}
+	.bills-empty p:last-child {
+		margin: 0.55rem 0 0;
+		color: var(--content-meta);
+		line-height: 1.65;
+	}
+.bills-page {
+		--guestbook-muted: color-mix(in srgb, var(--text-color) 55%, transparent);
+		--guestbook-line: var(--line-divider);
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+		padding: 0.6rem 0 1.2rem;
+	}
+	.bills-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.9rem;
+		align-items: start;
+	}
+	.bills-col {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+	}
+	.bills-source-note {
+		margin: -0.2rem 0 0;
+		font-size: 0.65rem;
+		line-height: 1.5;
+		color: var(--guestbook-muted);
+	}
+	@media (min-width: 1201px) {
+		.bills-page > .bills-grid:first-child {
+			transform: translateY(-0.6rem);
+		}
+	}
+	@media (max-width: 900px) {
+		.bills-grid {
+			grid-template-columns: 1fr;
+		}
+		.bills-col {
+			display: contents;
+		}
+	}
+	@media (max-width: 1200px) {
+	.bills-page {
+		zoom: 0.92;
+	}
+}
+@media (max-width: 1024px) {
+	.bills-page {
+		zoom: 0.88;
+	}
+}
+</style>

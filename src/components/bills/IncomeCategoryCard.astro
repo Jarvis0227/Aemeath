@@ -1,0 +1,155 @@
+---
+import BillPagination from "./BillPagination.astro";
+
+interface Props {
+	periodLabel: string;
+	data: { category: string; amount: number; count: number }[];
+	totalCount: number;
+	totalIncome: number;
+}
+const { periodLabel, data, totalCount, totalIncome } = Astro.props;
+const fmt = (n: number) =>
+	n.toLocaleString("zh-CN", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	});
+const PAGE_SIZE = 6;
+const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+const icons: Record<string, string> = {
+	职业收入: "💼",
+	工资: "💼",
+	人情收礼: "🙂",
+	其他收入: "➕",
+	兼职: "🧰",
+	爸妈给的: "👨‍👩‍👧",
+	投资收益: "📈",
+	奖金: "🎁",
+};
+const subMap: Record<string, string> = {
+	职业收入: "收入类别",
+	人情收礼: "收入类别",
+	其他收入: "收入类别",
+	兼职: "收入类别",
+	爸妈给的: "收入类别",
+};
+---
+<div class="income-card bill-pager-card" data-pager="income" data-total={data.length} data-pages={totalPages}>
+  <div class="income-head">
+    <h3 class="income-title">{periodLabel}分类收入</h3>
+    <span class="income-sub">收入笔数 {totalCount} &nbsp; 总收入 <b class="income-total">{fmt(totalIncome)}</b></span>
+  </div>
+  <div class="income-list bill-pager-list">
+    {data.map((item, idx) => (
+      <div class="income-row bill-pager-item" data-idx={idx}>
+        <span class="bill-rank-num">{idx+1}</span>
+        <span class="income-icon">{icons[item.category] ?? "💰"}</span>
+        <div class="income-main">
+          <div class="income-cat">{item.category}</div>
+          <div class="income-cat-sub">{subMap[item.category] ?? "收入类别"}</div>
+        </div>
+        <div class="income-amounts">
+          <span>收入笔数 {item.count}</span>
+          <span>总收入 <b class="income-amt">{fmt(item.amount)}</b></span>
+        </div>
+      </div>
+    ))}
+  </div>
+  {totalPages > 1 && (
+    <BillPagination
+      totalPages={totalPages}
+      totalItems={data.length}
+      itemLabel="类"
+      inputId="income-page-jump"
+      ariaLabel="分类收入分页"
+    />
+  )}
+</div>
+<script is:inline>
+(function(){
+  const pageSize = 6;
+  function init(root){
+    if(!root || root.dataset.pagerInit==="1") return;
+    const items = Array.from(root.querySelectorAll('.bill-pager-item'));
+    const pages = Math.max(1, Math.ceil(items.length / pageSize));
+    if(pages <= 1) return;
+    let cur = 1;
+    const pager = root.querySelector('[data-bill-pagination]');
+    const info = pager?.querySelector('[data-bill-page-indicator]');
+    const jumpForm = pager?.querySelector('[data-bill-page-jump-form]');
+    const jumpInput = pager?.querySelector('[data-bill-page-jump-input]');
+    const btns = Array.from(pager?.querySelectorAll('[data-bill-page]') ?? []);
+    const totalItems = Number(pager?.dataset.totalItems) || items.length;
+    const itemLabel = pager?.dataset.itemLabel || '项';
+    function render(){
+      items.forEach((el, i)=>{
+        const p = Math.floor(i / pageSize) + 1;
+        el.hidden = p !== cur;
+      });
+      if(info) info.textContent = `第 ${cur} / ${pages} 页 · 共 ${totalItems} ${itemLabel}`;
+      if(jumpInput instanceof HTMLInputElement){
+        jumpInput.max = String(pages);
+        jumpInput.placeholder = String(cur);
+        jumpInput.setAttribute('aria-valuemax', String(pages));
+        jumpInput.setAttribute('aria-valuenow', String(cur));
+      }
+      btns.forEach(b=>{
+        const isPrevious = b.dataset.billPage === 'prev';
+        b.disabled = (isPrevious && cur === 1) || (!isPrevious && cur === pages);
+        b.setAttribute('aria-disabled', String(b.disabled));
+      });
+    }
+    pager?.addEventListener('click', event=>{
+      const button = event.target instanceof Element
+        ? event.target.closest('button[data-bill-page]')
+        : null;
+      if(!button || button.disabled) return;
+      cur = Math.max(1, Math.min(pages, cur + (button.dataset.billPage === 'next' ? 1 : -1)));
+      render();
+    });
+    jumpForm?.addEventListener('submit', event=>{
+      event.preventDefault();
+      if(!(jumpInput instanceof HTMLInputElement)) return;
+      const value = Number.parseInt(jumpInput.value, 10);
+      if(!Number.isFinite(value)){
+        jumpInput.focus();
+        return;
+      }
+      jumpInput.value = '';
+      cur = Math.min(Math.max(value, 1), pages);
+      render();
+    });
+    root.dataset.pagerInit="1";
+    render();
+  }
+  function scan(){ document.querySelectorAll('[data-pager=\"income\"]').forEach(init); }
+  scan();
+  document.addEventListener('swup:content:replaced', scan);
+})();
+</script>
+<style>
+@reference "../../styles/main.css";
+.income-card{ background:#fff; border:1px solid oklch(0 0 0 / 0.06); border-radius:0.75rem; padding:0.7rem 0.85rem 0.55rem; height:25rem; display:flex; flex-direction:column; }
+:root.dark .income-card{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.08); }
+.income-head{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; margin-bottom:0.4rem; }
+.income-title{ font-size:0.82rem; font-weight:700; }
+:root.dark .income-title{ color: oklch(0.90 0 0); }
+.income-sub{ font-size:0.62rem; color:var(--guestbook-muted); white-space:nowrap; }
+.income-total{ color:#ef4444; font-weight:700; }
+.income-list{ display:flex; flex-direction:column; flex:1; min-height:17.2rem; }
+.income-row{ display:grid; grid-template-columns:1rem 1.5rem 1fr auto; gap:0.5rem; align-items:center; padding:0.58rem 0; border-bottom:1px solid oklch(0 0 0 / 0.06); }
+.bill-rank-num{ font-size:0.72rem; color:var(--guestbook-muted); text-align:center; }
+:root.dark .income-row{ border-color: oklch(1 0 0 / 0.06); }
+.income-row:last-child{ border-bottom:none; }
+.income-icon{ width:1.5rem; height:1.5rem; display:flex; align-items:center; justify-content:center; background:#fef2f2; border:1px solid #fee2e2; border-radius:0.4rem; font-size:0.85rem; }
+:root.dark .income-icon{ background: oklch(0.25 0.12 25 / 0.2); border-color: transparent; }
+.income-main{ min-width:0; }
+.income-cat{ font-size:0.78rem; font-weight:600; }
+:root.dark .income-cat{ color: oklch(0.92 0 0); }
+.income-cat-sub{ font-size:0.62rem; color:var(--guestbook-muted); }
+.income-amounts{ display:flex; flex-direction:column; align-items:flex-end; font-size:0.62rem; color:var(--guestbook-muted); gap:0.1rem; }
+.income-amt{ color:#ef4444; font-weight:700; }
+@media (max-width: 640px){
+  .income-card{ height:auto; min-height:25rem; }
+  .income-list{ flex:0 0 auto; min-height:0; }
+}
+</style>

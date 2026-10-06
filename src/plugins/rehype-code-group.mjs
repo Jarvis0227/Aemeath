@@ -43,7 +43,10 @@ function getCodeLabel(pre, labels, index) {
 		?.slice("language-".length)
 		.toLocaleLowerCase();
 
-	return LANGUAGE_LABELS[language] || (language ? language.toUpperCase() : `代码 ${index + 1}`);
+	return (
+		LANGUAGE_LABELS[language] ||
+		(language ? language.toUpperCase() : `代码 ${index + 1}`)
+	);
 }
 
 function classNames(...values) {
@@ -73,9 +76,8 @@ export function rehypeCodeGroup() {
 		visit(tree, "element", (node) => {
 			if (node.tagName !== "code-group") return;
 
-			const elementChildren = node.children?.filter(
-				(child) => child.type === "element",
-			) || [];
+			const elementChildren =
+				node.children?.filter((child) => child.type === "element") || [];
 			const codeBlocks = elementChildren.filter(
 				(child) => child.tagName === "pre" && getCodeElement(child),
 			);
@@ -88,11 +90,16 @@ export function rehypeCodeGroup() {
 			};
 
 			// Leave malformed or one-item groups as normal code content.
-			if (codeBlocks.length < 2 || codeBlocks.length !== elementChildren.length) {
+			if (
+				codeBlocks.length < 2 ||
+				codeBlocks.length !== elementChildren.length
+			) {
 				return SKIP;
 			}
 
-			const labels = String(node.properties?.labels || node.properties?.titles || "")
+			const labels = String(
+				node.properties?.labels || node.properties?.titles || "",
+			)
 				.split("|")
 				.map((label) => label.trim());
 			const groupId = `code-group-${groupCount++}`;

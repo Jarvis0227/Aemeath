@@ -1,0 +1,155 @@
+---
+import BillPagination from "./BillPagination.astro";
+
+interface Props {
+	periodLabel: string;
+	data: { category: string; amount: number; count: number }[];
+	totalCount: number;
+	totalExpense: number;
+}
+const { periodLabel, data, totalCount, totalExpense } = Astro.props;
+const fmt = (n: number) =>
+	n.toLocaleString("zh-CN", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	});
+const PAGE_SIZE = 6;
+const totalPages = Math.max(1, Math.ceil((data.length || 1) / PAGE_SIZE));
+const icons: Record<string, string> = {
+	食品酒水: "🥧",
+	居家生活: "🏠",
+	交流通讯: "📡",
+	餐饮: "🍜",
+	交通: "🚌",
+	住房: "🏠",
+	游戏: "🎮",
+	奶茶: "🧋",
+	宠物: "🐾",
+	应用软件: "📱",
+	其他支出: "📦",
+	日用: "🧻",
+	生活服务: "🧰",
+};
+---
+<div class="rank-card bill-pager-card" data-pager="expense" data-total={data.length} data-pages={totalPages}>
+  <div class="rank-head">
+    <h3 class="rank-title">{periodLabel}分类支出排行</h3>
+    <span class="rank-sub">记账笔数 {totalCount} &nbsp; 总支出 {fmt(totalExpense)}</span>
+  </div>
+  <div class="rank-list bill-pager-list">
+    {data.length===0 ? <p class="rank-empty">暂无支出</p> :
+      data.map((item, idx) => (
+        <div class="rank-row bill-pager-item" data-idx={idx}>
+          <span class="bill-rank-num">{idx+1}</span>
+          <span class="rank-icon">{icons[item.category] ?? "🧾"}</span>
+          <div class="rank-main">
+            <div class="rank-cat">{item.category}</div>
+            <div class="rank-cat-sub">支出类别</div>
+          </div>
+          <div class="rank-amounts">
+            <span>记账笔数 {item.count}</span>
+            <span>{item.amount < 0 ? "退款抵减" : "净支出"} <b class="rank-amt">{fmt(Math.abs(item.amount))}</b></span>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  {totalPages > 1 && (
+    <BillPagination
+      totalPages={totalPages}
+      totalItems={data.length}
+      itemLabel="类"
+      inputId="expense-page-jump"
+      ariaLabel="分类支出排行分页"
+    />
+  )}
+</div>
+<script is:inline>
+(function(){
+  const pageSize = 6;
+  function init(root){
+    if(!root || root.dataset.pagerInit==="1") return;
+    const items = Array.from(root.querySelectorAll('.bill-pager-item'));
+    const pages = Math.max(1, Math.ceil(items.length / pageSize));
+    if(pages <= 1) return;
+    let cur = 1;
+    const pager = root.querySelector('[data-bill-pagination]');
+    const info = pager?.querySelector('[data-bill-page-indicator]');
+    const jumpForm = pager?.querySelector('[data-bill-page-jump-form]');
+    const jumpInput = pager?.querySelector('[data-bill-page-jump-input]');
+    const btns = Array.from(pager?.querySelectorAll('[data-bill-page]') ?? []);
+    const totalItems = Number(pager?.dataset.totalItems) || items.length;
+    const itemLabel = pager?.dataset.itemLabel || '项';
+    function render(){
+      items.forEach((el, i)=>{
+        const p = Math.floor(i / pageSize) + 1;
+        el.hidden = p !== cur;
+      });
+      if(info) info.textContent = `第 ${cur} / ${pages} 页 · 共 ${totalItems} ${itemLabel}`;
+      if(jumpInput instanceof HTMLInputElement){
+        jumpInput.max = String(pages);
+        jumpInput.placeholder = String(cur);
+        jumpInput.setAttribute('aria-valuemax', String(pages));
+        jumpInput.setAttribute('aria-valuenow', String(cur));
+      }
+      btns.forEach(b=>{
+        const isPrevious = b.dataset.billPage === 'prev';
+        b.disabled = (isPrevious && cur === 1) || (!isPrevious && cur === pages);
+        b.setAttribute('aria-disabled', String(b.disabled));
+      });
+    }
+    pager?.addEventListener('click', event=>{
+      const button = event.target instanceof Element
+        ? event.target.closest('button[data-bill-page]')
+        : null;
+      if(!button || button.disabled) return;
+      cur = Math.max(1, Math.min(pages, cur + (button.dataset.billPage === 'next' ? 1 : -1)));
+      render();
+    });
+    jumpForm?.addEventListener('submit', event=>{
+      event.preventDefault();
+      if(!(jumpInput instanceof HTMLInputElement)) return;
+      const value = Number.parseInt(jumpInput.value, 10);
+      if(!Number.isFinite(value)){
+        jumpInput.focus();
+        return;
+      }
+      jumpInput.value = '';
+      cur = Math.min(Math.max(value, 1), pages);
+      render();
+    });
+    root.dataset.pagerInit="1";
+    render();
+  }
+  function scan(){ document.querySelectorAll('[data-pager=\"expense\"]').forEach(init); }
+  scan();
+  document.addEventListener('swup:content:replaced', scan);
+})();
+</script>
+<style>
+@reference "../../styles/main.css";
+.rank-card{ background:#fff; border:1px solid oklch(0 0 0 / 0.06); border-radius:0.75rem; padding:0.7rem 0.85rem 0.55rem; height:25rem; display:flex; flex-direction:column; }
+:root.dark .rank-card{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.08); }
+.rank-head{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; margin-bottom:0.5rem; }
+.rank-title{ font-size:0.82rem; font-weight:700; white-space:nowrap; }
+:root.dark .rank-title{ color: oklch(0.90 0 0); }
+.rank-sub{ font-size:0.62rem; color:var(--guestbook-muted); white-space:nowrap; }
+.rank-list{ display:flex; flex-direction:column; flex:1; min-height:17.2rem; }
+.bill-rank-num{ font-size:0.72rem; color:var(--guestbook-muted); text-align:center; }
+.rank-row{ display:grid; grid-template-columns:1rem 1.5rem 1fr auto; gap:0.5rem; align-items:center; padding:0.58rem 0; border-bottom:1px solid oklch(0 0 0 / 0.06); }
+:root.dark .rank-row{ border-color: oklch(1 0 0 / 0.06); }
+.rank-row:last-child{ border-bottom:none; }
+.rank-icon{ width:1.5rem; height:1.5rem; display:flex; align-items:center; justify-content:center; background:#fef9ec; border:1px solid #fef3c7; border-radius:0.4rem; font-size:0.85rem; }
+:root.dark .rank-icon{ background: oklch(0.22 0.6 80 / 0.15); border-color: transparent; }
+.rank-main{ min-width:0; }
+.rank-cat{ font-size:0.78rem; font-weight:600; }
+:root.dark .rank-cat{ color: oklch(0.92 0 0); }
+.rank-cat-sub{ font-size:0.62rem; color:var(--guestbook-muted); }
+.rank-amounts{ display:flex; flex-direction:column; align-items:flex-end; font-size:0.62rem; color:var(--guestbook-muted); gap:0.1rem; }
+.rank-amt{ color:var(--primary); font-weight:700; }
+.rank-empty{ font-size:0.78rem; color:var(--guestbook-muted); text-align:center; padding:0.6rem 0; }
+@media (max-width: 640px){
+  .rank-card{ height:auto; min-height:25rem; }
+  .rank-list{ flex:0 0 auto; min-height:0; }
+}
+</style>

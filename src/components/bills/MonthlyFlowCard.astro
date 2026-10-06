@@ -1,0 +1,317 @@
+---
+import BillPagination from "./BillPagination.astro";
+
+interface FlowEntry {
+	category: string;
+	subcategory: string;
+	time?: string;
+	amount: number;
+	type: string;
+}
+
+interface FlowDay {
+	key: string;
+	label: string;
+	income: number;
+	expense: number;
+	entries: FlowEntry[];
+}
+
+interface Props {
+	days: FlowDay[];
+}
+
+const { days } = Astro.props;
+const DAYS_PER_PAGE = 2;
+const totalPages = Math.max(1, Math.ceil(days.length / DAYS_PER_PAGE));
+const totalEntries = days.reduce((total, day) => total + day.entries.length, 0);
+const fmt = (n: number) =>
+	n.toLocaleString("zh-CN", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	});
+const icons: Record<string, string> = {
+	餐饮: "🍜",
+	餐饮美食: "🍜",
+	伙食支出: "🍚",
+	食品酒水: "🥧",
+	购物: "🛍️",
+	日用: "🧻",
+	日用百货: "🧻",
+	交通: "🚌",
+	交通出行: "🚌",
+	住房: "🏠",
+	居家生活: "🏠",
+	应用软件: "📱",
+	生活服务: "🧰",
+	生活费支出: "🏠",
+	工资: "💼",
+	职业收入: "💼",
+	退款: "↩️",
+	还贷: "🏦",
+	其他支出: "📦",
+	其他收入: "➕",
+};
+---
+
+<section class="flow-card" aria-labelledby="flow-title" data-flow-card data-page-size={DAYS_PER_PAGE} data-total-pages={totalPages}>
+	<div class="flow-head">
+		<h3 id="flow-title" class="flow-title">本月流水</h3>
+	</div>
+	{days.length === 0 ? (
+		<p class="flow-empty">本月还没有收支记录</p>
+	) : (
+		<div class="flow-days">
+			{days.map((day, dayIndex) => (
+				<section class="flow-day" data-flow-day={dayIndex} aria-label={day.label}>
+					<div class="flow-day-head">
+						<h4 class="flow-day-title">{day.label}</h4>
+						<p class="flow-day-totals">
+							<span>支 ¥{fmt(Math.abs(day.expense))}</span>
+							<span>收 ¥{fmt(day.income)}</span>
+						</p>
+					</div>
+					<div class="flow-entries">
+						{day.entries.map((entry) => (
+							<div class="flow-entry">
+								<span class:list={["flow-icon", `flow-icon-${entry.type}`]} aria-hidden="true">
+									{icons[entry.category] ?? "🧾"}
+								</span>
+								<div class="flow-entry-main">
+									<p class="flow-entry-name">
+										<span>{entry.category}</span>
+										{entry.subcategory && <span class="flow-entry-sub"> · {entry.subcategory}</span>}
+									</p>
+									{entry.time && <time class="flow-entry-time">{entry.time}</time>}
+								</div>
+								<span class:list={["flow-amount", `flow-amount-${entry.type}`]}>
+									{entry.type === "expense" ? "−" : "+"}{fmt(entry.amount)}
+								</span>
+							</div>
+						))}
+					</div>
+				</section>
+			))}
+		</div>
+	)}
+	{totalPages > 1 && (
+		<BillPagination
+			totalPages={totalPages}
+			totalItems={totalEntries}
+			itemLabel="笔"
+			inputId="flow-page-jump"
+			ariaLabel="本月流水分页"
+		/>
+	)}
+</section>
+
+<script is:inline>
+	(function () {
+		function init(root) {
+			if (!root || root.dataset.flowInit === "1") return;
+			root.dataset.flowInit = "1";
+			const days = Array.from(root.querySelectorAll("[data-flow-day]"));
+			const pageSize = Number(root.dataset.pageSize) || 2;
+			const pages = Math.max(1, Math.ceil(days.length / pageSize));
+			const pager = root.querySelector("[data-bill-pagination]");
+			if (!pager) return;
+			const status = pager.querySelector("[data-bill-page-indicator]");
+			const jumpForm = pager.querySelector("[data-bill-page-jump-form]");
+			const jumpInput = pager.querySelector("[data-bill-page-jump-input]");
+			const buttons = Array.from(pager.querySelectorAll("[data-bill-page]"));
+			const totalItems = Number(pager.dataset.totalItems) || 0;
+			const itemLabel = pager.dataset.itemLabel || "项";
+			let page = 1;
+
+			function render() {
+				days.forEach((day, index) => {
+					day.hidden = Math.floor(index / pageSize) + 1 !== page;
+				});
+				if (status) status.textContent = `第 ${page} / ${pages} 页 · 共 ${totalItems} ${itemLabel}`;
+				if (jumpInput instanceof HTMLInputElement) {
+					jumpInput.max = String(pages);
+					jumpInput.placeholder = String(page);
+					jumpInput.setAttribute("aria-valuemax", String(pages));
+					jumpInput.setAttribute("aria-valuenow", String(page));
+				}
+				buttons.forEach((button) => {
+					const isPrevious = button.dataset.billPage === "prev";
+					button.disabled = (isPrevious && page === 1) || (!isPrevious && page === pages);
+					button.setAttribute("aria-disabled", String(button.disabled));
+				});
+			}
+
+			pager.addEventListener("click", (event) => {
+				const button = event.target instanceof Element
+					? event.target.closest("button[data-bill-page]")
+					: null;
+				if (!button || button.disabled) return;
+				page = Math.max(1, Math.min(pages, page + (button.dataset.billPage === "next" ? 1 : -1)));
+				render();
+			});
+			jumpForm?.addEventListener("submit", (event) => {
+				event.preventDefault();
+				if (!(jumpInput instanceof HTMLInputElement)) return;
+				const value = Number.parseInt(jumpInput.value, 10);
+				if (!Number.isFinite(value)) {
+					jumpInput.focus();
+					return;
+				}
+				jumpInput.value = "";
+				page = Math.min(Math.max(value, 1), pages);
+				render();
+			});
+			render();
+		}
+
+		function scan() {
+			document.querySelectorAll("[data-flow-card]").forEach(init);
+		}
+		scan();
+		document.addEventListener("swup:content:replaced", scan);
+	})();
+</script>
+
+<style>
+	@reference "../../styles/main.css";
+	.flow-card {
+		background: #fff;
+		border: 1px solid oklch(0 0 0 / 0.06);
+		border-radius: 0.75rem;
+		padding: 0.8rem 0.95rem 0.65rem;
+	}
+	:global(:root.dark) .flow-card {
+		background: oklch(0.16 0 0 / 0.86);
+		border-color: oklch(1 0 0 / 0.08);
+	}
+	.flow-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 0.4rem;
+	}
+	.flow-title {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 700;
+	}
+	:global(:root.dark) .flow-title,
+	:global(:root.dark) .flow-day-title,
+	:global(:root.dark) .flow-entry-name {
+		color: oklch(0.9 0 0);
+	}
+	.flow-day + .flow-day {
+		margin-top: 0.38rem;
+	}
+	.flow-day-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.28rem 0 0.18rem;
+	}
+	.flow-day-title {
+		margin: 0;
+		font-size: 0.74rem;
+		font-weight: 650;
+	}
+	.flow-day-totals {
+		display: flex;
+		gap: 0.5rem;
+		margin: 0;
+		font-size: 0.59rem;
+		color: var(--guestbook-muted);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+	.flow-entries {
+		display: flex;
+		flex-direction: column;
+	}
+	.flow-entry {
+		display: grid;
+		grid-template-columns: 1.55rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.4rem 0;
+		border-bottom: 1px solid oklch(0 0 0 / 0.055);
+	}
+	:global(:root.dark) .flow-entry {
+		border-color: oklch(1 0 0 / 0.06);
+	}
+	.flow-entry:last-child {
+		border-bottom: 0;
+	}
+	.flow-icon {
+		width: 1.45rem;
+		height: 1.45rem;
+		display: grid;
+		place-items: center;
+		border: 1px solid oklch(0.82 0.08 85 / 0.42);
+		border-radius: 0.42rem;
+		background: oklch(0.97 0.025 85 / 0.62);
+		font-size: 0.77rem;
+	}
+	:global(:root.dark) .flow-icon {
+		border-color: transparent;
+		background: oklch(1 1 0 / 0.07);
+	}
+	.flow-icon-income {
+		background: oklch(0.97 0.025 25 / 0.65);
+		border-color: oklch(0.82 0.09 25 / 0.35);
+	}
+	.flow-icon-refund {
+		background: oklch(0.97 0.025 295 / 0.65);
+		border-color: oklch(0.8 0.09 295 / 0.35);
+	}
+	.flow-entry-main {
+		min-width: 0;
+	}
+	.flow-entry-name {
+		overflow: hidden;
+		margin: 0;
+		font-size: 0.72rem;
+		font-weight: 600;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.flow-entry-sub {
+		font-weight: 500;
+		color: var(--guestbook-muted);
+	}
+	.flow-entry-time {
+		display: block;
+		margin-top: 0.06rem;
+		font-size: 0.58rem;
+		line-height: 1.2;
+		color: var(--guestbook-muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.flow-amount {
+		font-size: 0.73rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+	.flow-amount-expense,
+	.flow-amount-income,
+	.flow-amount-refund {
+		color: var(--primary);
+	}
+	.flow-empty {
+		margin: 1rem 0;
+		text-align: center;
+		font-size: 0.72rem;
+		color: var(--guestbook-muted);
+	}
+	@media (max-width: 520px) {
+		.flow-card {
+			padding-right: 0.75rem;
+			padding-left: 0.75rem;
+		}
+		.flow-day-totals {
+			gap: 0.32rem;
+			font-size: 0.55rem;
+		}
+	}
+</style>

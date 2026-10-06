@@ -43,13 +43,20 @@ const normalizePath = (path: string) => {
 
 const currentPath = normalizePath(Astro.url.pathname);
 
-const isLinkActive = (item: NavBarLink) => {
-	if (item.external || !item.url || item.url === "#") return false;
+const getLinkActivePaths = (item: NavBarLink) => {
+	if (item.external) return [];
 
-	const itemPath = normalizePath(item.url);
-	if (itemPath === "/") return currentPath === "/";
-	return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
+	return [
+		...(item.url && item.url !== "#" ? [item.url] : []),
+		...(item.activePaths ?? []),
+	].map(normalizePath);
 };
+
+const isLinkActive = (item: NavBarLink) =>
+	getLinkActivePaths(item).some((itemPath) => {
+		if (itemPath === "/") return currentPath === "/";
+		return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
+	});
 
 const isActive =
 	isLinkActive(processedLink) ||
@@ -73,13 +80,9 @@ const symbolMap: Record<string, string> = {
 const getNavSymbol = (item: NavBarLink) => symbolMap[item.url] || "";
 
 const activePaths = [
-	processedLink.url && processedLink.url !== "#" && !processedLink.external
-		? normalizePath(processedLink.url)
-		: null,
-	...(processedLink.children
-		?.filter((child) => !child.external && child.url && child.url !== "#")
-		.map((child) => normalizePath(child.url)) ?? []),
-].filter(Boolean);
+	...getLinkActivePaths(processedLink),
+	...(processedLink.children?.flatMap(getLinkActivePaths) ?? []),
+];
 ---
 
 <div
@@ -126,6 +129,7 @@ const activePaths = [
 						href={child.external ? child.url : url(child.url)}
 						target={child.external ? "_blank" : undefined}
 						isActive={isLinkActive(child)}
+						navActivePaths={getLinkActivePaths(child).join("|")}
 						isLast={index === (processedLink.children?.length || 0) - 1}
 						class:list={["dropdown-item h-10", isLinkActive(child) && "dropdown-item-active"]}
 					>

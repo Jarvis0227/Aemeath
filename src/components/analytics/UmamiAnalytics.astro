@@ -2,6 +2,7 @@
 interface Props {
 	websiteId: string;
 	scriptUrl?: string;
+	hostUrl?: string;
 	replaysScriptUrl?: string;
 	trackOutboundLinks?: boolean;
 	collectWebVitals?: boolean;
@@ -18,6 +19,7 @@ interface Props {
 const {
 	websiteId,
 	scriptUrl,
+	hostUrl,
 	replaysScriptUrl,
 	trackOutboundLinks = true,
 	collectWebVitals = false,
@@ -38,6 +40,7 @@ const replaysBlockSelector = replays?.blockSelector?.trim();
 	define:vars={{
 		websiteId,
 		scriptUrl: scriptUrl || "",
+		hostUrl: hostUrl || "",
 		replaysScriptUrl: replaysScriptUrl || "",
 		collectWebVitals,
 		replaysEnabled,
@@ -75,6 +78,7 @@ const replaysBlockSelector = replays?.blockSelector?.trim();
 
 		loadAnalyticsScript(scriptUrl, {
 			"data-website-id": websiteId,
+			"data-host-url": hostUrl || undefined,
 			"data-performance": collectWebVitals ? "true" : undefined,
 		});
 

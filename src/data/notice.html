@@ -603,30 +603,46 @@
     <div class="notice-shell">
       <aside class="notice-aside">
         <section class="notice-hero">
-          <span class="notice-hero-kicker">UPDATE / 2026.9.6</span>
-          <h1>2026.9.6 上架工具更新公告</h1>
-          <p>本次汇总 8.11 之后的型号表、做表、标题兼容、进度恢复、旧链接折扣、图片参数联动和发布安全更新。</p>
+          <span class="notice-hero-kicker">UPDATE / 2026.9.22-1</span>
+          <h1>2026.9.22 上架工具更新公告</h1>
+          <p>汇总 9.17 之后的多店铺方案状态、历史记录日志、批次显示和型号资料更新，重点让“当前店铺用的是什么配置”和“这次到底上了哪些组”都能被准确核对。</p>
           <div class="notice-version">
             <span>公告版本</span>
-            <strong>2026-09-06</strong>
+            <strong>2026-09-22-1</strong>
           </div>
         </section>
 
         <nav class="notice-nav" aria-label="公告目录">
           <p class="notice-nav-title">快速查看</p>
-          <a href="#latest-0906-summary" data-section="summary"><i></i>本次更新</a>
-          <a href="#latest-0906-models" data-section="sheet-maker"><i></i>型号表与做表</a>
-          <a href="#latest-0906-title" data-section="bulk-import"><i></i>标题与店铺</a>
-          <a href="#latest-0906-discount" data-section="universal"><i></i>旧链接折扣</a>
-          <a href="#latest-0906-state" data-section="interface"><i></i>进度与稳定性</a>
-          <a href="#latest-0906-image" data-section="store"><i></i>图片参数联动</a>
-          <a href="#latest-0906-checklist" data-section="checklist"><i></i>更新检查</a>
+          <a href="#latest-0922-summary" data-section="summary"><i></i>本次更新</a>
+          <a href="#latest-0922-store" data-section="sheet-maker"><i></i>店铺卡片与方案</a>
+          <a href="#latest-0922-history" data-section="bulk-import"><i></i>历史记录与日志</a>
+          <a href="#latest-0922-catalog" data-section="universal"><i></i>型号表与 SKU</a>
+          <a href="#latest-0922-howto" data-section="interface"><i></i>使用教程</a>
+          <a href="#latest-0922-safety" data-section="store"><i></i>安全核对</a>
+          <a href="#latest-0922-checklist" data-section="checklist"><i></i>更新检查</a>
         </nav>
 
         <details class="notice-history">
           <summary>历史公告</summary>
           <div class="history-card">
-            <button class="history-entry active" type="button" data-notice-button="2026-09-06" onclick="showNoticeVersion('2026-09-06')">
+            <button class="history-entry active" type="button" data-notice-button="2026-09-22-1" onclick="showNoticeVersion('2026-09-22-1')">
+              <strong>2026.9.22 更新公告</strong>
+              <span>店铺方案状态、历史日志批次、型号表与 SKU 资料更新</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-09-17-1" onclick="showNoticeVersion('2026-09-17-1')">
+              <strong>2026.9.17-1 重大 BUG 修复</strong>
+              <span>表格批次与线上变种组号精确核对，错配时停止</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-09-17" onclick="showNoticeVersion('2026-09-17')">
+              <strong>2026.9.17 多店铺与图片兼容更新</strong>
+              <span>多店铺分开上架、目录识别、PNG 兼容和失败恢复</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-09-16" onclick="showNoticeVersion('2026-09-16')">
+              <strong>2026.9.16 9.6 之后更新汇总</strong>
+              <span>只读统计、旧链接折扣、店铺方案复制、分批上架和安装准备</span>
+            </button>
+            <button class="history-entry" type="button" data-notice-button="2026-09-06" onclick="showNoticeVersion('2026-09-06')">
               <strong>2026.9.6 8.11 之后更新汇总</strong>
               <span>型号表、标题兼容、进度恢复、旧链接折扣、图片参数联动和发布稳定性</span>
             </button>
@@ -670,7 +686,554 @@
         </details>
       </aside>
 
-      <article class="notice-main notice-view" data-notice-version="2026-09-06">
+      <article class="notice-main notice-view" data-notice-version="2026-09-22-1">
+        <p class="notice-lead">9.22 公告汇总 9.17 之后已经落地的更新：多店铺选择和配置状态更清楚，历史记录按运行日志显示真实批次，PH / ID 型号资料入口保持统一。重点不是增加一个“看起来像”的范围，而是让页面、日志、Excel 和实际配置可以互相核对。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">多店铺卡片选择</span>
+          <span class="notice-tag">店铺方案状态</span>
+          <span class="notice-tag">历史记录日志</span>
+          <span class="notice-tag">真实批次组号</span>
+          <span class="notice-tag">PH / ID 型号表</span>
+          <span class="notice-tag">SKU 规则同步</span>
+          <span class="notice-tag">安全核对</span>
+        </div>
+
+        <section class="notice-section" id="latest-0922-summary">
+          <div class="section-head">
+            <h2>一、9.17 之后的更新总览</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>多店铺选择和状态显示继续完善。</strong> 店铺列表现在可以直接点击整张店铺卡片选择，并明确显示是否已有绑定方案、方案名称以及当前使用的模板和通用类型。</span></li>
+            <li><span class="num">2</span><span><strong>店铺方案摘要改为显示当前配置。</strong> 一个方案可以保存多个模板，但配置步骤会优先显示当前店铺正在使用的模板和通用类型，减少“方案名称看对了、实际模板看错了”的风险。</span></li>
+            <li><span class="num">3</span><span><strong>历史记录批次改为读取运行日志。</strong> 历史页优先读取完整 <code>events.ndjson</code> 中的“表格第 N 组汇总”，显示 Excel 日志里真实的组号清单，不再用固定数量推算结束组号。</span></li>
+            <li><span class="num">4</span><span><strong>历史记录继续保留商品级证据。</strong> 每个商品可以查看标题、品牌、产品图、变种图、视频、截图、发布结果和执行步骤，便于上架后回查，而不是只看成功数量。</span></li>
+            <li><span class="num">5</span><span><strong>PH / ID 型号资料入口整理。</strong> 菲律宾当前使用 9.6 型号表，印尼使用 8.19 型号表；旧的菲律宾 8.12 型号表已移除，做表和 SKU 修复应使用工具当前显示的资料。</span></li>
+            <li><span class="num">6</span><span><strong>Shopee 与 TikTok Shop 继续保持独立。</strong> 店铺方案、模板、Worker、SSE、历史平台标识和型号规则不能交叉使用，选择店铺或模板时要先确认当前平台。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0922-store">
+          <div class="section-head">
+            <h2>二、多店铺卡片与店铺方案状态</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>9.17 的多店铺分开上架规则继续保留，9.22 重点把选择和确认状态做得更清楚。店铺卡片本身就是选择控件，已绑定店铺会显示绑定方案，进入配置步骤后会显示该方案当前真正使用的模板和通用类型。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>整张卡片可选择</h3>
+              <p>点击店铺卡片即可切换选择状态，也支持键盘 Enter / 空格操作。不要只点击卡片中的小区域来判断是否选中。</p>
+            </div>
+            <div class="feature-box">
+              <h3>已绑定状态更明确</h3>
+              <p>已绑定店铺会显示“已绑定方案”和方案名称；首次配置店铺会显示“首次配置”，避免把未绑定店铺当成已有配置。</p>
+            </div>
+            <div class="feature-box">
+              <h3>当前配置直接可见</h3>
+              <p>配置步骤会显示当前模板和通用类型。方案中保存多个模板时，仍以当前选中的模板为准，不要只看方案名称。</p>
+            </div>
+          </div>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>先确认平台</strong>先确认当前是 Shopee 还是 TikTok Shop，再选择对应的店铺方案。</div>
+            <div class="tutorial-step"><strong>选择店铺卡片</strong>确认店铺名称和 Shop ID 后，再点击整张卡片进行选择。</div>
+            <div class="tutorial-step"><strong>核对绑定方案</strong>已绑定店铺检查方案名称；首次配置店铺不要直接套用其他店铺的配置。</div>
+            <div class="tutorial-step"><strong>核对当前模板</strong>进入配置步骤后检查当前模板、通用类型、品牌开关、图片目录和 Excel 目录。</div>
+            <div class="tutorial-step"><strong>逐店确认范围</strong>每家店铺单独确认起始组和本次组数，检查首组、末组预览。</div>
+            <div class="tutorial-step"><strong>按队列执行</strong>多店铺任务仍然串行执行，一家店铺完成后才进入下一家。</div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="latest-0922-history">
+          <div class="section-head">
+            <h2>三、历史记录现在以日志为准</h2>
+            <span class="section-index">03</span>
+          </div>
+          <p>历史记录中的批次标题不再根据商品编号猜测。服务端会读取本次运行的完整日志，解析“表格第 N 组汇总”事件，再把日志中的完整组号清单对应到商品明细。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>显示 Excel 日志原值</h3>
+              <p>如果日志记录的是 <code>第2组：GG606-GG610.xlsx</code>，历史页会显示 <code>第2组：GG606-GG610</code>，不会擅自扩展成 GG613。</p>
+            </div>
+            <div class="feature-box">
+              <h3>完整日志不怕前面被截断</h3>
+              <p>历史详情展示的最近日志仍用于查看，但批次汇总解析会读取整个运行日志，早期批次也能被正确识别。</p>
+            </div>
+            <div class="feature-box">
+              <h3>商品明细继续可追溯</h3>
+              <p>点击商品可以继续查看实际 groupId、品牌、标题、素材路径、截图和执行步骤；批次标题和商品明细分开核对。</p>
+            </div>
+          </div>
+          <div class="notice-warning"><strong>看到组号不一致时：</strong>先打开右侧执行记录，确认“表格第 N 组汇总”和“表格↔线上组号精确对齐”两条日志；不要只根据标题或图片文件名判断。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0922-catalog">
+          <div class="section-head">
+            <h2>四、PH / ID 型号表与 SKU 规则</h2>
+            <span class="section-index">04</span>
+          </div>
+          <p>型号表是“上架表格一键制作”和“批量修改错误 SKU”的共同资料源。9.22 已整理资料入口，避免旧型号表继续被误选。</p>
+          <div class="notice-table-wrap">
+            <table class="notice-table">
+              <thead><tr><th>地区</th><th>当前资料</th><th>处理方式</th><th>注意事项</th></tr></thead>
+              <tbody>
+                <tr><td>菲律宾 PH</td><td><code>model-ph-2026-09-06.xls</code></td><td>继续用于做表和 SKU 修复</td><td>旧的 <code>model-ph-2026-08-12.xls</code> 已移除</td></tr>
+                <tr><td>印尼 ID</td><td><code>model-id-2026-08-19.xls</code></td><td>继续用于做表和 SKU 修复</td><td>按工具内地区选择，不要手动混用 PH / ID</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <ul class="checklist">
+            <li>修改错误 SKU 前，手动选择正确地区、类型和品牌。</li>
+            <li>生成上架表格前，确认价格档和型号表来自同一地区。</li>
+            <li>看到未知 Model、冲突型号或组号不唯一时，保持安全暂停，不要强行导出或写入。</li>
+          </ul>
+        </section>
+
+        <section class="notice-section" id="latest-0922-howto">
+          <div class="section-head">
+            <h2>五、9.22 更新后的使用教程</h2>
+            <span class="section-index">05</span>
+          </div>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>重启工具</strong>更新代码或型号表后先完整重启工具，再打开 BigSeller 页面。</div>
+            <div class="tutorial-step"><strong>检查店铺方案</strong>多店铺模式中逐家查看“已绑定方案”、当前模板和通用类型。</div>
+            <div class="tutorial-step"><strong>检查数据目录</strong>确认当前店铺使用的 Excel 与图库目录属于同一批数据，不要只看目录名称。</div>
+            <div class="tutorial-step"><strong>开始少量测试</strong>第一次使用新方案或新型号表时，先选择 1 个店铺、1 个组进行验证。</div>
+            <div class="tutorial-step"><strong>打开历史记录</strong>上架完成后从历史记录打开对应运行，检查批次标题、商品明细和执行日志。</div>
+            <div class="tutorial-step"><strong>以日志复核</strong>组号以“表格第 N 组汇总”和“表格↔线上组号精确对齐”为准，截图只作为辅助证据。</div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="latest-0922-safety">
+          <div class="section-head">
+            <h2>六、这次更新后的安全要求</h2>
+            <span class="section-index">06</span>
+          </div>
+          <ul class="checklist">
+            <li>不要把店铺方案名称当作当前实际模板，必须核对配置步骤里的当前模板和通用类型。</li>
+            <li>不要根据历史页的商品数量推断 Excel 组数，批次范围以运行日志汇总为准。</li>
+            <li>看到“表格↔线上组号未对齐”、编辑页身份无法确认或型号表冲突时，保持任务暂停。</li>
+            <li>多店铺任务失败或停止后，先核对 BigSeller 实际发布状态，再恢复剩余店铺，避免重复上架。</li>
+            <li>Shopee 与 TikTok Shop 的配置和状态完全独立，不要用另一平台的模板、店铺方案或型号表替代。</li>
+          </ul>
+        </section>
+
+        <section class="notice-section" id="latest-0922-checklist">
+          <div class="section-head">
+            <h2>七、完成更新后的检查清单</h2>
+            <span class="section-index">07</span>
+          </div>
+          <ul class="checklist">
+            <li>重启后打开公告，确认版本显示为 <code>2026-09-22-1</code>。</li>
+            <li>多店铺模式中确认整张店铺卡片可以选择，已绑定方案和当前模板显示正确。</li>
+            <li>确认 PH / ID 工具加载的是最新型号资料，旧 PH 8.12 不再作为入口。</li>
+            <li>上架 1 个小批次后打开历史记录，确认批次标题与日志中的 Excel 组号一致。</li>
+            <li>抽查至少 1 个商品的标题、品牌、产品图、变种图、截图和执行记录。</li>
+            <li>如有失败，先看日志和 BigSeller 实际状态，不要直接重复开始整批任务。</li>
+          </ul>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-09-17-1" hidden>
+        <p class="notice-lead">9.17-1 是一次重大安全修复，重点解决“表格里的产品组”和“线上编辑页变种组”不是同一批，却继续使用图片的问题。现在表格批次清单和线上变种顺序必须逐项完全一致；任何差异都会在删除旧图、选择图片和上传图片之前停止。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">重大 BUG 修复</span>
+          <span class="notice-tag">表格组号核对</span>
+          <span class="notice-tag">线上变种顺序</span>
+          <span class="notice-tag">错配立即停止</span>
+          <span class="notice-tag">编辑页加载等待</span>
+          <span class="notice-tag">Shopee / TK 同步</span>
+        </div>
+
+        <section class="notice-section" id="latest-0917-1-summary">
+          <div class="section-head">
+            <h2>一、9.17-1 修复内容</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>每份 Excel 表格单独记录组号清单。</strong> 例如第一批表格会保存为 <code>[PA001, PA002, PA003, PA004, PA005, PA006]</code>，不会只记一个搜索关键词。</span></li>
+            <li><span class="num">2</span><span><strong>编辑页读取线上变种顺序后做全等比较。</strong> 组号数量、每个组号和排列顺序都必须与表格一致，不能少一个、多一个、重复或换顺序。</span></li>
+            <li><span class="num">3</span><span><strong>发现任何不一致立即停止。</strong> 停止发生在旧图片删除、产品图选择、变种图上传之前，不会继续“猜”对应关系。</span></li>
+            <li><span class="num">4</span><span><strong>Shopee 和 TK 都执行同样的安全规则。</strong> 表格解析复用设置页面的组号识别逻辑，避免设置里识别一套、正式上架又按另一套规则猜测。</span></li>
+            <li><span class="num">5</span><span><strong>编辑页标题异步加载不再被过早判空。</strong> 打开编辑页后会等待标题输入框真实回填，最多等待 15 秒；仍然为空才停止确认身份。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0917-1-example">
+          <div class="section-head">
+            <h2>二、重叠批次会怎样处理</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>如果出现下面这种不建议使用的表格安排，系统仍会把两份表格分别记录，但不会把它们强行合并：</p>
+          <div class="notice-table-wrap">
+            <table class="notice-table">
+              <thead>
+                <tr><th>表格批次</th><th>表格记录</th><th>线上核对结果</th><th>处理</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>第 1 组</td><td><code>PA001–PA006</code></td><td>必须完全等于这 6 个组号及顺序</td><td>一致才继续</td></tr>
+                <tr><td>第 2 组</td><td><code>PA001、PA003–PA007</code></td><td>必须完全等于第二份表格的 6 个组号及顺序</td><td>不一致立即停止</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="notice-warning">两份表格都从 <code>PA001</code> 搜索时，线上可能打开同一批商品。第一份表格通过后，第二份表格若读取到的线上顺序仍是第一份，就会因为清单不同而停止，不会把 <code>PA007</code> 自动补进来，也不会错传图片。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0917-1-flow">
+          <div class="section-head">
+            <h2>三、正式上架前的核对顺序</h2>
+            <span class="section-index">03</span>
+          </div>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>读取表格</strong>先按设置页面相同的识别规则记录当前文件中的完整组号和顺序。</div>
+            <div class="tutorial-step"><strong>打开编辑页</strong>进入销售信息或变种信息，连续读取两次，确认线上页面结构稳定。</div>
+            <div class="tutorial-step"><strong>逐项比较</strong>比较表格清单和线上清单的数量、内容与顺序。</div>
+            <div class="tutorial-step"><strong>通过后才处理图片</strong>核对成功后才进入主图、产品图、变种图和发布流程。</div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="latest-0917-1-checklist">
+          <div class="section-head">
+            <h2>四、使用要求</h2>
+            <span class="section-index">04</span>
+          </div>
+          <ul class="checklist">
+            <li>每份 Excel 文件尽量对应唯一的线上搜索组，不要让不同批次使用相同的起始组号。</li>
+            <li>不同批次不要交叉复用、跳号或重叠使用产品组号。</li>
+            <li>看到“表格↔线上组号未对齐”时，先检查 Excel 文件内容、文件名、BigSeller 当前商品和店铺，不要直接重试。</li>
+            <li>看到编辑页标题为空时，工具会先等待页面异步加载；15 秒后仍为空才需要检查 BigSeller 页面或网络状态。</li>
+            <li>修复后首次运行建议只执行 1 个表格批次，并查看日志中的“表格第 N 组汇总”和“表格↔线上组号精确对齐”。</li>
+          </ul>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-09-17" hidden>
+        <p class="notice-lead">本次 9.17 更新围绕“多店铺分开上架”和“文件目录更容易配对”展开。现在可以先从 BigSeller 选择多家店铺，再为每家店铺分别确认店铺配置方案、本地 Excel 数据目录和上架范围，最后按顺序逐家执行。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">多店铺分开上架</span>
+          <span class="notice-tag">店铺配置方案</span>
+          <span class="notice-tag">店铺独立 Excel</span>
+          <span class="notice-tag">逐店确认</span>
+          <span class="notice-tag">PNG 图片兼容</span>
+          <span class="notice-tag">多店铺失败恢复</span>
+          <span class="notice-tag">目录自动识别</span>
+        </div>
+
+        <section class="notice-section" id="latest-0917-summary">
+          <div class="section-head">
+            <h2>一、9.17 更新总览</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>新增多店铺分开上架模式。</strong> 可以一次选择多家 BigSeller 店铺，但每家店铺仍然使用自己的配置、数据目录和上架范围，并按确认顺序串行执行。</span></li>
+            <li><span class="num">2</span><span><strong>店铺配置方案和本地 Excel 分开绑定。</strong> 每家店铺可以选择对应的“店铺配置方案”和本地数据目录，不会因为切换店铺而把另一家店铺的模板或表格混用。</span></li>
+            <li><span class="num">3</span><span><strong>多店铺上架仍然需要逐店确认。</strong> 选择多家店铺后，程序会让你逐个检查具体模板、品牌、图片、标题、数据目录和组范围；保存确认时会同步更新当前店铺对应的上架设置方案。</span></li>
+            <li><span class="num">4</span><span><strong>增加 PNG 图片路径兼容。</strong> 图片扫描、主图、变种图和补充图的本地路径识别支持 PNG，不再要求图片必须是 JPG；Grocico 等使用 PNG 的图库可以继续按原有命名规则读取。</span></li>
+            <li><span class="num">5</span><span><strong>批量上传表格支持多店铺目录识别。</strong> 带店铺名称的数据目录可以和 BigSeller 店铺自动匹配，批量上传表格工具与正式多店铺上架流程的目录配对规则保持一致。</span></li>
+            <li><span class="num">6</span><span><strong>失败或停止后重新开始更安全。</strong> 如果多店铺队列中途失败或停止，重新点击开始上架会优先恢复多店铺入口，保留原上架范围，只处理未完成店铺，已经完成的店铺不会自动重复上架。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0917-multi-store">
+          <div class="section-head">
+            <h2>二、多店铺分开上架</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>多店铺模式用于“同一批任务上不同店铺”，不是把多家店铺合并成一个店铺，也不是批量上传表格。程序会读取当前 BigSeller Shopee 店铺列表，按队列顺序逐家切换和执行。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>每家店铺独立配置</h3>
+              <p>每家店铺都可以选择自己的店铺配置方案、模板、品牌开关、标题和图片参数，并使用自己的本地 Excel 数据目录。</p>
+            </div>
+            <div class="feature-box">
+              <h3>每家店铺独立范围</h3>
+              <p>每家店铺可以单独填写“从第几组开始”和“本次上架多少组”，因此可以做到一家店铺上第 1 组，另一家店铺上第 2 组。</p>
+            </div>
+            <div class="feature-box">
+              <h3>按顺序串行执行</h3>
+              <p>队列不会同时操作多个 BigSeller 店铺，而是完成当前店铺后再进入下一家，降低页面切换、配置串用和登录状态冲突的风险。</p>
+            </div>
+          </div>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>选择多店铺模式</strong>在店铺选择后进入上架模式，选择“多店铺上架”，不要直接进入单店铺设置。</div>
+            <div class="tutorial-step"><strong>勾选 BigSeller 店铺</strong>只勾选本次真正要上架的店铺，确认店铺名称和 Shop ID。</div>
+            <div class="tutorial-step"><strong>选择方案和目录</strong>为当前店铺选择对应的店铺配置方案和本地数据目录。</div>
+            <div class="tutorial-step"><strong>填写组范围</strong>按当前店铺的 Excel 组数填写起始组和本次组数，并检查首组、末组预览。</div>
+            <div class="tutorial-step"><strong>逐店保存确认</strong>每家店铺都要打开具体设置并确认；保存时会同步该店铺对应的上架设置。</div>
+            <div class="tutorial-step"><strong>开始串行上架</strong>全部店铺确认完成后开始，顶部卡片会显示当前店铺以及类似 <code>2/3</code> 的队列进度。</div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="latest-0917-directory">
+          <div class="section-head">
+            <h2>三、店铺数据目录与批量上传</h2>
+            <span class="section-index">03</span>
+          </div>
+          <p>批量上传表格和多店铺正式上架现在都可以识别带店铺名称的数据目录。建议保持目录名称清楚，并让目录中的 Excel 只属于对应店铺，避免同一批表格被错误配对。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>默认数据目录</h3>
+              <p><code>自动上架数据</code> 继续作为默认目录，适合单店铺或没有店铺后缀的通用数据。</p>
+            </div>
+            <div class="feature-box">
+              <h3>店铺数据目录</h3>
+              <p><code>自动上架数据-店铺名</code> 可以让程序按店铺名匹配对应目录，例如每个店铺单独放自己的 Excel 文件。</p>
+            </div>
+            <div class="feature-box">
+              <h3>工具之间规则一致</h3>
+              <p>批量上传表格工具负责连续上传目录中的 Excel；正式多店铺上架则会读取当前店铺绑定的目录和组范围，两者入口不同，不能混淆。</p>
+            </div>
+          </div>
+          <div class="notice-warning">如果店铺名称包含空格、特殊符号或目录名称不完整，自动匹配可能无法确认。遇到未匹配时，请在多店铺配置中手动选择正确的数据目录，不要直接开始任务。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0917-png">
+          <div class="section-head">
+            <h2>四、PNG 图片路径兼容</h2>
+            <span class="section-index">04</span>
+          </div>
+          <p>图库扫描和图片路径解析现在兼容 <code>.jpg</code>、<code>.jpeg</code>、<code>.png</code>、<code>.webp</code>。图片组编号和品牌目录规则不变，只是文件扩展名不再限定为 JPG。</p>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>保持原有命名</strong>继续使用组编号和图片序号命名，例如 <code>PA001-1.png</code>。</div>
+            <div class="tutorial-step"><strong>放入正确品牌目录</strong>PNG 图片仍需放在当前模板和品牌配置对应的图库目录中。</div>
+            <div class="tutorial-step"><strong>检查主图和变种图</strong>开始前确认主图序号、变种图序号和补充图都能找到对应的 PNG 文件。</div>
+            <div class="tutorial-step"><strong>先少量测试</strong>Grocico 或其他 PNG 图库首次使用时，先上 1 个组并检查截图中的产品图和变种图。</div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="latest-0917-retry">
+          <div class="section-head">
+            <h2>五、多店铺失败、停止后的恢复</h2>
+            <span class="section-index">05</span>
+          </div>
+          <p>多店铺队列中途失败或停止后，程序会保留队列状态。下一次点击“开始上架”时，会先检查是否存在未完成的多店铺任务，避免把上一次多店铺任务误当成单店铺任务重新启动。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>已完成店铺不重跑</h3>
+              <p>恢复时会保留已完成店铺的状态，只把失败、停止或尚未执行的店铺带回确认列表。</p>
+            </div>
+            <div class="feature-box">
+              <h3>原范围继续保留</h3>
+              <p>失败店铺会保留原来的店铺配置、数据目录和组范围，重新开始前仍可以逐店检查和微调。</p>
+            </div>
+            <div class="feature-box">
+              <h3>重新开始前人工确认</h3>
+              <p>恢复入口只负责带回任务，不代表平台已经成功发布。请先看运行日志和 BigSeller 实际状态，再确认是否继续。</p>
+            </div>
+          </div>
+          <div class="notice-warning">如果某家店铺已经在 BigSeller 成功发布，但工具在收尾阶段报错，请先核对平台实际商品状态，再决定是否把该店铺标记为完成，避免重复发布。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0917-review">
+          <div class="section-head">
+            <h2>六、逐店确认与店铺卡片</h2>
+            <span class="section-index">06</span>
+          </div>
+          <p>多店铺模式下，顶部店铺卡片会显示正在处理的当前店铺，并显示队列位置，例如 <code>2/3</code>。硅基余额等与当前页面相关的信息会跟随当前店铺显示，避免把队列中的其他店铺误认为当前店铺。</p>
+          <ul class="checklist">
+            <li>确认当前店铺名称、Shop ID 和对应的店铺配置方案。</li>
+            <li>确认当前店铺的模板、品牌开关、图片参数、标题设置和本地 Excel 目录。</li>
+            <li>确认保存确认后，当前店铺对应的店铺上架设置已经同步更新。</li>
+            <li>确认当前店铺的起始组、上架组数和首末组预览。</li>
+            <li>完成一家店铺后再进入下一家，不要在 BigSeller 页面手动切店。</li>
+          </ul>
+        </section>
+
+        <section class="notice-section" id="latest-0917-checklist">
+          <div class="section-head">
+            <h2>七、9.17 更新后的检查建议</h2>
+            <span class="section-index">07</span>
+          </div>
+          <ul class="checklist">
+            <li>更新文件后先完整重启上架工具，再打开多店铺模式。</li>
+            <li>首次使用多店铺时只选择 2 家店铺、每家 1 组进行测试。</li>
+            <li>逐店确认方案、数据目录和范围，确认卡片显示正确的店铺名与 <code>当前序号/总数</code>。</li>
+            <li>Grocico 使用 PNG 时，先检查图片扫描结果和截图，不要只看文件夹里是否存在图片。</li>
+            <li>批量上传表格时确认目录名称能对应 BigSeller 店铺，未匹配目录先手动处理。</li>
+            <li>任务失败或停止后重新开始，先检查已完成店铺和平台实际状态，再确认剩余店铺。</li>
+          </ul>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-09-16" hidden>
+        <p class="notice-lead">9.6 之后到 9.16，本次更新重点从“发布流程稳定”延伸到“上架前检查、旧链接维护、店铺方案复用和分批上架控制”。新增多项只读统计工具，并让一次正式上架可以只处理指定的连续 Excel 组。</p>
+
+        <div class="notice-tag-row">
+          <span class="notice-tag">只读统计工具</span>
+          <span class="notice-tag">Item ID 提取</span>
+          <span class="notice-tag">库存为 0 型号</span>
+          <span class="notice-tag">价格促销价</span>
+          <span class="notice-tag">店铺方案复制</span>
+          <span class="notice-tag">分批上架组范围</span>
+          <span class="notice-tag">安装准备优化</span>
+        </div>
+
+        <section class="notice-section" id="latest-0916-summary">
+          <div class="section-head">
+            <h2>一、9.6 之后的更新总览</h2>
+            <span class="section-index">01</span>
+          </div>
+          <ol class="notice-list">
+            <li><span class="num">1</span><span><strong>新增三项只读检查工具。</strong> 可以从当前 Shopee 店铺和列表筛选中读取 Item ID、SKU 价格/促销价以及库存为 0 的型号，并导出或复制结果。</span></li>
+            <li><span class="num">2</span><span><strong>旧链接折扣继续增强安全判断。</strong> 只读取“折扣”列中的非空 <code>% OFF</code> 数值，全部一致才会统一设置；不一致或无法确认时自动跳过并记录原因。</span></li>
+            <li><span class="num">3</span><span><strong>店铺方案支持复制。</strong> 可以复制一个已保存的整套店铺配置并改名，源店铺不受影响；Shopee 和 TK 仍然完全隔离。</span></li>
+            <li><span class="num">4</span><span><strong>正式上架支持按组分批执行。</strong> 不是“批量上传表格”，而是在正式上架时选择从第几组开始、这次上架多少组，适合把本地 10 组表格分几次上架。</span></li>
+            <li><span class="num">5</span><span><strong>新电脑安装准备更完整。</strong> setup.bat 会处理 Node.js、依赖、Playwright Chromium、浏览器图标和桌面快捷方式，并对关键步骤给出明确结果。</span></li>
+            <li><span class="num">6</span><span><strong>首页与工具入口继续整理。</strong> 统计工具、读取工具和店铺维护能力统一放入“偷懒小工具”与设置面板，减少在列表页和编辑页之间手工查找。</span></li>
+          </ol>
+        </section>
+
+        <section class="notice-section" id="latest-0916-tools">
+          <div class="section-head">
+            <h2>二、三项只读统计工具</h2>
+            <span class="section-index">02</span>
+          </div>
+          <p>这些工具只读取当前已经打开的 BigSeller Shopee 列表页和对应接口，不进入编辑页修改商品。开始前必须在 BigSeller 中选定一个具体店铺，并确认列表筛选范围正确。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>读取 Item ID</h3>
+              <p>读取当前店铺和当前列表筛选结果，自动去重后逐行显示 Item ID，可直接复制；不会下载 Excel、打开编辑页或修改商品。</p>
+            </div>
+            <div class="feature-box">
+              <h3>价格促销价统计</h3>
+              <p>读取每个变种 SKU 的原价和促销价。只要同一 Item 内有一个 SKU 没有促销价，就记录该 Item，并可下载包含明细、去重 Item ID 和失败记录的 Excel。</p>
+            </div>
+            <div class="feature-box">
+              <h3>库存为 0 型号统计</h3>
+              <p>去掉 SKU 末尾颜色后缀后按型号归类，区分全部为 0、同一链接混合库存以及其他链接有库存的情况，并导出型号汇总与 Item 明细。</p>
+            </div>
+          </div>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>选定具体店铺</strong>不要使用“全部店铺”筛选，先在 BigSeller 列表页选择本次要检查的店铺。</div>
+            <div class="tutorial-step"><strong>确认列表筛选</strong>读取 Item ID 和两个统计工具都会使用当前列表筛选条件，先确认状态、关键词和分页范围。</div>
+            <div class="tutorial-step"><strong>打开工具</strong>进入“偷懒小工具”，选择“读取 Item ID”“价格促销价统计”或“库存为0型号统计”。</div>
+            <div class="tutorial-step"><strong>等待扫描完成</strong>扫描过程中不要刷新或跳转 BigSeller 页面；日志会显示列表页、链接和 SKU 的读取进度。</div>
+            <div class="tutorial-step"><strong>复制或下载结果</strong>Item ID 可以直接复制；价格促销价和库存统计完成后下载 Excel 报表。</div>
+            <div class="tutorial-step"><strong>先看失败明细</strong>如果报表存在“读取失败 Item”或“未归类库存行”，先人工核对，不要把不完整报表当成全部商品的最终结论。</div>
+          </div>
+          <div class="notice-warning">库存统计只有在某个 Item 连续 3 次返回空变种时，才会打开编辑页进行只读兜底读取，读取后立即关闭；兜底失败会单独记录，不会修改商品。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0916-discount">
+          <div class="section-head">
+            <h2>三、旧链接折扣继续增强</h2>
+            <span class="section-index">03</span>
+          </div>
+          <p>“批量开启旧链接折扣”针对已经存在的旧链接，和普通“批量开启折扣”是两个工具。它会在列表页打开促销弹窗，按页面现有折扣判断，不会把促销价、限购输入框或其他数字误当成折扣。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>可选先同步产品</h3>
+              <p>工具默认不先同步；开启“开始折扣前先同步产品”后，每个链接会先确认同步成功，再继续读取折扣，同步失败会记录并跳过。</p>
+            </div>
+            <div class="feature-box">
+              <h3>只比较有效非空值</h3>
+              <p>先开启全部变种，再识别“折扣”列。空白值不参与比较；非空值必须是 0–100 的有效数值。</p>
+            </div>
+            <div class="feature-box">
+              <h3>不一致不强行覆盖</h3>
+              <p>全部有效折扣一致时才会批量填写并更新；折扣不一致、无效或完全没有可比较数值时，自动关闭弹窗并记录跳过原因。</p>
+            </div>
+          </div>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>打开 Shopee 列表页</strong>确认当前页面是 BigSeller Shopee 产品列表页，并准备 Item ID。</div>
+            <div class="tutorial-step"><strong>选择旧链接工具</strong>从“偷懒小工具”打开“批量开启旧链接折扣”，不要和普通目标折扣工具混用。</div>
+            <div class="tutorial-step"><strong>输入 Item ID</strong>每行输入一个 ID，数量不限；需要时勾选先同步产品。</div>
+            <div class="tutorial-step"><strong>查看结果状态</strong>重点查看已更新、已跳过和失败数量，以及每个跳过 Item 的具体原因。</div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="latest-0916-store">
+          <div class="section-head">
+            <h2>四、店铺方案支持复制</h2>
+            <span class="section-index">04</span>
+          </div>
+          <p>设置面板中的店铺整套配置现在可以直接复制。复制会建立一个新的保存方案，保留当前平台的模板、品牌开关、标题字段、图片/视频参数和基础上架配置；AI 密钥、AI 端点、本机路径和浏览器目录不会写入或跨店铺复制。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>复制后源店铺不变</h3>
+              <p>复制操作会深拷贝整套配置，新方案改名后独立保存，修改新方案不会回写原店铺。</p>
+            </div>
+            <div class="feature-box">
+              <h3>复制后需要应用</h3>
+              <p>复制成功后会选中新方案，但正式上架前仍要点击“应用店铺”，并确认当前平台和生效方案名称。</p>
+            </div>
+            <div class="feature-box">
+              <h3>Shopee / TK 分开管理</h3>
+              <p>当前打开 Shopee 设置时只显示 Shopee 方案；切到 TK 后使用 TK 自己的方案列表，不能跨平台覆盖。</p>
+            </div>
+          </div>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>打开设置</strong>先切到需要配置的平台，再打开设置面板。</div>
+            <div class="tutorial-step"><strong>选择源店铺</strong>在已保存方案中点选要复制的店铺。</div>
+            <div class="tutorial-step"><strong>点击复制店铺</strong>填写一个不同的新店铺名称并确认复制。</div>
+            <div class="tutorial-step"><strong>应用并复核</strong>点击“应用店铺”，检查模板、品牌开关、图片参数和标题字段后再开始任务。</div>
+          </div>
+        </section>
+
+        <section class="notice-section" id="latest-0916-scope">
+          <div class="section-head">
+            <h2>五、正式上架可以按组分批执行</h2>
+            <span class="section-index">05</span>
+          </div>
+          <p>这次新增的是“正式上架”的组范围选择，不是批量上传表格。对于本地有 10 组上架表格、但想分几次发布的情况，可以在每次点击“开始上架”时选定连续的起始组和本次组数。</p>
+          <div class="feature-grid">
+            <div class="feature-box">
+              <h3>选择起始组和组数</h3>
+              <p>弹窗会显示当前 Excel 驱动模板读取到的总组数，填写“从第几组开始”和“本次上架组数”。组数留空表示从起始组上完剩余全部。</p>
+            </div>
+            <div class="feature-box">
+              <h3>范围会先校验</h3>
+              <p>开始前会预览第一个和最后一个组，并检查是否超出总组数；服务端和 Worker 会再次校验，避免越界或误传。</p>
+            </div>
+            <div class="feature-box">
+              <h3>不会改模板批次配置</h3>
+              <p>本次选择只影响当前运行，不会修改模板里的 <code>groupsPerBatch</code>。Shopee 与 TK 分别读取自己的范围和进度。</p>
+            </div>
+          </div>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>整理 Excel 文件</strong>确认文件名和组编号连续，目录中只保留本次正式上架要读取的表格。</div>
+            <div class="tutorial-step"><strong>点击开始上架</strong>选择正确的平台、店铺和 Excel 驱动模板后，点击正式的“开始上架”。</div>
+            <div class="tutorial-step"><strong>填写本次范围</strong>例如 10 组先填“从第 1 组开始、上架 3 组”，确认预览显示第 1–3 组。</div>
+            <div class="tutorial-step"><strong>下一次接着上</strong>下一次把起始组改成第 4 组，再选择下一段组数，避免和上次重复。</div>
+          </div>
+          <div class="notice-warning">组范围按当前表格读取顺序处理，并且是连续区间。开始前一定要核对预览中的首组、末组和组数；这项功能不会替你判断某组是否已经在线发布。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0916-setup">
+          <div class="section-head">
+            <h2>六、新电脑安装与启动准备</h2>
+            <span class="section-index">06</span>
+          </div>
+          <p>setup.bat 的准备流程已补齐：缺少 Node.js 时优先尝试安装 LTS，随后安装项目依赖和 Playwright Chromium，再准备项目浏览器、图标和桌面快捷方式。图标资源缺失或部分修补失败时会明确提示，不再静默当作成功。</p>
+          <div class="tutorial-grid">
+            <div class="tutorial-step"><strong>首次准备</strong>把项目放到目标电脑后，双击根目录的 <code>setup.bat</code>。</div>
+            <div class="tutorial-step"><strong>允许安装依赖</strong>根据提示等待 Node.js、npm 依赖和 Chromium 完成；首次安装需要网络和磁盘空间。</div>
+            <div class="tutorial-step"><strong>确认快捷方式</strong>安装结束后检查桌面快捷方式和项目图标是否生成。</div>
+            <div class="tutorial-step"><strong>日常启动</strong>以后直接双击 <code>start.bat</code> 或桌面快捷方式，不要手动改浏览器路径。</div>
+          </div>
+          <div class="notice-note">如果自动安装 Node.js 不可用，setup.bat 会打开 Node.js 下载页；安装完成后重新运行 setup.bat 即可继续准备。</div>
+        </section>
+
+        <section class="notice-section" id="latest-0916-checklist">
+          <div class="section-head">
+            <h2>七、9.16 更新后的使用检查</h2>
+            <span class="section-index">07</span>
+          </div>
+          <ul class="checklist">
+            <li>更新项目文件后先完整重启上架工具，再开始新的 Shopee 或 TK 任务。</li>
+            <li>使用三项统计工具前，确认 BigSeller 已选定具体店铺和正确的列表筛选；报表有失败项时先看失败明细。</li>
+            <li>旧链接折扣只允许在非空有效折扣完全一致时更新；不一致、无效或空值全部跳过并查看原因。</li>
+            <li>复制店铺方案后，确认新名称、当前平台和模板内容，点击“应用店铺”后再开始上架。</li>
+            <li>分批上架前核对本次起始组、结束组、首末组编号和组数；下一次从上一段结束组的下一组开始。</li>
+            <li>正式上架期间不要刷新、跳转或关闭 BigSeller 编辑页；遇到 SSE 短暂断开先等待状态恢复。</li>
+            <li>安装新电脑时先运行 setup.bat；Node.js、Chromium 或图标步骤出现失败提示时，按提示处理后再启动工具。</li>
+          </ul>
+        </section>
+      </article>
+
+      <article class="notice-main notice-view" data-notice-version="2026-09-06" hidden>
         <p class="notice-lead">9.6 公告集中记录 8.11 之后已经落地的更新。重点是让新版 BigSeller 页面变化不再直接中断标题填写，让 PH / ID 型号表和做表规则跟上最新资料，并让批量任务在断线、旧链接折扣不一致或图片参数冲突时保持可检查、可恢复和可安全暂停。</p>
 
         <div class="notice-tag-row">
@@ -1809,6 +2372,110 @@
   </main>
   <script>
     const NOTICE_VIEWS = {
+      '2026-09-22-1': {
+        kicker: 'UPDATE / 2026.9.22-1',
+        title: '2026.9.22 上架工具更新公告',
+        desc: '汇总 9.17 之后的多店铺方案状态、历史记录日志、批次显示和 PH / ID 型号资料更新。',
+        version: '2026-09-22-1',
+        sections: {
+          summary: 'latest-0922-summary',
+          'sheet-maker': 'latest-0922-store',
+          'bulk-import': 'latest-0922-history',
+          universal: 'latest-0922-catalog',
+          interface: 'latest-0922-howto',
+          store: 'latest-0922-safety',
+          safety: 'latest-0922-safety',
+          checklist: 'latest-0922-checklist',
+        },
+        labels: {
+          summary: '本次更新',
+          'sheet-maker': '店铺卡片与方案',
+          'bulk-import': '历史记录与日志',
+          universal: '型号表与 SKU',
+          interface: '使用教程',
+          store: '安全核对',
+          safety: '安全核对',
+          checklist: '更新检查',
+        },
+      },
+      '2026-09-17-1': {
+        kicker: 'UPDATE / 2026.9.17-1',
+        title: '2026.9.17-1 重大 BUG 修复公告',
+        desc: '修复表格批次与线上变种组号错配，以及编辑页标题异步加载过慢导致的过早判空问题。',
+        version: '2026-09-17-1',
+        sections: {
+          summary: 'latest-0917-1-summary',
+          'sheet-maker': 'latest-0917-1-example',
+          'bulk-import': 'latest-0917-1-example',
+          universal: 'latest-0917-1-flow',
+          interface: 'latest-0917-1-flow',
+          store: 'latest-0917-1-checklist',
+          safety: 'latest-0917-1-checklist',
+          checklist: 'latest-0917-1-checklist',
+        },
+        labels: {
+          summary: '修复内容',
+          'sheet-maker': '重叠批次',
+          'bulk-import': '重叠批次',
+          universal: '核对顺序',
+          interface: '核对顺序',
+          store: '使用要求',
+          safety: '使用要求',
+          checklist: '使用要求',
+        },
+      },
+      '2026-09-17': {
+        kicker: 'UPDATE / 2026.9.17',
+        title: '2026.9.17 上架工具更新公告',
+        desc: '本次更新重点是多店铺分开上架、店铺配置与数据目录绑定、PNG 图片兼容，以及多店铺任务失败后的安全恢复。',
+        version: '2026-09-17',
+        sections: {
+          summary: 'latest-0917-summary',
+          'sheet-maker': 'latest-0917-multi-store',
+          'bulk-import': 'latest-0917-directory',
+          universal: 'latest-0917-png',
+          interface: 'latest-0917-retry',
+          store: 'latest-0917-review',
+          safety: 'latest-0917-checklist',
+          checklist: 'latest-0917-checklist',
+        },
+        labels: {
+          summary: '本次更新',
+          'sheet-maker': '多店铺上架',
+          'bulk-import': '目录识别',
+          universal: 'PNG 兼容',
+          interface: '失败恢复',
+          store: '店铺确认',
+          safety: '更新检查',
+          checklist: '更新检查',
+        },
+      },
+      '2026-09-16': {
+        kicker: 'UPDATE / 2026.9.16',
+        title: '2026.9.16 上架工具更新公告',
+        desc: '本次汇总 9.6 之后的只读统计、旧链接折扣、店铺方案复制、分批上架和安装准备更新。',
+        version: '2026-09-16',
+        sections: {
+          summary: 'latest-0916-summary',
+          'sheet-maker': 'latest-0916-tools',
+          'bulk-import': 'latest-0916-discount',
+          universal: 'latest-0916-store',
+          interface: 'latest-0916-scope',
+          store: 'latest-0916-setup',
+          safety: 'latest-0916-checklist',
+          checklist: 'latest-0916-checklist',
+        },
+        labels: {
+          summary: '本次更新',
+          'sheet-maker': '只读统计工具',
+          'bulk-import': '旧链接折扣',
+          universal: '店铺方案复制',
+          interface: '分批上架',
+          store: '安装准备',
+          safety: '更新检查',
+          checklist: '更新检查',
+        },
+      },
       '2026-09-06': {
         kicker: 'UPDATE / 2026.9.6',
         title: '2026.9.6 上架工具更新公告',
@@ -2056,7 +2723,7 @@
     };
 
     function showNoticeVersion(version) {
-      const meta = NOTICE_VIEWS[version] || NOTICE_VIEWS['2026-09-06'];
+      const meta = NOTICE_VIEWS[version] || NOTICE_VIEWS['2026-09-22-1'];
       document.querySelectorAll('.notice-view').forEach(view => {
         view.hidden = view.dataset.noticeVersion !== version;
       });

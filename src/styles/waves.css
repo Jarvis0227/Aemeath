@@ -13,6 +13,11 @@ html[data-waves-enabled="true"] #header-waves {
     display: block !important;
 }
 
+/* Keep wallpaper waves scoped to the homepage, even when the preference is enabled. */
+#wallpaper-wrapper.non-home-wallpaper-hidden #header-waves {
+    display: none !important;
+}
+
 /* --------------------------------------------------------------------------
    2. 波浪容器基础样式
    -------------------------------------------------------------------------- */

@@ -1,0 +1,242 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+	totalPages: number;
+	totalItems: number;
+	itemLabel: string;
+	inputId: string;
+	ariaLabel: string;
+}
+
+const { totalPages, totalItems, itemLabel, inputId, ariaLabel } = Astro.props;
+---
+
+<nav
+	class="bill-pagination"
+	data-bill-pagination
+	data-total-items={totalItems}
+	data-item-label={itemLabel}
+	aria-label={ariaLabel}
+>
+	<button type="button" data-bill-page="prev" aria-label="上一页">
+		<Icon is:inline name="material-symbols:chevron-left-rounded" aria-hidden="true" />
+		<span>上一页</span>
+	</button>
+	<span class="bill-page-indicator" data-bill-page-indicator aria-live="polite">
+		第 1 / {totalPages} 页 · 共 {totalItems} {itemLabel}
+	</span>
+	<form class="bill-page-jump" data-bill-page-jump-form aria-label={`跳转到${ariaLabel}`}>
+		<label for={inputId}>跳转至</label>
+		<input
+			id={inputId}
+			data-bill-page-jump-input
+			type="number"
+			min="1"
+			inputmode="numeric"
+			aria-label="页码"
+			placeholder="页码"
+		/>
+		<span aria-hidden="true">页</span>
+		<button type="submit">前往</button>
+	</form>
+	<button type="button" data-bill-page="next" aria-label="下一页">
+		<span>下一页</span>
+		<Icon is:inline name="material-symbols:chevron-right-rounded" aria-hidden="true" />
+	</button>
+</nav>
+
+<style>
+	@reference "../../styles/main.css";
+
+	.bill-pagination {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: center;
+		gap: 0.55rem;
+		margin-top: auto;
+		padding: 0.35rem 0.4rem 0.15rem;
+	}
+
+	.bill-pagination > button,
+	.bill-page-indicator {
+		display: inline-flex;
+		min-height: 2.1rem;
+		align-items: center;
+		justify-content: center;
+		gap: 0.25rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line-divider));
+		border-radius: 0.75rem;
+		background: transparent;
+		color: var(--primary);
+		font-size: 0.76rem;
+		line-height: 1;
+	}
+
+	.bill-pagination > button {
+		padding: 0.45rem 0.62rem;
+		cursor: pointer;
+		transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease, opacity 180ms ease;
+	}
+
+	.bill-pagination > button:hover:not(:disabled),
+	.bill-pagination > button:focus-visible {
+		border-color: var(--primary);
+		background: transparent;
+		color: var(--primary);
+		outline: none;
+	}
+
+	.bill-pagination > button:disabled {
+		cursor: not-allowed;
+		opacity: 0.42;
+	}
+
+	.bill-page-indicator {
+		padding: 0 0.72rem;
+		color: var(--primary);
+		font-weight: 650;
+		white-space: nowrap;
+	}
+
+	.bill-page-jump {
+		display: inline-flex;
+		min-height: 2.1rem;
+		align-items: center;
+		gap: 0.28rem;
+		padding: 0.18rem 0.3rem 0.18rem 0.5rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line-divider));
+		border-radius: 0.75rem;
+		background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+		color: var(--content-meta);
+		font-size: 0.74rem;
+		line-height: 1;
+	}
+
+	.bill-page-jump label {
+		white-space: nowrap;
+	}
+
+	.bill-page-jump input {
+		width: 2.65rem;
+		min-height: 1.7rem;
+		padding: 0.25rem 0.3rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--line-divider));
+		border-radius: 0.5rem;
+		background: var(--card-bg);
+		color: var(--primary);
+		font: inherit;
+		font-variant-numeric: tabular-nums;
+		text-align: center;
+		outline: none;
+	}
+
+	.bill-page-jump input::placeholder {
+		color: color-mix(in srgb, var(--content-meta) 78%, transparent);
+	}
+
+	.bill-page-jump input:focus-visible {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
+	}
+
+	.bill-page-jump input::-webkit-outer-spin-button,
+	.bill-page-jump input::-webkit-inner-spin-button {
+		margin: 0;
+		-webkit-appearance: none;
+	}
+
+	.bill-page-jump > button {
+		min-height: 1.7rem;
+		padding: 0.3rem 0.48rem;
+		border: 1px solid var(--glass-control-border);
+		border-radius: 0.5rem;
+		background: transparent;
+		color: var(--primary);
+		font: inherit;
+		cursor: pointer;
+	}
+
+	.bill-page-jump > button:hover,
+	.bill-page-jump > button:focus-visible {
+		border-color: var(--primary);
+		background: transparent;
+		color: var(--primary);
+		outline: none;
+	}
+
+	@media (max-width: 640px) {
+		.bill-pagination {
+			flex-wrap: nowrap;
+			gap: 0.28rem;
+		}
+
+		.bill-page-indicator {
+			order: 1;
+			flex: 0 0 auto;
+			padding-inline: 0.4rem;
+			font-size: 0.68rem;
+		}
+
+		.bill-pagination > button[data-bill-page="next"] {
+			order: 2;
+		}
+
+		.bill-pagination > button[data-bill-page="prev"] {
+			order: 0;
+		}
+
+		.bill-pagination > button > span {
+			display: none;
+		}
+
+		.bill-pagination > button {
+			width: 1.9rem;
+			min-height: 2rem;
+			padding: 0.35rem;
+		}
+
+		.bill-page-jump {
+			order: 3;
+			flex: 0 0 auto;
+			min-height: 2rem;
+			justify-content: center;
+			padding-inline: 0.28rem;
+		}
+
+		.bill-page-jump label {
+			display: none;
+		}
+
+		.bill-page-jump input {
+			width: 2.15rem;
+			min-height: 1.55rem;
+			padding-inline: 0.12rem;
+		}
+
+		.bill-page-jump > span {
+			min-height: 0;
+			padding: 0;
+			border: 0;
+			background: none;
+			color: var(--content-meta);
+		}
+
+		.bill-page-jump > button {
+			min-height: 1.55rem;
+			padding: 0.22rem 0.28rem;
+			font-size: 0.68rem;
+		}
+	}
+
+	@media (max-width: 360px) {
+		.bill-pagination {
+			flex-wrap: wrap;
+		}
+
+		.bill-page-jump {
+			margin-inline: auto;
+		}
+	}
+</style>

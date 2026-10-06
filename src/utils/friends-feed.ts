@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import sanitizeHtml from "sanitize-html";
 import type { FriendLink } from "@/types/friendsConfig";
@@ -102,8 +102,9 @@ function decodeXmlEntities(value: string): string {
 		quot: '"',
 	};
 
-	return value
-		.replace(/&(#x[\da-f]+|#\d+|[a-z][\da-z]+);/gi, (_, entity: string) => {
+	return value.replace(
+		/&(#x[\da-f]+|#\d+|[a-z][\da-z]+);/gi,
+		(_, entity: string) => {
 			const normalized = entity.toLowerCase();
 			if (normalized.startsWith("#x")) {
 				return String.fromCodePoint(Number.parseInt(normalized.slice(2), 16));
@@ -112,7 +113,8 @@ function decodeXmlEntities(value: string): string {
 				return String.fromCodePoint(Number.parseInt(normalized.slice(1), 10));
 			}
 			return namedEntities[normalized] ?? `&${entity};`;
-		});
+		},
+	);
 }
 
 function cleanText(value: string): string {
@@ -125,9 +127,7 @@ function cleanText(value: string): string {
 		allowedTags: [],
 		allowedAttributes: {},
 	});
-	return decodeXmlEntities(sanitized)
-		.replace(/\s+/g, " ")
-		.trim();
+	return decodeXmlEntities(sanitized).replace(/\s+/g, " ").trim();
 }
 
 function extractTag(block: string, names: string[]): string {
@@ -214,7 +214,10 @@ async function readFriendsFeedSnapshot(): Promise<
 	try {
 		const raw = await readFile(FRIENDS_FEED_SNAPSHOT_FILE, "utf8");
 		const parsed = JSON.parse(raw) as Partial<StoredFeedSnapshot>;
-		if (![1, 2].includes(parsed.version ?? 0) || !Array.isArray(parsed.sources)) {
+		if (
+			![1, 2].includes(parsed.version ?? 0) ||
+			!Array.isArray(parsed.sources)
+		) {
 			return new Map();
 		}
 
@@ -284,7 +287,10 @@ async function writeFriendsFeedSnapshot(records: FeedRecord[]): Promise<void> {
 	await writeFile(FRIENDS_FEED_SNAPSHOT_FILE, serialized, "utf8");
 }
 
-async function fetchText(url: string, accept: string): Promise<FeedDocument | null> {
+async function fetchText(
+	url: string,
+	accept: string,
+): Promise<FeedDocument | null> {
 	for (let attempt = 1; attempt <= FETCH_RETRY_ATTEMPTS; attempt += 1) {
 		const controller = new AbortController();
 		const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -365,7 +371,8 @@ async function tryFeedUrls(urls: string[]): Promise<{
 		}),
 	);
 	const successful = results.filter(
-		(result): result is { document: FeedDocument; items: ParsedFeedItem[] } => result !== null,
+		(result): result is { document: FeedDocument; items: ParsedFeedItem[] } =>
+			result !== null,
 	);
 	if (successful.length === 0) return null;
 
@@ -398,7 +405,10 @@ async function discoverFriendFeed(friend: FriendLink) {
 	const directResult = await tryFeedUrls([...new Set(directCandidates)]);
 	if (directResult) return directResult;
 
-	const homepage = await fetchText(friend.siteurl, "text/html, application/xhtml+xml;q=0.9");
+	const homepage = await fetchText(
+		friend.siteurl,
+		"text/html, application/xhtml+xml;q=0.9",
+	);
 	if (!homepage) return null;
 	const alternateUrls = findAlternateFeedUrls(homepage.text, homepage.url);
 	return alternateUrls.length > 0 ? tryFeedUrls(alternateUrls) : null;
@@ -432,34 +442,38 @@ export async function loadFriendsFeed(
 	// 朋友圈按“日历日期”过滤未来文章：构建当天的文章全部保留，
 	// 只有日期晚于构建当天的文章才隐藏。这样不会误伤当天稍晚发布的文章。
 	const todayKey = formatDateToYYYYMMDD(new Date());
-	const records = await mapWithConcurrency<FriendLink, FeedRecord>(friends, 5, async (friend) => {
-		const result = await discoverFriendFeed(friend);
-		if (result) {
+	const records = await mapWithConcurrency<FriendLink, FeedRecord>(
+		friends,
+		5,
+		async (friend) => {
+			const result = await discoverFriendFeed(friend);
+			if (result) {
+				return {
+					friend,
+					feedUrls: result.documents.map((document) => document.url),
+					items: result.items.slice(0, MAX_ITEMS_PER_FRIEND),
+					stale: false,
+				};
+			}
+
+			const cached = previousSnapshot.get(normalizeSiteUrl(friend.siteurl));
+			if (cached?.items.length) {
+				return {
+					friend,
+					feedUrls: cached.feedUrls,
+					items: cached.items.slice(0, MAX_ITEMS_PER_FRIEND),
+					stale: true,
+				};
+			}
+
 			return {
 				friend,
-				feedUrls: result.documents.map((document) => document.url),
-				items: result.items.slice(0, MAX_ITEMS_PER_FRIEND),
+				feedUrls: [],
+				items: [],
 				stale: false,
 			};
-		}
-
-		const cached = previousSnapshot.get(normalizeSiteUrl(friend.siteurl));
-		if (cached?.items.length) {
-			return {
-				friend,
-				feedUrls: cached.feedUrls,
-				items: cached.items.slice(0, MAX_ITEMS_PER_FRIEND),
-				stale: true,
-			};
-		}
-
-		return {
-			friend,
-			feedUrls: [],
-			items: [],
-			stale: false,
-		};
-	});
+		},
+	);
 
 	const seenLinks = new Set<string>();
 	const items: FriendFeedItem[] = [];
@@ -488,8 +502,7 @@ export async function loadFriendsFeed(
 	}
 
 	items.sort(
-		(a, b) =>
-			(b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0),
+		(a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0),
 	);
 
 	await writeFriendsFeedSnapshot(records);

@@ -1,5 +1,8 @@
 import type { BackgroundWallpaperConfig } from "@/types/backgroundWallpaper";
 
+export const homepageWallpaper = "/assets/images/wallpaper/homepage-anniversary-fireworks-20260930.webp";
+export const alternateHomepageWallpaper = "/assets/images/wallpaper/homepage-anniversary-blossoms.webp";
+export const mobileHomepageWallpaper = "/assets/images/wallpaper/homepage-anniversary-mobile-20260930.webp";
 const originalWallpaperImages = Array.from(
 	{ length: 24 },
 	(_, index) =>
@@ -18,6 +21,8 @@ const wutheringWavesWallpaperImages = [
 ];
 const otherWallpaperImages = originalWallpaperImages.slice(1);
 const desktopWallpaperImages = [
+	homepageWallpaper,
+	alternateHomepageWallpaper,
 	...wutheringWavesWallpaperImages,
 	...otherWallpaperImages,
 ];
@@ -28,7 +33,8 @@ const mobileOnlyWutheringWavesImages = Array.from(
 		`/assets/images/wallpaper/wallpaper-mobile-${String(index + 1).padStart(2, "0")}.webp`,
 );
 const mobileWallpaperImages = [
-	...mobileOnlyWutheringWavesImages,
+ mobileHomepageWallpaper,
+ ...mobileOnlyWutheringWavesImages,
 	...wutheringWavesWallpaperImages,
 	...otherWallpaperImages,
 ];
@@ -61,7 +67,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 	 * mobile: "https://t.alcy.cc/mp", // 随机图API
 	 * mobile: "assets/images/MobileWallpaper/m1.webp", // 单张图片
 	 *
-	 * 支持配置多张图片（数组），每次刷新页面随机显示一张：
+	 * 支持配置多张图片（数组），开启轮播后按顺序切换；关闭轮播时显示第一张：
 	 * desktop: [
 	 * "assets/images/DesktopWallpaper/d1.webp",
 	 * "assets/images/DesktopWallpaper/d2.webp",
@@ -73,19 +79,15 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 	 * ],
 	 */
 	src: {
-		// 桌面背景图片（支持单张或多张随机）
-		// desktop: "assets/images/DesktopWallpaper/d1.webp",
+		// 桌面背景图片（第一张作为默认壁纸）
 		desktop: desktopWallpaperImages,
-		// 移动背景图片（支持单张或多张随机）
-		// mobile: "assets/images/MobileWallpaper/m1.webp",
+		// 移动背景图片（第一张作为默认壁纸）
 		mobile: mobileWallpaperImages,
 		// 背景视频播放地址
 		// 支持单个视频路径（字符串）或多个视频循环（数组）
 		// 支持远程视频URL，本地视频请放在 public/assets/videos/ 目录下
 		// playerUrl: "/assets/videos/firefly.mp4",
-		playerUrl: [
-			"https://www.image2url.com/r2/default/videos/1781765166391-f2ba6648-1597-40e0-9f0a-6768ae39e574.mp4",
-		],
+		playerUrl: "/assets/videos/mingchao-home-edit.mp4",
 	},
 	// 横幅壁纸和全屏壁纸共享配置
 	common: {
@@ -162,13 +164,13 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		},
 		// 壁纸轮播配置，横幅壁纸和全屏壁纸共享，仅在配置多张图片时生效
 		carousel: {
-			// 是否启用壁纸轮播；关闭时保持每次刷新随机显示一张
+			// 普通模式默认自动轮播；国庆模式由主题状态覆盖为关闭
 			enable: true,
 			// 轮播切换间隔（毫秒）
 			interval: 5000,
 			// 过渡效果: 'fade' 渐变 | 'zoom' 缩放 | 'slide' 滑动 | 'kenburns' 旋转木马
 			transitionEffect: "zoom",
-			// 是否允许用户通过控制面板切换壁纸轮播
+			// 允许用户通过控制面板切换壁纸轮播
 			switchable: true,
 		},
 	},

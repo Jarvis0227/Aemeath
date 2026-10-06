@@ -458,6 +458,17 @@ const initialLayoutClass =
     aspect-ratio: 2 / 1 !important;
   }
 
+  /* Monthly covers stay fully visible when readers switch the homepage to list mode. */
+  #post-list-container.list-mode :global(.post-card-wrapper.has-monthly-badge .cover-image-container img) {
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+
+  #post-list-container.list-mode :global(.post-card-wrapper.post-card-full-preview .cover-image-container img) {
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+
   #post-list-container.grid-mode :global(.card-header-meta .text-sm) {
     font-size: 0.875rem !important;
     line-height: 1.25rem !important;

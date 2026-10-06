@@ -12,57 +12,83 @@ const applyFontMode = (nextMode: FontMode) => {
 	localStorage.setItem(STORAGE_KEY, nextMode);
 };
 
-const toggleFontMode = () => {
-	applyFontMode(mode === "wenkai" ? "original" : "wenkai");
-};
-
 onMount(() => {
 	const savedMode = localStorage.getItem(STORAGE_KEY);
 	applyFontMode(savedMode === "original" ? "original" : "wenkai");
 });
 </script>
 
-<button
-	type="button"
-	id="font-switch"
-	class="font-switch-btn btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90"
-	aria-label={mode === "wenkai" ? "切换到原字体" : "切换到霞鹜文楷"}
-	title={mode === "wenkai" ? "切换到原字体" : "切换到霞鹜文楷"}
-	aria-pressed={mode === "wenkai"}
-	on:click={toggleFontMode}
+<div class="font-switch-options" role="group" aria-label="字体样式">
+	<button
+		type="button"
+		class="font-switch-option"
+		class:font-switch-option-active={mode === "original"}
+		aria-pressed={mode === "original"}
+		onclick={() => applyFontMode("original")}
 	>
-  <span
-    class="inline-flex items-center justify-center text-[1.1rem] font-semibold leading-none"
-    aria-hidden="true"
-  >
-    文
-  </span>
-</button>
+		默认字体
+	</button>
+	<button
+		type="button"
+		class="font-switch-option"
+		class:font-switch-option-active={mode === "wenkai"}
+		aria-pressed={mode === "wenkai"}
+		onclick={() => applyFontMode("wenkai")}
+	>
+		霞鹜文楷
+	</button>
+</div>
 
 <style>
-	.font-switch-btn {
-		position: relative;
+	.font-switch-options {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.5rem;
 	}
 
-	.font-switch-btn::after {
-		content: "";
-		position: absolute;
-		right: 0.55rem;
-		bottom: 0.55rem;
-		width: 0.38rem;
-		height: 0.38rem;
-		border-radius: 999px;
-		background: var(--primary);
-		box-shadow: 0 0 0 2px var(--card-bg);
-		opacity: 0;
-		transform: scale(0.6);
+	.font-switch-option {
+		min-width: 0;
+		min-height: 2.5rem;
+		padding: 0.625rem 0.5rem;
+		border: 1px solid var(--glass-control-border);
+		border-radius: 0.625rem;
+		background: transparent;
+		color: var(--primary);
+		opacity: 0.7;
+		font-size: 0.875rem;
+		font-weight: 600;
+		text-align: center;
 		transition:
-			opacity 0.18s ease-out,
-			transform 0.18s ease-out;
+			background-color 180ms ease,
+			color 180ms ease,
+			opacity 180ms ease,
+			transform 180ms ease;
 	}
 
-	:global(:root[data-font-mode="wenkai"]) .font-switch-btn::after {
+	.font-switch-option:hover:not(.font-switch-option-active) {
+		background: transparent;
+		color: var(--primary);
 		opacity: 1;
-		transform: scale(1);
+	}
+
+	.font-switch-option-active {
+		border-color: var(--primary);
+		background: transparent;
+		color: var(--primary);
+		opacity: 1;
+		font-weight: 700;
+	}
+
+	.font-switch-option-active:hover {
+		background: transparent;
+	}
+
+	.font-switch-option:active {
+		transform: scale(0.97);
+	}
+
+	.font-switch-option:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 2px;
 	}
 </style>

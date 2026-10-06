@@ -95,10 +95,11 @@ body:has(#wallpaper-wrapper) #navbar[data-transparent-mode="semifull"]:not(.scro
     /* "semifull" (scrolled) */
     #wallpaper-wrapper~* #navbar[data-transparent-mode="semifull"].scrolled>div,
     body:has(#wallpaper-wrapper) #navbar[data-transparent-mode="semifull"].scrolled>div {
-        backdrop-filter: blur(var(--navbar-glass-blur, 20px)) !important;
-        background: rgba(255, 255, 255, var(--opacity-55)) !important;
+        backdrop-filter: blur(0) !important;
+        background: transparent !important;
+        border: none !important;
         border-radius: 0 0 0.75rem 0.75rem !important;
-        box-shadow: var(--shadow-navbar) !important;
+        box-shadow: none !important;
     }
 }
 
@@ -140,10 +141,11 @@ body:has(#wallpaper-wrapper) #navbar[data-transparent-mode="semifull"]:not(.scro
     /* "semifull" (scrolled) */
     #wallpaper-wrapper~* #navbar[data-transparent-mode="semifull"][data-is-home="true"].scrolled>div,
     body:has(#wallpaper-wrapper) #navbar[data-transparent-mode="semifull"][data-is-home="true"].scrolled>div {
-        backdrop-filter: blur(var(--navbar-glass-blur, 20px)) !important;
-        background: rgba(255, 255, 255, var(--opacity-55)) !important;
+        backdrop-filter: blur(0) !important;
+        background: transparent !important;
+        border: none !important;
         border-radius: 0 0 0.75rem 0.75rem !important;
-        box-shadow: var(--shadow-navbar) !important;
+        box-shadow: none !important;
     }
 }
 
@@ -178,8 +180,10 @@ body:has(#wallpaper-wrapper) #navbar[data-transparent-mode="semifull"]:not(.scro
     /* "semifull" (scrolled) */
     :root.dark #wallpaper-wrapper~* #navbar[data-transparent-mode="semifull"].scrolled>div,
     :root.dark body:has(#wallpaper-wrapper) #navbar[data-transparent-mode="semifull"].scrolled>div {
-        background: rgba(0, 0, 0, var(--opacity-55)) !important;
-        box-shadow: var(--shadow-navbar-dark) !important;
+        backdrop-filter: blur(0) !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 }
 
@@ -214,8 +218,10 @@ body:has(#wallpaper-wrapper) #navbar[data-transparent-mode="semifull"]:not(.scro
     /* "semifull" (scrolled) */
     :root.dark #wallpaper-wrapper~* #navbar[data-transparent-mode="semifull"][data-is-home="true"].scrolled>div,
     :root.dark body:has(#wallpaper-wrapper) #navbar[data-transparent-mode="semifull"][data-is-home="true"].scrolled>div {
-        background: rgba(0, 0, 0, var(--opacity-55)) !important;
-        box-shadow: var(--shadow-navbar-dark) !important;
+        backdrop-filter: blur(0) !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 }
 
@@ -321,103 +327,108 @@ body.wallpaper-transparent #navbar-wrapper #navbar[data-full-width="true"] > div
     }
 }
 
-/* Reference navbar design ported from python-web */
+/* Keep prefixed backdrop-filter before the standard declaration. Tailwind's
+ * production optimizer otherwise drops the standard property, leaving glass
+ * modules unblurred in browsers that do not support the WebKit prefix. */
+/* Detached-inspired glass modules while retaining Firefly's existing controls. */
 #navbar.firefly-navbar {
     --nav-accent-primary: var(--primary);
-    --nav-accent-secondary: color-mix(in oklab, var(--primary) 72%, #22d3ee);
-    --nav-accent-tertiary: color-mix(in oklab, var(--primary) 70%, #ec4899);
     --nav-fg-0: var(--deep-text, oklch(0.25 0.02 var(--hue)));
-    --nav-fg-1: color-mix(in oklab, var(--nav-fg-0) 82%, transparent);
-    --nav-fg-2: color-mix(in oklab, var(--nav-fg-0) 66%, transparent);
+    --nav-fg-1: color-mix(in oklch, var(--nav-fg-0) 82%, transparent);
+    --nav-fg-2: color-mix(in oklch, var(--nav-fg-0) 66%, transparent);
+    --navbar-module-bg: color-mix(in oklch, var(--card-bg) 30%, transparent);
+    --navbar-pill-bg: color-mix(in oklch, var(--card-bg) 18%, transparent);
+    --navbar-module-border: color-mix(in oklch, var(--primary) 16%, transparent);
+    --navbar-module-shadow: 0 4px 14px rgb(15 35 60 / 0.045);
+    --nav-active-bg: var(--btn-plain-bg-hover);
+    --nav-active-fg: var(--primary);
     position: relative;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color 0.24s ease;
 }
 
 :root.dark #navbar.firefly-navbar {
-    --nav-fg-0: white;
-    --nav-fg-1: rgb(255 255 255 / 0.82);
-    --nav-fg-2: rgb(255 255 255 / 0.68);
+    --nav-fg-0: #fff;
+    --nav-fg-1: rgb(255 255 255 / 0.86);
+    --nav-fg-2: rgb(255 255 255 / 0.7);
+    --navbar-module-bg: color-mix(in oklch, var(--card-bg) 34%, transparent);
+    --navbar-pill-bg: color-mix(in oklch, var(--card-bg) 22%, transparent);
+    --navbar-module-border: color-mix(in oklch, var(--primary) 22%, transparent);
+    --navbar-module-shadow: 0 5px 14px rgb(0 0 0 / 0.16);
+    --nav-active-bg: var(--btn-plain-bg-hover);
+    --nav-active-fg: var(--primary);
 }
 
-#navbar.firefly-navbar > .firefly-nav-shell {
-    background: color-mix(in oklab, var(--card-bg) 18%, transparent) !important;
-    border: 0 !important;
-    border-bottom: 1px solid color-mix(in oklab, var(--nav-accent-primary) 8%, transparent) !important;
-    border-radius: 0 !important;
-    box-shadow: 0 4px 16px rgb(0 0 0 / 0.02) !important;
-    backdrop-filter: blur(8px) saturate(1.08) !important;
-    -webkit-backdrop-filter: blur(8px) saturate(1.08) !important;
-    padding-top: 0.85rem;
-    padding-bottom: 0.85rem;
-    height: auto;
-    min-height: 5rem;
-    transition:
-        padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-        background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-        box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-#navbar.firefly-navbar.scrolled > .firefly-nav-shell,
-#navbar.firefly-navbar.navbar-sticky-shadow > .firefly-nav-shell {
-    background: color-mix(in oklab, var(--card-bg) 78%, transparent) !important;
-    border-bottom: 1px solid color-mix(in oklab, var(--nav-accent-primary) 24%, transparent) !important;
-    box-shadow:
-        0 8px 28px rgb(0 0 0 / 0.14),
-        0 0 42px color-mix(in oklab, var(--nav-accent-primary) 9%, transparent) !important;
-    backdrop-filter: blur(var(--navbar-glass-blur, 18px)) saturate(1.2) !important;
-    -webkit-backdrop-filter: blur(var(--navbar-glass-blur, 18px)) saturate(1.2) !important;
-    padding-top: 0.6rem;
-    padding-bottom: 0.6rem;
-}
-
+#navbar.firefly-navbar > .firefly-nav-shell,
 #wallpaper-wrapper~* #navbar.firefly-navbar > .firefly-nav-shell,
 body:has(#wallpaper-wrapper) #navbar.firefly-navbar > .firefly-nav-shell,
-body.wallpaper-transparent #navbar.firefly-navbar > .firefly-nav-shell {
-    background: color-mix(in oklab, var(--card-bg) 14%, transparent) !important;
-    border-bottom: 1px solid color-mix(in oklab, var(--nav-accent-primary) 7%, transparent) !important;
-    box-shadow: 0 4px 14px rgb(0 0 0 / 0.025) !important;
-    backdrop-filter: blur(6px) saturate(1.06) !important;
-    -webkit-backdrop-filter: blur(6px) saturate(1.06) !important;
-}
-
+body.wallpaper-transparent #navbar.firefly-navbar > .firefly-nav-shell,
 #wallpaper-wrapper~* #navbar.firefly-navbar.scrolled > .firefly-nav-shell,
 body:has(#wallpaper-wrapper) #navbar.firefly-navbar.scrolled > .firefly-nav-shell,
-body.wallpaper-transparent #navbar.firefly-navbar.scrolled > .firefly-nav-shell,
-body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .firefly-nav-shell {
-    background: color-mix(in oklab, var(--card-bg) 68%, transparent) !important;
-    border-bottom-color: color-mix(in oklab, var(--nav-accent-primary) 22%, transparent) !important;
-    box-shadow: 0 8px 28px rgb(0 0 0 / 0.12) !important;
-    backdrop-filter: blur(var(--navbar-glass-blur, 18px)) saturate(1.2) !important;
-    -webkit-backdrop-filter: blur(var(--navbar-glass-blur, 18px)) saturate(1.2) !important;
+body.wallpaper-transparent #navbar.firefly-navbar.scrolled > .firefly-nav-shell {
+    box-sizing: border-box;
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0.58rem 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transition: none !important;
 }
 
 #navbar.firefly-navbar .nav-container {
+    height: auto;
     max-width: none;
-    padding: 0 clamp(0.75rem, 2.4vw, 3rem);
-    gap: clamp(0.5rem, 1.4vw, 1.25rem);
+    padding-inline: 0;
+    gap: clamp(0.5rem, 1vw, 1rem);
+}
+
+@media (min-width: 1441px) {
+    #navbar.firefly-navbar:not(.scrolled) .nav-container {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    }
+}
+
+#navbar.firefly-navbar .nav-brand,
+#navbar.firefly-navbar .nav-links {
+    background: var(--navbar-module-bg);
+    border: 1px solid var(--navbar-module-border);
+    border-radius: 9999px;
+    box-shadow: var(--navbar-module-shadow);
+    -webkit-backdrop-filter: blur(24px) saturate(1.25);
+    backdrop-filter: blur(24px) saturate(1.25);
 }
 
 #navbar.firefly-navbar .nav-brand {
-    font-family: var(--font-navbar-title, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
-    font-size: 1.35rem;
-    font-weight: 800;
-    text-decoration: none;
-    color: var(--nav-fg-0);
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    position: relative;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    padding: 0.4rem 0.8rem;
-    border-radius: 12px;
-    white-space: nowrap;
     justify-self: start;
+    gap: 0.45rem;
+    height: 48px;
+    min-height: 48px;
+    padding: 0 1rem;
+    border-radius: 9999px;
+    color: var(--nav-fg-0);
+    font-family: var(--font-navbar-title, inherit);
+    font-size: 1.12rem;
+    font-weight: 750;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+        background-color 200ms ease,
+        border-color 200ms ease,
+        color 200ms ease,
+        transform 180ms ease;
 }
 
 #navbar.firefly-navbar .nav-brand:hover {
-    transform: scale(1.08) translateY(-2px);
-    background: color-mix(in oklab, var(--nav-accent-primary) 10%, transparent);
-    box-shadow: 0 8px 25px color-mix(in oklab, var(--nav-accent-primary) 25%, transparent);
+    background: color-mix(in oklch, var(--primary) 10%, var(--navbar-module-bg));
+    border-color: color-mix(in oklch, var(--primary) 22%, var(--line-color));
+    box-shadow: var(--navbar-module-shadow);
+    transform: translateY(-1px);
 }
 
 #navbar.firefly-navbar .brand-name {
@@ -427,48 +438,121 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
 
 #navbar.firefly-navbar .nav-links {
     display: flex;
-    gap: 0.2rem;
-    background: color-mix(in oklab, var(--card-bg) 8%, transparent);
-    padding: 0.25rem;
-    border-radius: 14px;
-    border: 1px solid color-mix(in oklab, var(--nav-accent-primary) 7%, transparent);
-    justify-self: end;
+    align-items: center;
+    justify-self: center;
+    gap: 0.12rem;
+    width: var(--nav-links-expanded-width, max-content);
     max-width: 100%;
-    overflow: visible;
     min-width: 0;
+    padding: 0.24rem;
+    overflow: visible;
+    border-radius: 9999px;
+    transition:
+        width 1100ms cubic-bezier(0.6, 0, 0.4, 1),
+        background-color 260ms ease var(--nav-item-reveal-delay, 760ms),
+        border-color 260ms ease var(--nav-item-reveal-delay, 760ms),
+        box-shadow 260ms ease var(--nav-item-reveal-delay, 760ms),
+        backdrop-filter 260ms ease var(--nav-item-reveal-delay, 760ms),
+        -webkit-backdrop-filter 260ms ease var(--nav-item-reveal-delay, 760ms);
+}
+
+#navbar.firefly-navbar .nav-links > .dropdown-container {
+    display: flex;
+    align-items: center;
+}
+
+/* Keep the same containing block and vertical anchor at the top and while
+ * scrolling. Switching flex items to absolute positioning during a transform
+ * transition moves them down by half their height before they settle. */
+#navbar.firefly-navbar .nav-links.is-layout-ready {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 30;
+    box-sizing: border-box;
+    height: 50px;
+    min-height: 50px;
+    transform: translate(-50%, -50%);
+}
+
+#navbar.firefly-navbar .nav-links.is-layout-ready > .dropdown-container {
+    position: absolute;
+    top: 50%;
+    left: calc(50% + var(--nav-item-expanded-offset, 0px));
+    transform: translate(-50%, -50%);
+    transition:
+        left 1100ms cubic-bezier(0.6, 0, 0.4, 1),
+        opacity 300ms ease var(--nav-item-reveal-delay, 760ms),
+        visibility 0s;
+}
+
+#navbar.firefly-navbar .nav-links.is-layout-ready > .dropdown-container.nav-compact-active {
+    z-index: 2;
+    /* Its position is driven by the module-fold animation. A second CSS left
+       transition keeps running while it waits for the other modules. */
+    transition: none !important;
+}
+
+#navbar.firefly-navbar .nav-links.is-module-folding > .dropdown-container.nav-compact-active {
+    will-change: transform;
+}
+
+#navbar.firefly-navbar.scrolled .nav-links.is-module-folding > .dropdown-container {
+    visibility: visible;
+    pointer-events: none;
 }
 
 #navbar.firefly-navbar .nav-link {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.35rem;
-    padding: 0.55rem 0.82rem;
-    color: var(--nav-fg-2);
-    text-decoration: none;
-    font-size: 0.88rem;
-    font-weight: 600;
-    border-radius: 12px;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
+    gap: 0.32rem;
+    height: 40px;
+    min-height: 40px;
     min-width: max-content;
+    padding: 0 0.72rem;
+    border: 1px solid transparent;
+    border-radius: 9999px;
+    color: var(--nav-fg-1);
+    background: var(--navbar-pill-bg);
+    box-shadow: none;
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    backdrop-filter: blur(18px) saturate(1.2);
+    overflow: visible;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+        color 180ms ease,
+        background-color 180ms ease;
 }
 
-#navbar.firefly-navbar .dropdown-trigger {
-    padding-right: 0.68rem;
+#navbar.firefly-navbar .nav-link::before,
+#navbar.firefly-navbar .nav-link::after {
+    content: none !important;
+    display: none !important;
 }
 
 #navbar.firefly-navbar .nav-link-inner {
     display: inline-flex;
     align-items: center;
     min-width: 0;
-    gap: 0.375rem;
+    gap: 0.32rem;
 }
 
 #navbar.firefly-navbar .nav-text {
     min-width: 0;
     white-space: nowrap;
+}
+
+#navbar.firefly-navbar .nav-link .nav-icon {
+    display: inline-flex !important;
+    flex: 0 0 auto;
+    color: currentColor;
+    font-size: 1.04rem;
+    font-weight: 600;
+    opacity: 0.82;
+    transition: opacity 180ms ease;
 }
 
 #navbar.firefly-navbar .dropdown-arrow {
@@ -477,124 +561,202 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
     width: 1rem;
     height: 1rem;
     margin-left: 0;
+    transition: transform 180ms ease;
 }
 
-#navbar.firefly-navbar .nav-link::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--nav-accent-primary) 18%, transparent), transparent);
-    transition: left 0.6s ease;
+#navbar.firefly-navbar .dropdown-trigger[aria-expanded="true"] .dropdown-arrow {
+    transform: rotate(180deg);
 }
 
-#navbar.firefly-navbar .nav-link:hover::before {
-    left: 100%;
-}
-
-#navbar.firefly-navbar .nav-link::after {
-    content: "";
-    position: absolute;
-    bottom: 6px;
-    left: 50%;
-    width: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--nav-accent-primary), var(--nav-accent-tertiary));
-    transition: all 0.35s ease;
-    transform: translateX(-50%);
-    border-radius: 2px;
-}
-
-#navbar.firefly-navbar .nav-link:hover::after,
-#navbar.firefly-navbar .nav-link.active::after,
-#navbar.firefly-navbar .nav-link.nav-link-active::after {
-    width: 40%;
-}
-
-#navbar.firefly-navbar .nav-link .nav-icon {
-    display: inline-flex !important;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.85rem;
-    opacity: 0.7;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    font-weight: 800;
-}
-
-#navbar.firefly-navbar .nav-link:hover .nav-icon,
-#navbar.firefly-navbar .nav-link.active .nav-icon,
-#navbar.firefly-navbar .nav-link.nav-link-active .nav-icon {
-    opacity: 1;
-    transform: scale(1.3) rotate(-10deg);
-}
-
-#navbar.firefly-navbar .nav-link:hover,
-#navbar.firefly-navbar .nav-link.active,
-#navbar.firefly-navbar .nav-link.nav-link-active {
+#navbar.firefly-navbar .nav-link:hover:not(.nav-link-active):not(.active) {
     color: var(--nav-accent-primary);
-    background: color-mix(in oklab, var(--nav-accent-primary) 14%, transparent);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px color-mix(in oklab, var(--nav-accent-primary) 26%, transparent);
+    background: color-mix(in oklch, var(--primary) 13%, var(--navbar-module-bg));
+    border-color: color-mix(in oklch, var(--primary) 20%, transparent);
+}
+
+#navbar.firefly-navbar .nav-link.nav-link-active,
+#navbar.firefly-navbar .nav-link.active {
+    color: var(--nav-active-fg);
+    background: var(--nav-active-bg);
+    font-weight: 700;
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    backdrop-filter: blur(20px) saturate(1.2);
+    box-shadow: none;
+}
+
+#navbar.firefly-navbar .nav-link.nav-link-active .nav-icon,
+#navbar.firefly-navbar .nav-link.active .nav-icon {
+    opacity: 1;
+}
+
+#navbar.firefly-navbar .nav-link:active {
+    transform: scale(0.97);
 }
 
 #navbar.firefly-navbar .nav-actions {
+    display: flex;
     align-items: center;
-    gap: 0.5rem;
-}
-
-#navbar.firefly-navbar #search-bar {
-    border-radius: 12px;
-    border-color: color-mix(in oklab, var(--nav-accent-primary) 20%, transparent);
-    background: color-mix(in oklab, var(--nav-accent-primary) 6%, transparent);
+    justify-self: end;
+    gap: 0.45rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    transition: none !important;
 }
 
 #navbar.firefly-navbar .nav-actions > button,
 #navbar.firefly-navbar .nav-actions > a {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    border: 1px solid color-mix(in oklab, var(--nav-accent-primary) 22%, transparent);
-    background: color-mix(in oklab, var(--nav-accent-primary) 7%, transparent);
-    color: var(--nav-fg-1);
+    position: relative;
     display: flex;
+    flex: 0 0 44px;
     align-items: center;
     justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    overflow: visible;
+    border: 1px solid var(--navbar-module-border);
+    border-radius: 9999px;
+    color: var(--nav-fg-1);
+    background: var(--navbar-module-bg);
+    box-shadow: var(--navbar-module-shadow);
+    -webkit-backdrop-filter: blur(14px) saturate(1.12);
+    backdrop-filter: blur(14px) saturate(1.12);
     cursor: var(--cursor-pointer, pointer);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    font-size: 1rem;
-    position: relative;
-    overflow: hidden;
+    transition:
+        color 180ms ease,
+        background-color 180ms ease,
+        border-color 180ms ease;
+}
+
+#navbar.firefly-navbar .nav-actions > button > svg,
+#navbar.firefly-navbar #scheme-switch svg {
+    font-size: 1.375rem;
 }
 
 #navbar.firefly-navbar .nav-actions > button::before,
 #navbar.firefly-navbar .nav-actions > a::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: var(--nav-accent-primary);
-    border-radius: 50%;
-    transition: all 0.5s ease;
-    transform: translate(-50%, -50%);
-}
-
-#navbar.firefly-navbar .nav-actions > button:hover::before,
-#navbar.firefly-navbar .nav-actions > a:hover::before {
-    width: 150%;
-    height: 150%;
-    opacity: 0.15;
+    content: none !important;
 }
 
 #navbar.firefly-navbar .nav-actions > button:hover,
 #navbar.firefly-navbar .nav-actions > a:hover {
-    border-color: var(--nav-accent-primary);
     color: var(--nav-accent-primary);
-    background: color-mix(in oklab, var(--nav-accent-primary) 14%, transparent);
-    transform: scale(1.15) rotate(15deg);
-    box-shadow: 0 0 30px color-mix(in oklab, var(--nav-accent-primary) 42%, transparent);
+    background: color-mix(in oklch, var(--primary) 11%, var(--navbar-module-bg));
+    border-color: color-mix(in oklch, var(--primary) 26%, transparent);
+    box-shadow: var(--navbar-module-shadow);
+    transform: none;
+}
+
+#navbar.firefly-navbar .nav-actions > button:active,
+#navbar.firefly-navbar .nav-actions > a:active {
+    transform: scale(0.94);
+}
+
+#navbar.firefly-navbar .nav-actions > button:focus-visible,
+#navbar.firefly-navbar .nav-actions > a:focus-visible,
+#navbar.firefly-navbar #font-switch:focus-visible,
+#navbar.firefly-navbar #scheme-switch:focus-visible,
+#navbar.firefly-navbar .nav-brand:focus-visible,
+#navbar.firefly-navbar .nav-link:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+#navbar.firefly-navbar #search-bar {
+    height: 44px;
+    margin: 0;
+    border: 1px solid var(--navbar-module-border);
+    border-radius: 9999px;
+    background: var(--navbar-module-bg);
+    box-shadow: var(--navbar-module-shadow);
+    -webkit-backdrop-filter: blur(14px) saturate(1.12);
+    backdrop-filter: blur(14px) saturate(1.12);
+    transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+#navbar.firefly-navbar #search-bar > svg {
+    font-size: 1.375rem;
+    color: var(--nav-fg-2);
+}
+
+#navbar.firefly-navbar #search-bar input {
+    width: 9rem;
+    padding-right: 1rem;
+    font-size: 1rem;
+    color: var(--nav-fg-1);
+    transition: color 180ms ease;
+}
+
+#navbar.firefly-navbar #search-bar input::placeholder {
+    color: var(--nav-fg-2);
+    opacity: 1;
+}
+
+#navbar.firefly-navbar #search-bar:hover,
+#navbar.firefly-navbar #search-bar:focus-within {
+    border-color: color-mix(in oklch, var(--primary) 40%, transparent);
+    background: color-mix(in oklch, var(--primary) 8%, var(--navbar-module-bg));
+}
+
+#navbar.firefly-navbar #search-bar:focus-within {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+#navbar.firefly-navbar .nav-actions > .relative:has(> #scheme-switch) {
+    display: flex;
+    align-items: center;
+}
+
+#navbar.firefly-navbar #scheme-switch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--navbar-module-border);
+    border-radius: 9999px;
+    color: var(--nav-fg-1);
+    background: var(--navbar-module-bg);
+    box-shadow: var(--navbar-module-shadow);
+    -webkit-backdrop-filter: blur(14px) saturate(1.12);
+    backdrop-filter: blur(14px) saturate(1.12);
+    transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+#navbar.firefly-navbar .nav-actions #font-switch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--navbar-module-border);
+    border-radius: 9999px;
+    color: var(--nav-fg-1);
+    background: var(--navbar-module-bg);
+    box-shadow: var(--navbar-module-shadow);
+    -webkit-backdrop-filter: blur(14px) saturate(1.12);
+    backdrop-filter: blur(14px) saturate(1.12);
+    transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+#navbar.firefly-navbar .nav-actions #font-switch:hover {
+    color: var(--nav-accent-primary);
+    border-color: color-mix(in oklch, var(--primary) 26%, transparent);
+    background: color-mix(in oklch, var(--primary) 11%, var(--navbar-module-bg));
+}
+
+#navbar.firefly-navbar #scheme-switch:hover {
+    color: var(--nav-accent-primary);
+    border-color: color-mix(in oklch, var(--primary) 26%, transparent);
+    background: color-mix(in oklch, var(--primary) 11%, var(--navbar-module-bg));
 }
 
 #navbar.firefly-navbar .nav-actions > .menu-btn {
@@ -611,26 +773,177 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
 }
 
 #navbar.firefly-navbar .menu-btn span {
-    width: 24px;
-    height: 2.5px;
-    background: var(--nav-fg-1);
+    width: 20px;
+    height: 2px;
+    background: currentColor;
     border-radius: 3px;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        transform 180ms ease,
+        opacity 180ms ease,
+        background-color 180ms ease;
 }
 
 #navbar.firefly-navbar .menu-btn.active span:nth-child(1) {
-    transform: rotate(45deg) translate(6px, 6px);
+    transform: rotate(45deg) translate(5px, 5px);
     background: var(--nav-accent-primary);
 }
 
 #navbar.firefly-navbar .menu-btn.active span:nth-child(2) {
     opacity: 0;
-    transform: translateX(25px);
+    transform: translateX(16px);
 }
 
 #navbar.firefly-navbar .menu-btn.active span:nth-child(3) {
-    transform: rotate(-45deg) translate(6px, -6px);
+    transform: rotate(-45deg) translate(5px, -5px);
     background: var(--nav-accent-primary);
+}
+
+/* Only the center menu collapses. The brand and tools keep their full size. */
+#navbar.firefly-navbar.scrolled .nav-links {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 30;
+    display: flex !important;
+    box-sizing: border-box;
+    height: 50px;
+    min-height: 50px;
+    width: var(--nav-links-compact-width, 6rem);
+    max-width: calc(100vw - 2rem);
+    justify-content: center;
+    padding: 0.24rem;
+    border: 1px solid transparent;
+    border-radius: 9999px;
+    background: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    transform: translate(-50%, -50%);
+    transition:
+        width 1100ms cubic-bezier(0.6, 0, 0.4, 1),
+        background-color 180ms ease,
+        border-color 180ms ease,
+        box-shadow 180ms ease,
+        backdrop-filter 180ms ease,
+        -webkit-backdrop-filter 180ms ease;
+}
+
+#navbar.firefly-navbar.scrolled .nav-links > .dropdown-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: flex !important;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition:
+        left 1100ms cubic-bezier(0.6, 0, 0.4, 1),
+        opacity 220ms ease-out,
+        visibility 0s linear 220ms;
+}
+
+#navbar.firefly-navbar.scrolled .nav-links > .dropdown-container.nav-compact-active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(-50%, -50%);
+}
+
+#navbar.firefly-navbar.scrolled .nav-links .nav-link {
+    height: 40px;
+    min-height: 40px;
+    padding-inline: 0.78rem;
+}
+
+#navbar.firefly-navbar.scrolled .nav-links.is-hover-expanded .nav-link {
+    padding-inline: 0.72rem;
+}
+
+#navbar.firefly-navbar.scrolled .nav-links .dropdown-arrow {
+    display: inline-flex;
+    width: 0;
+    height: 1rem;
+    margin-left: -0.32rem;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+        width 360ms ease,
+        margin-left 360ms ease,
+        opacity 260ms ease;
+}
+
+/* Keep the selected button's footprint stable while its label travels. */
+#navbar.firefly-navbar.scrolled .nav-links > .nav-compact-active .nav-link {
+    padding-inline: 0.72rem;
+}
+
+#navbar.firefly-navbar.scrolled .nav-links > .nav-compact-active .dropdown-arrow {
+    width: 1rem;
+    margin-left: 0;
+    opacity: 1;
+}
+
+#navbar.firefly-navbar.scrolled .nav-links.is-hover-expanded {
+    width: min(var(--nav-links-expanded-width, 52rem), calc(100vw - 2rem));
+    background: var(--navbar-module-bg);
+    border-color: var(--navbar-module-border);
+    box-shadow: var(--navbar-module-shadow);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    backdrop-filter: blur(20px) saturate(1.2);
+    transition:
+        width 1100ms cubic-bezier(0.6, 0, 0.4, 1),
+        background-color 260ms ease var(--nav-item-reveal-delay, 760ms),
+        border-color 260ms ease var(--nav-item-reveal-delay, 760ms),
+        box-shadow 260ms ease var(--nav-item-reveal-delay, 760ms),
+        backdrop-filter 260ms ease var(--nav-item-reveal-delay, 760ms),
+        -webkit-backdrop-filter 260ms ease var(--nav-item-reveal-delay, 760ms);
+}
+
+#navbar.firefly-navbar.scrolled .nav-links.is-hover-expanded > .dropdown-container {
+    left: calc(50% + var(--nav-item-expanded-offset, 0px));
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(-50%, -50%);
+    transition:
+        left 1100ms cubic-bezier(0.6, 0, 0.4, 1),
+        opacity 300ms ease var(--nav-item-reveal-delay, 760ms),
+        visibility 0s;
+}
+
+#navbar.firefly-navbar.scrolled .nav-links .dropdown-menu {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: translateY(-8px) !important;
+    transition:
+        opacity 160ms ease,
+        transform 160ms ease,
+        visibility 0s linear 160ms !important;
+}
+
+#navbar.firefly-navbar.scrolled .nav-links.is-active-submenu-open > .dropdown-container.nav-submenu-open .dropdown-menu {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    translate: 0 0;
+    transform: translateY(0) !important;
+    transition:
+        opacity 260ms ease var(--nav-submenu-reveal-delay, 0ms),
+        translate 260ms ease var(--nav-submenu-reveal-delay, 0ms),
+        transform 260ms ease var(--nav-submenu-reveal-delay, 0ms),
+        visibility 0s linear var(--nav-submenu-reveal-delay, 0ms) !important;
+}
+
+#navbar.firefly-navbar.scrolled .nav-links.is-active-submenu-open > .dropdown-container.nav-submenu-open .dropdown-trigger .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+#navbar.firefly-navbar.scrolled .nav-links.is-hover-expanded .dropdown-arrow {
+    width: 1rem;
+    margin-left: 0;
+    opacity: 1;
 }
 
 /*
@@ -644,10 +957,10 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
 @media (max-width: 1440px) {
     #navbar.firefly-navbar .nav-container {
         grid-template-columns: minmax(0, 1fr) auto;
-        padding-inline: clamp(0.75rem, 2vw, 1.5rem);
+        padding-inline: 0;
     }
 
-    #navbar.firefly-navbar .nav-links {
+    #navbar.firefly-navbar:not(.scrolled) .nav-links {
         display: none !important;
     }
 
@@ -719,6 +1032,14 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
     transform: none !important;
 }
 
+@layer utilities {
+    body.sticky-navbar #top-row.mobile-nav-open {
+        /* Raise the drawer's full ancestor stacking context above fixed controls. */
+        z-index: 1100 !important;
+        transition: none !important;
+    }
+}
+
 .mobile-bg {
     position: absolute;
     inset: 0;
@@ -727,8 +1048,8 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
     padding: 0;
     cursor: default;
     background: rgb(6 12 24 / 0.48);
-    backdrop-filter: blur(7px) saturate(0.76);
     -webkit-backdrop-filter: blur(7px) saturate(0.76);
+    backdrop-filter: blur(7px) saturate(0.76);
     opacity: 0;
     transition: opacity var(--mobile-nav-duration) cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -746,7 +1067,7 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
     height: 100dvh;
     max-height: 100dvh;
     display: block;
-    padding: env(safe-area-inset-top) 1.35rem calc(1.35rem + env(safe-area-inset-bottom));
+    padding: calc(0.55rem + env(safe-area-inset-top)) 1.35rem calc(1.35rem + env(safe-area-inset-bottom));
     overflow-y: auto;
     overscroll-behavior: contain;
     color: var(--nav-fg-0, var(--deep-text));
@@ -766,36 +1087,67 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
 }
 
 .mobile-nav-header {
+    position: relative;
     display: flex;
-    min-height: 4.45rem;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    border-bottom: 1px solid color-mix(in oklab, var(--nav-fg-0) 14%, transparent);
+    justify-content: center;
+    padding: 2.45rem 0.25rem 0.25rem;
 }
 
-.mobile-nav-brand {
-    display: inline-flex;
+.mobile-profile {
+    display: flex;
     min-width: 0;
+    flex-direction: column;
     align-items: center;
-    gap: 0.58rem;
+    gap: 0.35rem;
     color: inherit;
-    font: 800 1rem/1.2 var(--font-navbar-title, var(--font-blog-original));
-    letter-spacing: 0.02em;
     text-decoration: none;
 }
 
-.mobile-nav-brand-icon {
+.mobile-profile-avatar {
+    width: 5.4rem;
+    height: 5.4rem;
     flex: 0 0 auto;
-    color: var(--primary);
-    font-size: 1.4rem;
+    margin-bottom: 0.1rem;
+    border: 3px solid color-mix(in oklab, var(--card-bg) 86%, white 14%);
+    border-radius: 50%;
+    background: color-mix(in oklab, var(--primary) 8%, var(--card-bg));
+    box-shadow: 0 0.25rem 1rem rgb(20 30 52 / 0.16);
+}
+
+.mobile-profile-avatar picture,
+.mobile-profile-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+}
+
+.mobile-profile-name {
+    max-width: 100%;
+    color: var(--nav-fg-0, var(--deep-text));
+    font-size: 0.96rem;
+    font-weight: 800;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.mobile-profile-bio {
+    max-width: 100%;
+    color: color-mix(in oklab, var(--nav-fg-0) 76%, transparent);
+    font-size: 0.78rem;
+    line-height: 1.4;
+    text-align: center;
+    overflow-wrap: anywhere;
 }
 
 .mobile-nav-close {
     display: grid;
-    width: 2.6rem;
-    height: 2.6rem;
+    width: max(44px, 2.75rem);
+    height: max(44px, 2.75rem);
     flex: 0 0 auto;
+    position: absolute;
+    top: 0.05rem;
+    right: 0;
     place-items: center;
     border: 0;
     border-radius: 50%;
@@ -812,47 +1164,134 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
     transform: rotate(90deg);
 }
 
-.mobile-nav-eyebrow {
-    margin: 1.35rem 0 0.86rem;
-    color: color-mix(in oklab, var(--nav-fg-0) 54%, transparent);
-    font: 800 0.62rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
-    letter-spacing: 0.18em;
+.mobile-profile-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0.7rem 0 0.9rem;
+}
+
+.mobile-profile-social {
+    display: grid;
+    width: 2.15rem;
+    height: 2.15rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 0;
+    border-radius: 0.65rem;
+    color: color-mix(in oklab, var(--primary) 78%, var(--nav-fg-0));
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.2rem;
+    text-decoration: none;
+    transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.mobile-profile-social:hover,
+.mobile-profile-social:focus-visible,
+.mobile-profile-social[data-copied="true"] {
+    color: var(--primary);
+    background: color-mix(in oklab, var(--primary) 10%, transparent);
+}
+
+.mobile-profile-social:hover {
+    transform: translateY(-1px);
+}
+
+.mobile-profile-social:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 .mobile-links {
     display: block;
     width: 100%;
+    margin-top: 0.35rem;
     text-align: left;
 }
 
 .mobile-nav-group {
-    margin-top: 0.75rem;
-    padding-top: 0.92rem;
-    border-top: 1px solid color-mix(in oklab, var(--nav-fg-0) 14%, transparent);
+    margin-top: 0.28rem;
+    padding-top: 0.12rem;
     opacity: 1;
     transform: none;
 }
 
 .mobile-group-title {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1.35rem minmax(0, 1fr) 1rem;
     align-items: center;
-    min-height: auto;
+    gap: 0.72rem;
+    min-height: max(44px, 2.75rem);
+    width: 100%;
     margin: 0;
-    padding: 0 0 0.56rem;
-    color: color-mix(in oklab, var(--nav-fg-0) 58%, transparent);
-    font: 700 0.78rem/1.15 var(--font-blog-original, sans-serif);
-    font-weight: 800;
-    letter-spacing: 0.05em;
+    padding: 0.66rem 0.6rem;
+    border: 0;
+    border-radius: 0.64rem;
+    color: color-mix(in oklab, var(--nav-fg-0) 90%, transparent);
+    background: transparent;
+    font: inherit;
+    font-size: 0.93rem;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    transition: color 0.3s ease, background-color 0.3s ease, transform 0.2s ease;
 }
 
-.mobile-group-title::after {
-    display: none;
+.mobile-group-title:hover {
+    color: var(--primary);
+    background: color-mix(in oklab, var(--primary) 9%, transparent);
+}
+
+.mobile-group-title:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.mobile-group-icon {
+    width: 1.35rem;
+    color: color-mix(in oklab, var(--nav-fg-0) 68%, transparent);
+    font-size: 1.1rem;
+}
+
+.mobile-group-chevron {
+    color: color-mix(in oklab, var(--nav-fg-0) 60%, transparent);
+    font-size: 1.1rem;
+    transition: transform 0.25s ease;
+}
+
+.mobile-nav-group[data-open="true"] .mobile-group-chevron {
+    transform: rotate(180deg);
+}
+
+.mobile-group-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-top: 0;
+    opacity: 0;
+    transform: translateY(-0.2rem);
+    transition:
+        grid-template-rows 380ms cubic-bezier(0.22, 1, 0.36, 1),
+        margin-top 380ms cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 220ms ease,
+        transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mobile-nav-group[data-open="true"] .mobile-group-panel {
+    grid-template-rows: 1fr;
+    margin-top: 0.12rem;
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .mobile-group-links {
     display: grid;
+    min-height: 0;
     gap: 0.08rem;
-    padding: 0;
+    margin-left: 0.8rem;
+    padding-left: 0.25rem;
+    overflow: hidden;
 }
 
 .mobile-link {
@@ -860,10 +1299,10 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
     position: relative;
     display: grid;
     grid-template-columns: 1.35rem minmax(0, 1fr) auto;
-    min-height: 3.1rem;
+    min-height: max(44px, 2.75rem);
     align-items: center;
     gap: 0.72rem;
-    padding: 0.66rem 0.6rem;
+    padding: 0.45rem 0.6rem;
     overflow: hidden;
     border: 0;
     border-radius: 0.64rem;
@@ -871,7 +1310,7 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
     background: transparent;
     box-shadow: none;
     text-decoration: none;
-    font-size: 0.98rem;
+    font-size: 0.93rem;
     font-weight: 700;
     transition:
         opacity 320ms cubic-bezier(0.22, 1, 0.36, 1) var(--mobile-link-enter-delay),
@@ -883,30 +1322,18 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
 }
 
 .mobile-sub-link {
-    min-height: 2.8rem;
+    grid-template-columns: 1.15rem minmax(0, 1fr) auto;
+    min-height: max(44px, 2.75rem);
+    gap: 0.58rem;
     background: transparent;
-    padding: 0.55rem 0.6rem;
-    font-size: 0.92rem;
+    padding: 0.34rem 0.55rem;
+    font-size: 0.86rem;
+    font-weight: 600;
 }
 
-.mobile-link::after {
-    content: "";
-    position: absolute;
-    top: 0.76rem;
-    bottom: 0.76rem;
-    left: 0;
-    width: 2px;
-    border-radius: 999px;
-    background: var(--primary);
-    opacity: 0;
-    transform: scaleY(0.4);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.mobile-link:hover::after,
-.mobile-link.mobile-nav-active::after {
-    opacity: 1;
-    transform: scaleY(1);
+.mobile-sub-link .mobile-nav-item-icon {
+    width: 1.15rem;
+    font-size: 1rem;
 }
 
 .mobile-nav.active .mobile-link {
@@ -937,11 +1364,15 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
     transform: translate3d(0.16rem, 0, 0);
 }
 
-.mobile-nav-group.mobile-nav-group-active {
-    border-top-color: color-mix(in oklab, var(--primary) 38%, transparent);
+.mobile-nav.active .mobile-group-title:hover {
+    transform: translate3d(0.16rem, 0, 0);
 }
 
 .mobile-nav-group.mobile-nav-group-active .mobile-group-title {
+    color: var(--primary);
+}
+
+.mobile-nav-group.mobile-nav-group-active .mobile-group-icon {
     color: var(--primary);
 }
 
@@ -949,8 +1380,11 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
     margin: 1.4rem 0 0;
     padding: 1rem 0 0;
     border-top: 1px solid color-mix(in oklab, var(--nav-fg-0) 12%, transparent);
-    font: 700 0.64rem/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
-    letter-spacing: 0.04em;
+    font-family: var(--font-active-sans, inherit);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
     color: color-mix(in oklab, var(--nav-fg-0) 56%, transparent);
     opacity: 1;
 }
@@ -983,10 +1417,10 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
 @media (max-width: 1023px) {
     #navbar.firefly-navbar .nav-container {
         grid-template-columns: minmax(0, 1fr) auto;
-        padding: 0 0.75rem;
+        padding: 0;
     }
 
-    #navbar.firefly-navbar .nav-links {
+    #navbar.firefly-navbar:not(.scrolled) .nav-links {
         display: none !important;
     }
 
@@ -1015,10 +1449,37 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
 }
 
 @media (max-width: 767px) {
+    #navbar.firefly-navbar.scrolled .nav-links,
+    #navbar.firefly-navbar.navbar-sticky-shadow .nav-links {
+        display: none !important;
+    }
+}
+
+@media (max-width: 767px) {
     #navbar.firefly-navbar > .firefly-nav-shell {
-        min-height: 4.4rem;
-        padding-top: 0.55rem;
-        padding-bottom: 0.55rem;
+        min-height: 0 !important;
+        padding-top: 0.42rem !important;
+        padding-bottom: 0.42rem !important;
+    }
+
+    #navbar.firefly-navbar .nav-brand {
+        height: 40px;
+        min-height: 40px;
+        padding-inline: 0.65rem;
+    }
+
+    #navbar.firefly-navbar .brand-name {
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 1.125rem;
+        font-weight: 750;
+        line-height: 1;
+    }
+
+    #navbar.firefly-navbar .brand-name img,
+    #navbar.firefly-navbar .brand-name svg {
+        flex: 0 0 auto;
+        margin: 0;
     }
 
     #navbar.firefly-navbar .nav-actions {
@@ -1027,9 +1488,21 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
 
     #navbar.firefly-navbar .nav-actions > button,
     #navbar.firefly-navbar .nav-actions > a {
+        flex-basis: 36px;
         width: 36px;
         height: 36px;
-        border-radius: 10px;
+        border-radius: 9999px;
+    }
+
+    #navbar.firefly-navbar #scheme-switch {
+        width: 36px;
+        height: 36px;
+    }
+
+    #navbar.firefly-navbar .nav-actions #font-switch {
+        flex-basis: 36px;
+        width: 36px;
+        height: 36px;
     }
 
     .mobile-content {
@@ -1041,13 +1514,16 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
 
 @media (max-width: 420px) {
     #navbar.firefly-navbar .nav-container {
-        padding-inline: 0.5rem;
+        padding-inline: 0;
         gap: 0.35rem;
     }
 
     #navbar.firefly-navbar .nav-brand {
-        font-size: 1rem;
-        padding-inline: 0.35rem;
+        padding-inline: 0.55rem;
+    }
+
+    #navbar.firefly-navbar .brand-name {
+        font-size: clamp(1rem, 5vw, 1.125rem);
     }
 
     #navbar.firefly-navbar .nav-actions {
@@ -1061,6 +1537,18 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
 
     #navbar.firefly-navbar .nav-actions > button,
     #navbar.firefly-navbar .nav-actions > a {
+        flex-basis: 34px;
+        width: 34px;
+        height: 34px;
+    }
+
+    #navbar.firefly-navbar #scheme-switch {
+        width: 34px;
+        height: 34px;
+    }
+
+    #navbar.firefly-navbar .nav-actions #font-switch {
+        flex-basis: 34px;
         width: 34px;
         height: 34px;
     }
@@ -1070,10 +1558,24 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
     }
 }
 
+@media (max-width: 767px) {
+    /* Keep the menu toggle easy to hit on phones, including narrow screens. */
+    #navbar.firefly-navbar .nav-actions > .menu-btn {
+        flex-basis: max(44px, 2.75rem);
+        width: max(44px, 2.75rem);
+        height: max(44px, 2.75rem);
+        touch-action: manipulation;
+    }
+}
+
+#navbar.firefly-navbar[data-full-width="true"] .nav-container {
+    padding-inline: clamp(1rem, 2vw, 2rem) !important;
+}
+
 @media (min-width: 1024px) and (max-width: 1180px) {
     #navbar.firefly-navbar .nav-container {
         grid-template-columns: auto minmax(0, 1fr) auto;
-        padding-inline: 0.75rem;
+        padding-inline: 0;
     }
 
     #navbar.firefly-navbar .nav-brand {
@@ -1083,7 +1585,6 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
 
     #navbar.firefly-navbar .nav-link {
         padding-inline: 0.6rem;
-        font-size: 0.84rem;
     }
 
     #navbar.firefly-navbar .nav-icon {
@@ -1098,5 +1599,17 @@ body:has(#wallpaper-wrapper) #navbar.firefly-navbar.navbar-sticky-shadow > .fire
     .mobile-nav * {
         animation: none !important;
         transition-duration: 0.01ms !important;
+        transition-delay: 0ms !important;
+    }
+}
+
+@media (max-width: 767px) {
+    /* A solid glass strip makes the pinned mobile controls readable over
+       article images without changing the transparent top-of-page treatment. */
+    #navbar.firefly-navbar.scrolled > .firefly-nav-shell {
+        background: color-mix(in oklab, var(--card-bg) 94%, transparent) !important;
+        border-bottom: 1px solid color-mix(in oklab, var(--line-divider) 78%, transparent) !important;
+        -webkit-backdrop-filter: blur(16px) saturate(1.1) !important;
+        backdrop-filter: blur(16px) saturate(1.1) !important;
     }
 }

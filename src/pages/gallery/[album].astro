@@ -53,7 +53,7 @@ const coverLqipProps = cover
         <!-- 返回按钮 -->
         <a
           href={url("/gallery/")}
-          class="absolute top-4 left-4 inline-flex items-center gap-1.5 text-sm text-white/90 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg transition-colors"
+          class="absolute top-4 left-4 inline-flex items-center gap-1.5 text-sm text-(--primary) hover:text-(--primary) border border-(--glass-control-border) bg-transparent hover:bg-transparent px-3 py-1.5 rounded-lg transition-colors"
         >
           <Icon is:inline name="material-symbols:arrow-back" class="text-base" />
           {i18n(I18nKey.galleryBackToAlbums)}
@@ -154,7 +154,7 @@ const coverLqipProps = cover
           </div>
         )
       ) : (
-        <div class="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-500">
+        <div class="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-400">
           <Icon is:inline name="material-symbols:photo-library" class="text-6xl mb-4 opacity-50" />
           <p class="text-lg">{i18n(I18nKey.galleryNoAlbums)}</p>
         </div>

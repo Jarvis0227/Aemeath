@@ -12,6 +12,27 @@ const quickLinks = [
 	{ label: "关于", href: url("/about/") },
 ];
 
+const cardOrnaments = [
+	{
+		key: "dove",
+		src: url("/images/home-stickers/golden-dove.png"),
+		initialStyle:
+			"left: 14.3103%; top: -62.2141%; right: auto; bottom: auto;",
+	},
+	{
+		key: "cloud",
+		src: url("/images/home-stickers/golden-cloud.png"),
+		initialStyle:
+			"left: 58.2759%; top: 5.8809%; right: auto; bottom: auto;",
+	},
+	{
+		key: "cloud-stream",
+		src: url("/images/home-stickers/golden-cloud-stream.png"),
+		initialStyle:
+			"left: -10.8621%; top: 65.6188%; right: auto; bottom: auto;",
+	},
+];
+
 const socialLinks = [
 	...profileConfig.links,
 	{
@@ -28,14 +49,25 @@ const stickerImages = [
 		src: url("/images/home-stickers/claudecode.webp"),
 	},
 	{
+		key: "anniversary-77",
+		src: url("/images/home-stickers/anniversary-77.webp"),
+		initialStyle: "inset: 23.4649% auto auto 29.8958%;",
+		nationalDayStyle: "inset: 23.4649% auto auto 29.8958%;",
+		mobileAnchor: "home-wallpaper-card",
+	},
+	{
 		key: "coder",
 		src: url("/monthly-2026-08/loading-girl.webp"),
 		initialStyle: "inset: 83.320066% auto auto 18.718750%;",
+		mobileStyle: "inset: auto auto 3% 29.5%;",
 	},
 	{
 		key: "blonde",
 		src: url("/images/home-stickers/blonde-idol.webp"),
 		initialStyle: "inset: 42.073794% auto auto 56.985938%;",
+		defaultStyle: "inset: 42.073794% auto auto 56.985938%;",
+		nationalDayStyle: "inset: 42.1053% auto auto 59.4271%;",
+		mobileStyle: "inset: auto auto 3% 55.5%;",
 	},
 	{
 		key: "dark",
@@ -56,6 +88,7 @@ const stickerImages = [
 		key: "blue-witch",
 		src: url("/images/home-stickers/blue-witch.webp"),
 		initialStyle: "inset: 84.791667% auto auto 28.275156%;",
+		mobileStyle: "inset: auto auto 3% 4.5%;",
 	},
 	{
 		key: "white-haired-reader",
@@ -66,6 +99,7 @@ const stickerImages = [
 		key: "brown-lightning",
 		src: url("/images/home-stickers/brown-lightning.webp"),
 		initialStyle: "inset: 84.653289% auto auto 74.681250%;",
+		mobileStyle: "inset: auto auto 3% 80.5%;",
 	},
 	{
 		key: "pink-cat",
@@ -93,6 +127,7 @@ const mobileStickerKeys = [
 	"blonde",
 	"brown-lightning",
 	"blue-witch",
+	"anniversary-77",
 ];
 ---
 
@@ -106,11 +141,18 @@ const mobileStickerKeys = [
 				]}
 				style={sticker.initialStyle}
 				data-home-wallpaper-initial-style={sticker.initialStyle}
+				data-home-wallpaper-mobile-style={sticker.mobileStyle}
+				data-home-wallpaper-mobile-anchor={sticker.mobileAnchor}
+				data-home-wallpaper-default-style={sticker.defaultStyle}
+				data-home-wallpaper-national-day-style={sticker.nationalDayStyle}
 				data-home-wallpaper-mobile={mobileStickerKeys.includes(sticker.key) ? "true" : "false"}
 				data-home-wallpaper-sticker
 			>
 				<img
-					src={sticker.src}
+					src={sticker.key === "anniversary-77" ? undefined : sticker.src}
+					data-national-day-src={
+						sticker.key === "anniversary-77" ? sticker.src : undefined
+					}
 					alt=""
 					style="width: 100% !important; height: auto !important; max-height: none !important; object-fit: contain !important;"
 					loading="eager"
@@ -129,6 +171,25 @@ const mobileStickerKeys = [
 	</div>
 
 	<article class="home-wallpaper-card">
+		<div class="home-wallpaper-card__ornaments" aria-hidden="true">
+			{cardOrnaments.map((ornament) => (
+				<img
+					class:list={[
+						"home-wallpaper-card__ornament",
+						`home-wallpaper-card__ornament--${ornament.key}`,
+					]}
+					data-national-day-src={ornament.src}
+					data-home-wallpaper-sticker
+					alt=""
+					width="1254"
+					height="1254"
+					draggable="false"
+					loading="eager"
+					decoding="async"
+					style={`${ornament.initialStyle} width: var(--home-wallpaper-card-ornament-width) !important; height: auto !important; max-width: none !important; max-height: none !important; object-fit: contain !important; object-position: center !important; filter: none !important; opacity: 1 !important;`}
+				/>
+			))}
+		</div>
 		<div class="home-wallpaper-card__content">
 			<div class="home-wallpaper-card__avatar-wrap">
 				<ImageWrapper
@@ -153,22 +214,28 @@ const mobileStickerKeys = [
 				)}
 			</div>
 
-    <p class="home-wallpaper-card__identity">
-      <span class="home-wallpaper-card__identity-mark" aria-hidden="true"></span>
-      <span class="home-wallpaper-card__motion-text">{profileConfig.name}</span>
-    </p>
-    <h1><span class="home-wallpaper-card__motion-text">{siteConfig.title}</span></h1>
-    <p class="home-wallpaper-card__subtitle">
-      <span class="home-wallpaper-card__motion-text">{siteConfig.subtitle}</span>
-    </p>
+			<p class="home-wallpaper-card__identity">
+				<span class="home-wallpaper-card__identity-mark" aria-hidden="true"></span>
+				<span class="home-wallpaper-card__motion-text">{profileConfig.name}</span>
+			</p>
+			<h1><span class="home-wallpaper-card__motion-text">{siteConfig.title}</span></h1>
+			<p class="home-wallpaper-card__celebration">
+				<span class="home-wallpaper-card__motion-text">盛世华诞 与你同庆</span>
+			</p>
+			<p class="home-wallpaper-card__subtitle home-wallpaper-card__subtitle--default">
+				<span class="home-wallpaper-card__motion-text">{siteConfig.subtitle}</span>
+			</p>
+			<p class="home-wallpaper-card__subtitle home-wallpaper-card__subtitle--national-day">
+				<span class="home-wallpaper-card__motion-text">山河锦绣，万家灯火，愿以热爱守护这盛世中华</span>
+			</p>
 
-    <nav class="home-wallpaper-card__nav" aria-label="首页快捷导航">
-      {quickLinks.map((link) => (
-        <a href={link.href}>
-          <span class="home-wallpaper-card__motion-text">{link.label}</span>
-        </a>
-      ))}
-    </nav>
+			<nav class="home-wallpaper-card__nav" aria-label="首页快捷导航">
+				{quickLinks.map((link) => (
+					<a href={link.href}>
+						<span class="home-wallpaper-card__motion-text">{link.label}</span>
+					</a>
+				))}
+			</nav>
 
 			{socialLinks.length > 0 && (
 				<div class="home-wallpaper-card__socials" aria-label="社交链接">
@@ -214,11 +281,38 @@ const mobileStickerKeys = [
 
 <script is:inline>
 	(() => {
+		if (document.documentElement.dataset.nationalDayTheme === "true") {
+			document
+				.querySelectorAll("img[data-national-day-src]")
+				.forEach((image) => {
+					const src = image.dataset.nationalDaySrc;
+					if (src) image.setAttribute("src", src);
+				});
+		}
+
+		const applyNationalDayStickerPositions = (decor) => {
+			const useNationalDayPositions =
+				document.documentElement.dataset.nationalDayTheme === "true";
+			decor
+				.querySelectorAll("[data-home-wallpaper-national-day-style]")
+				.forEach((sticker) => {
+					const style = sticker.getAttribute(
+						useNationalDayPositions
+							? "data-home-wallpaper-national-day-style"
+							: "data-home-wallpaper-default-style",
+					);
+					if (!style) return;
+					sticker.setAttribute("style", style);
+					sticker.setAttribute("data-home-wallpaper-initial-style", style);
+				});
+		};
+
 		const mobileStickerZones = [
 			{ minX: 3, maxX: 24, minY: 18, maxY: 36 },
 			{ minX: 76, maxX: 94, minY: 18, maxY: 36 },
 			{ minX: 3, maxX: 23, minY: 51, maxY: 70 },
 			{ minX: 77, maxX: 94, minY: 51, maxY: 70 },
+			{ minX: 3, maxX: 22, minY: 38, maxY: 49 },
 		];
 
 		const shuffled = (items) => {
@@ -239,13 +333,56 @@ const mobileStickerKeys = [
 				...decor.querySelectorAll(
 					'[data-home-wallpaper-sticker][data-home-wallpaper-mobile="true"]',
 				),
-			];
+			].filter(
+				(sticker) =>
+					document.documentElement.dataset.nationalDayTheme !== "false" ||
+					!sticker.classList.contains("home-wallpaper-sticker--anniversary-77"),
+			);
+			const availableZones =
+				document.documentElement.dataset.nationalDayTheme === "false"
+					? mobileStickerZones.slice(0, 4)
+					: mobileStickerZones;
 			if (!wallpaperRect.width || !wallpaperRect.height || stickers.length === 0) {
 				return;
 			}
 
-			shuffled(stickers).forEach((sticker, index) => {
-				const zone = mobileStickerZones[index % mobileStickerZones.length];
+			const fixedMobileStickers = stickers.filter(
+				(sticker) => sticker.dataset.homeWallpaperMobileStyle,
+			);
+			fixedMobileStickers.forEach((sticker) => {
+				const mobileStyle = sticker.dataset.homeWallpaperMobileStyle;
+				if (mobileStyle) sticker.setAttribute("style", mobileStyle);
+			});
+
+			const mobileAnchoredStickers = stickers.filter(
+				(sticker) =>
+					sticker.dataset.homeWallpaperMobileAnchor === "home-wallpaper-card",
+			);
+			const card = decor.querySelector(".home-wallpaper-card");
+			if (card) {
+				const cardRect = card.getBoundingClientRect();
+				mobileAnchoredStickers.forEach((sticker) => {
+					const left =
+						((cardRect.left - wallpaperRect.left + 8) / wallpaperRect.width) *
+						100;
+					const top =
+						((cardRect.top - wallpaperRect.top + 8) / wallpaperRect.height) *
+						100;
+					sticker.style.inset = "auto";
+					sticker.style.left = `${left}%`;
+					sticker.style.top = `${top}%`;
+					sticker.style.right = "auto";
+					sticker.style.bottom = "auto";
+				});
+			}
+
+			const randomizedStickers = stickers.filter(
+				(sticker) =>
+					!sticker.dataset.homeWallpaperMobileStyle &&
+					sticker.dataset.homeWallpaperMobileAnchor !== "home-wallpaper-card",
+			);
+			shuffled(randomizedStickers).forEach((sticker, index) => {
+				const zone = availableZones[index % availableZones.length];
 				const stickerRect = sticker.getBoundingClientRect();
 				const stickerWidth = (stickerRect.width / wallpaperRect.width) * 100;
 				const stickerHeight = (stickerRect.height / wallpaperRect.height) * 100;
@@ -293,6 +430,17 @@ const mobileStickerKeys = [
 			applyLayout();
 			mediaQuery.addEventListener?.("change", applyLayout);
 		};
+
+		const themeLayoutEventKey = "__rainztNationalDayStickerLayoutBound";
+		if (!window[themeLayoutEventKey]) {
+			window[themeLayoutEventKey] = true;
+			window.addEventListener("nationalDayThemeChange", () => {
+				const decor = document.querySelector(".home-wallpaper-decor");
+				if (!decor) return;
+				applyNationalDayStickerPositions(decor);
+				window.requestAnimationFrame(() => randomizeMobileStickers(decor));
+			});
+		}
 
 		const waitForIntroCompletion = (callback) => {
 			const intro = document.getElementById("home-portfolio-intro");
@@ -396,6 +544,7 @@ const mobileStickerKeys = [
 			if (!decor || decor.getAttribute("data-stickers-bound") === "true") return;
 
 			decor.setAttribute("data-stickers-bound", "true");
+			applyNationalDayStickerPositions(decor);
 			bindMobileStickerLayout(decor);
 			bindHomeWallpaperReveal(decor);
 			const wallpaper = decor.closest("#wallpaper-wrapper") || decor;
@@ -412,6 +561,11 @@ const mobileStickerKeys = [
 
 					const wallpaperRect = wallpaper.getBoundingClientRect();
 					const stickerRect = sticker.getBoundingClientRect();
+					const positioningParent = sticker.offsetParent;
+					const positioningRect =
+						positioningParent instanceof HTMLElement
+							? positioningParent.getBoundingClientRect()
+							: wallpaperRect;
 					const baseTranslateX =
 						Number.parseFloat(
 							sticker.getAttribute("data-home-wallpaper-drag-x") || "0",
@@ -424,10 +578,22 @@ const mobileStickerKeys = [
 						startX: event.clientX,
 						startY: event.clientY,
 						isAvatarSticker,
-						left: stickerRect.left - wallpaperRect.left,
-						top: stickerRect.top - wallpaperRect.top,
-						maxLeft: Math.max(0, wallpaperRect.width - stickerRect.width),
-						maxTop: Math.max(0, wallpaperRect.height - stickerRect.height),
+						left: sticker.offsetLeft,
+						top: sticker.offsetTop,
+						positionWidth:
+							positioningParent instanceof HTMLElement
+								? positioningParent.clientWidth
+								: wallpaper.clientWidth,
+						positionHeight:
+							positioningParent instanceof HTMLElement
+								? positioningParent.clientHeight
+								: wallpaper.clientHeight,
+						minLeft: wallpaperRect.left - positioningRect.left,
+						minTop: wallpaperRect.top - positioningRect.top,
+						maxLeft:
+							wallpaperRect.right - positioningRect.left - stickerRect.width,
+						maxTop:
+							wallpaperRect.bottom - positioningRect.top - stickerRect.height,
 						translateX: baseTranslateX,
 						translateY: baseTranslateY,
 					};
@@ -458,11 +624,17 @@ const mobileStickerKeys = [
 					}
 					const nextLeft = Math.min(
 						dragState.maxLeft,
-						Math.max(0, dragState.left + event.clientX - dragState.startX),
+						Math.max(
+							dragState.minLeft,
+							dragState.left + event.clientX - dragState.startX,
+						),
 					);
 					const nextTop = Math.min(
 						dragState.maxTop,
-						Math.max(0, dragState.top + event.clientY - dragState.startY),
+						Math.max(
+							dragState.minTop,
+							dragState.top + event.clientY - dragState.startY,
+						),
 					);
 					sticker.style.left = `${nextLeft}px`;
 					sticker.style.top = `${nextTop}px`;
@@ -482,6 +654,41 @@ const mobileStickerKeys = [
 							"data-home-wallpaper-drag-y",
 							String(dragState.translateY),
 						);
+					} else if (
+						dragState.positionWidth > 0 &&
+						dragState.positionHeight > 0
+					) {
+						const left =
+							((Number.parseFloat(sticker.style.left) || 0) /
+								dragState.positionWidth) *
+							100;
+						const top =
+							((Number.parseFloat(sticker.style.top) || 0) /
+								dragState.positionHeight) *
+							100;
+						const leftPercent = `${left.toFixed(4)}%`;
+						const topPercent = `${top.toFixed(4)}%`;
+						const positionStyle = `inset: ${topPercent} auto auto ${leftPercent};`;
+						sticker.style.inset = "auto";
+						sticker.style.left = leftPercent;
+						sticker.style.top = topPercent;
+						sticker.style.right = "auto";
+						sticker.style.bottom = "auto";
+
+						if (sticker.hasAttribute("data-home-wallpaper-initial-style")) {
+							sticker.setAttribute(
+								"data-home-wallpaper-initial-style",
+								positionStyle,
+							);
+						}
+
+						const modeStyleAttribute =
+							document.documentElement.dataset.nationalDayTheme === "true"
+								? "data-home-wallpaper-national-day-style"
+								: "data-home-wallpaper-default-style";
+						if (sticker.hasAttribute(modeStyleAttribute)) {
+							sticker.setAttribute(modeStyleAttribute, positionStyle);
+						}
 					}
 					dragState = null;
 					sticker.classList.remove("is-dragging");
@@ -516,28 +723,6 @@ const mobileStickerKeys = [
 				}, 1800);
 			};
 
-			const fallbackCopy = (value) => {
-				const input = document.createElement("textarea");
-				input.value = value;
-				input.setAttribute("readonly", "");
-				input.style.position = "fixed";
-				input.style.top = "-9999px";
-				input.style.left = "-9999px";
-				input.style.opacity = "0";
-				document.body.appendChild(input);
-				input.focus();
-				input.select();
-
-				let copied = false;
-				try {
-					copied = document.execCommand("copy");
-				} catch {
-					copied = false;
-				}
-				input.remove();
-				return copied;
-			};
-
 			copyLinks.forEach((copyLink) => {
 				copyLink.addEventListener("click", async (event) => {
 					event.preventDefault();
@@ -550,15 +735,12 @@ const mobileStickerKeys = [
 					}
 
 					let copied = false;
-					if (navigator.clipboard?.writeText) {
-						try {
-							await navigator.clipboard.writeText(value);
-							copied = true;
-						} catch {
-							copied = false;
-						}
+					try {
+						await navigator.clipboard.writeText(value);
+						copied = true;
+					} catch {
+						// Clipboard access can be denied or unavailable outside a secure context.
 					}
-					if (!copied) copied = fallbackCopy(value);
 					showToast(copied ? "已复制" : "复制失败，请手动复制", !copied);
 				});
 			});

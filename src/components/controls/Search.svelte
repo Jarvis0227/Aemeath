@@ -5,7 +5,7 @@ import { navigateToPage } from "@utils/navigation-utils";
 import { onMount } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
 import type { SearchResult } from "@/global";
-import { getSearchUrl, url as formatUrl } from "@/utils/url-utils";
+import { url as formatUrl, getSearchUrl } from "@/utils/url-utils";
 
 type LocalSearchPost = {
 	id: string;
@@ -157,7 +157,9 @@ const search = async (keyword: string, isDesktop: boolean): Promise<void> => {
 
 				// Pagefind 的 content 是整篇文章正文，不适合放进导航栏下拉结果。
 				// 保留标题与摘要，避免长文把搜索面板撑满。
-				searchResults = pagefindResults.map(({ content: _content, ...item }) => item);
+				searchResults = pagefindResults.map(
+					({ content: _content, ...item }) => item,
+				);
 			}
 
 			if (searchResults.length === 0) {
@@ -186,7 +188,9 @@ onMount(() => {
 	if (window.pagefind || import.meta.env.DEV) {
 		initializeSearch();
 	} else {
-		document.addEventListener("pagefindready", initializeSearch, { once: true });
+		document.addEventListener("pagefindready", initializeSearch, {
+			once: true,
+		});
 		document.addEventListener("pagefindloaderror", initializeSearch, {
 			once: true,
 		});
@@ -351,7 +355,7 @@ top-20 left-4 md:left-[unset] right-4 shadow-2xl rounded-2xl p-2">
 	}
 
 	.search-more-link:hover {
-		background: var(--btn-plain-bg-hover);
+		background: transparent;
 	}
 
 	:global(#navbar.firefly-navbar #search-panel a.search-more-link::before),

@@ -47,7 +47,8 @@ const BOOST_TOP_SPEED = 20;
 const MAX_CAPTION_SCALE = 2.6;
 const TUNNEL_END_SCALE = 0.58;
 const TERMINAL_FILL_END_PROGRESS = 1 / 1.2;
-const TERMINAL_FILL_WINDOW_SECONDS = (HOLD_TO_JUMP_MS / 1000) * TERMINAL_FILL_END_PROGRESS;
+const TERMINAL_FILL_WINDOW_SECONDS =
+	(HOLD_TO_JUMP_MS / 1000) * TERMINAL_FILL_END_PROGRESS;
 const TERMINAL_REVEAL_DURATION = 0.26;
 const TERMINAL_TAIL_SEGMENT_COUNT = 5;
 const TERMINAL_EXIT_FADE_START = 0.84;
@@ -68,10 +69,17 @@ const clearActiveRuntime = () => {
 const createTunnel = (
 	frame: HTMLElement,
 	canvas: HTMLCanvasElement,
-	setCursor: (visible: boolean, pressed: boolean, x?: number, y?: number) => void,
+	setCursor: (
+		visible: boolean,
+		pressed: boolean,
+		x?: number,
+		y?: number,
+	) => void,
 	initialDarkMode: boolean,
 ): TunnelController | null => {
-	const urls = [...frame.querySelectorAll<HTMLImageElement>("[data-portal-source]")]
+	const urls = [
+		...frame.querySelectorAll<HTMLImageElement>("[data-portal-source]"),
+	]
 		.map((image) => image.currentSrc || image.src)
 		.filter(Boolean);
 
@@ -124,7 +132,14 @@ const createTunnel = (
 		// per segment. This preserves the grid while removing hundreds of per-frame
 		// WebGL state changes.
 		const linePositions: number[] = [];
-		const addLine = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number) => {
+		const addLine = (
+			x1: number,
+			y1: number,
+			z1: number,
+			x2: number,
+			y2: number,
+			z2: number,
+		) => {
 			linePositions.push(x1, y1, z1, x2, y2, z2);
 		};
 		for (let index = 0; index <= columns; index += 1) {
@@ -142,7 +157,10 @@ const createTunnel = (
 		addLine(-halfWidth, -halfHeight, 0, -halfWidth, halfHeight, 0);
 		addLine(halfWidth, -halfHeight, 0, halfWidth, halfHeight, 0);
 		const lineGeometry = new THREE.BufferGeometry();
-		lineGeometry.setAttribute("position", new THREE.Float32BufferAttribute(linePositions, 3));
+		lineGeometry.setAttribute(
+			"position",
+			new THREE.Float32BufferAttribute(linePositions, 3),
+		);
 
 		const textureLoader = new THREE.TextureLoader();
 		textureLoader.setCrossOrigin("anonymous");
@@ -177,13 +195,26 @@ const createTunnel = (
 						// supports it. This keeps the visual sharpness while cutting texture
 						// upload and sampling cost substantially.
 						const source = texture.image as HTMLImageElement | undefined;
-						if (typeof window.createImageBitmap === "function" && source?.naturalWidth && source?.naturalHeight) {
+						if (
+							typeof window.createImageBitmap === "function" &&
+							source?.naturalWidth &&
+							source?.naturalHeight
+						) {
 							try {
 								const maxSize = 640;
-								const scale = Math.min(1, maxSize / Math.max(source.naturalWidth, source.naturalHeight));
+								const scale = Math.min(
+									1,
+									maxSize / Math.max(source.naturalWidth, source.naturalHeight),
+								);
 								const bitmap = await window.createImageBitmap(source, {
-									resizeWidth: Math.max(1, Math.round(source.naturalWidth * scale)),
-									resizeHeight: Math.max(1, Math.round(source.naturalHeight * scale)),
+									resizeWidth: Math.max(
+										1,
+										Math.round(source.naturalWidth * scale),
+									),
+									resizeHeight: Math.max(
+										1,
+										Math.round(source.naturalHeight * scale),
+									),
 									resizeQuality: "medium",
 									imageOrientation: "flipY",
 								});
@@ -207,11 +238,11 @@ const createTunnel = (
 						displayTexture.minFilter = THREE.LinearFilter;
 						displayTexture.generateMipmaps = false;
 						displayTexture.colorSpace = THREE.SRGBColorSpace;
-					record.texture = displayTexture;
-					record.materials.forEach((material) => {
-						material.map = displayTexture;
-						material.needsUpdate = true;
-			});
+						record.texture = displayTexture;
+						record.materials.forEach((material) => {
+							material.map = displayTexture;
+							material.needsUpdate = true;
+						});
 						record.loaded = true;
 						record.loading = false;
 					})();
@@ -232,7 +263,8 @@ const createTunnel = (
 				return;
 			}
 			const batchEnd = Math.min(textureCursor + 3, imageRecords.length);
-			while (textureCursor < batchEnd) loadTexture(imageRecords[textureCursor++]);
+			while (textureCursor < batchEnd)
+				loadTexture(imageRecords[textureCursor++]);
 			if (textureCursor < imageRecords.length) {
 				textureTimer = window.setTimeout(loadTextureBatch, 160);
 			} else {
@@ -243,7 +275,11 @@ const createTunnel = (
 		const floorGeometry = new THREE.PlaneGeometry(columnWidth, segmentDepth);
 		const wallGeometry = new THREE.PlaneGeometry(segmentDepth, rowHeight);
 
-		const slots: Array<{ geometry: THREE.BufferGeometry; position: THREE.Vector3; rotation: THREE.Euler }> = [];
+		const slots: Array<{
+			geometry: THREE.BufferGeometry;
+			position: THREE.Vector3;
+			rotation: THREE.Euler;
+		}> = [];
 		const slotZ = -segmentDepth / 2;
 		for (let index = 0; index < columns; index += 1) {
 			const x = -halfWidth + index * columnWidth + columnWidth / 2;
@@ -286,13 +322,17 @@ const createTunnel = (
 			const slabs = group.userData.slabs as THREE.Mesh[];
 			const takesSlabs = populateIndex % 2 === 0;
 			populateIndex += 1;
-			const fillStagger = Math.max(0, TERMINAL_FILL_WINDOW_SECONDS - TERMINAL_REVEAL_DURATION);
-			slabs.forEach((slab) => {
+			const fillStagger = Math.max(
+				0,
+				TERMINAL_FILL_WINDOW_SECONDS - TERMINAL_REVEAL_DURATION,
+			);
+			for (const slab of slabs) {
 				const material = slab.material as THREE.MeshBasicMaterial;
-				const previousRecord = slab.userData.portalImageRecord as PortalImageRecord | null;
+				const previousRecord = slab.userData
+					.portalImageRecord as PortalImageRecord | null;
 				// Keep screenshots that are already visible in place. Reassigning every
 				// slab here makes the whole tunnel blink and creates a large visual burst.
-				if (fillTail && slab.visible && previousRecord) return;
+				if (fillTail && slab.visible && previousRecord) continue;
 				previousRecord?.materials.delete(material);
 				slab.userData.portalImageRecord = null;
 				slab.userData.portalReveal = null;
@@ -301,13 +341,16 @@ const createTunnel = (
 				material.needsUpdate = true;
 				slab.scale.setScalar(1);
 
-				if (!fillTail && (!takesSlabs || imageRecords.length === 0 || Math.random() > 0.5)) {
+				if (
+					!fillTail &&
+					(!takesSlabs || imageRecords.length === 0 || Math.random() > 0.5)
+				) {
 					slab.visible = false;
-					return;
+					continue;
 				}
 				if (imageRecords.length === 0) {
 					slab.visible = false;
-					return;
+					continue;
 				}
 				// Tail-fill slabs stay hidden until their scheduled reveal starts. This
 				// prevents the tunnel from looking full on the very first pressed frame.
@@ -318,20 +361,23 @@ const createTunnel = (
 				material.map = record.texture;
 				material.needsUpdate = true;
 				slab.userData.portalImageRecord = record;
-				const tailProgress = fillTail && terminalFillTotal > 1
-					? terminalFillOrder++ / (terminalFillTotal - 1)
-					: 0;
+				const tailProgress =
+					fillTail && terminalFillTotal > 1
+						? terminalFillOrder++ / (terminalFillTotal - 1)
+						: 0;
 				const reveal: PortalRevealState = {
 					elapsed: 0,
 					delay: fillTail ? fillStagger * tailProgress : Math.random() * 0.08,
-					duration: fillTail ? TERMINAL_REVEAL_DURATION : 0.46 + Math.random() * 0.16,
+					duration: fillTail
+						? TERMINAL_REVEAL_DURATION
+						: 0.46 + Math.random() * 0.16,
 					startScale: 0.82 + Math.random() * 0.05,
 					terminalFill: fillTail,
 					terminalActivated: !fillTail,
 				};
 				slab.userData.portalReveal = reveal;
 				slab.scale.setScalar(reveal.startScale);
-			});
+			}
 		};
 
 		const createSegment = (z: number) => {
@@ -366,7 +412,9 @@ const createTunnel = (
 			segments.push(segment);
 		}
 		const isTailSegment = (segment: THREE.Group) =>
-			segment.position.z <= camera.position.z - (segmentCount - TERMINAL_TAIL_SEGMENT_COUNT - 0.5) * segmentDepth;
+			segment.position.z <=
+			camera.position.z -
+				(segmentCount - TERMINAL_TAIL_SEGMENT_COUNT - 0.5) * segmentDepth;
 
 		let running = false;
 		let raf = 0;
@@ -378,7 +426,7 @@ const createTunnel = (
 		let terminalFillPrepared = false;
 		const resetTerminalFill = () => {
 			if (!terminalFillPrepared) return;
-			segments.forEach((segment) => populate(segment));
+			for (const segment of segments) populate(segment);
 			terminalFillPrepared = false;
 		};
 		const setBoost = (active: boolean, startedAt = performance.now()) => {
@@ -423,23 +471,33 @@ const createTunnel = (
 			// Start with an immediate push, then increase linearly while the mouse
 			// button or space bar remains held instead of snapping to one speed.
 			const speed = boostActive
-				? BOOST_START_SPEED + (BOOST_TOP_SPEED - BOOST_START_SPEED) * boostProgress
+				? BOOST_START_SPEED +
+					(BOOST_TOP_SPEED - BOOST_START_SPEED) * boostProgress
 				: CRUISE_SPEED;
 			scrollPosition += speed * delta * 60;
 			const desiredZ = -0.05 * scrollPosition;
 			const cameraResponse = boostActive ? 0.16 : 0.1;
 			camera.position.z += cameraResponse * (desiredZ - camera.position.z);
-			const endEase = boostActive ? 1 - Math.pow(1 - boostProgress, 3) : 0;
+			const endEase = boostActive ? 1 - (1 - boostProgress) ** 3 : 0;
 			const exitFade = boostActive
-				? Math.min(1, Math.max(0, (boostProgress - TERMINAL_EXIT_FADE_START) / (1 - TERMINAL_EXIT_FADE_START)))
+				? Math.min(
+						1,
+						Math.max(
+							0,
+							(boostProgress - TERMINAL_EXIT_FADE_START) /
+								(1 - TERMINAL_EXIT_FADE_START),
+						),
+					)
 				: 0;
 			// The final part is the actual exit: fade the whole gallery frame away
 			// while the caption remains in the clean outside space.
 			frame.style.opacity = `${1 - exitFade}`;
 			const targetTunnelScale = 1 - (1 - TUNNEL_END_SCALE) * endEase;
 			segments.forEach((segment) => {
-				segment.scale.x += (boostActive ? 0.16 : 0.22) * (targetTunnelScale - segment.scale.x);
-				segment.scale.y += (boostActive ? 0.16 : 0.22) * (targetTunnelScale - segment.scale.y);
+				segment.scale.x +=
+					(boostActive ? 0.16 : 0.22) * (targetTunnelScale - segment.scale.x);
+				segment.scale.y +=
+					(boostActive ? 0.16 : 0.22) * (targetTunnelScale - segment.scale.y);
 			});
 			const targetZoom = 1 + 1.35 * endEase;
 			camera.zoom += (boostActive ? 0.18 : 0.22) * (targetZoom - camera.zoom);
@@ -454,11 +512,12 @@ const createTunnel = (
 					.flatMap((segment) => segment.userData.slabs as THREE.Mesh[])
 					.filter((slab) => !slab.visible || !slab.userData.portalImageRecord);
 				terminalFillTotal = candidates.length;
-				tailSegments.forEach((segment) => populate(segment, true));
+				for (const segment of tailSegments) populate(segment, true);
 				const tailRecords = new Set<PortalImageRecord>();
 				tailSegments.forEach((segment) => {
 					(segment.userData.slabs as THREE.Mesh[]).forEach((slab) => {
-						const record = slab.userData.portalImageRecord as PortalImageRecord | null;
+						const record = slab.userData
+							.portalImageRecord as PortalImageRecord | null;
 						if (record) tailRecords.add(record);
 					});
 				});
@@ -467,8 +526,8 @@ const createTunnel = (
 				terminalFillOrder = 0;
 			}
 			const span = segmentCount * segmentDepth;
-			let minimum = Infinity;
-			let maximum = -Infinity;
+			let minimum = Number.POSITIVE_INFINITY;
+			let maximum = Number.NEGATIVE_INFINITY;
 			for (const segment of segments) {
 				minimum = Math.min(minimum, segment.position.z);
 				maximum = Math.max(maximum, segment.position.z);
@@ -477,18 +536,24 @@ const createTunnel = (
 				if (segment.position.z > camera.position.z + segmentDepth) {
 					segment.position.z = minimum - segmentDepth;
 					populateForCurrentState(segment);
-				} else if (segment.position.z < camera.position.z - span - segmentDepth) {
+				} else if (
+					segment.position.z <
+					camera.position.z - span - segmentDepth
+				) {
 					segment.position.z = maximum + segmentDepth;
 					populateForCurrentState(segment);
 				}
 			}
 			for (const slab of revealSlabs) {
-				const record = slab.userData.portalImageRecord as PortalImageRecord | null;
+				const record = slab.userData
+					.portalImageRecord as PortalImageRecord | null;
 				const reveal = slab.userData.portalReveal as PortalRevealState | null;
 				if (!record || !reveal) continue;
 				const material = slab.material as THREE.MeshBasicMaterial;
 				if (reveal.terminalFill && !reveal.terminalActivated) {
-					const terminalElapsed = boostActive ? (now - boostStartedAt) / 1000 : 0;
+					const terminalElapsed = boostActive
+						? (now - boostStartedAt) / 1000
+						: 0;
 					if (terminalElapsed < reveal.delay) {
 						material.opacity = 0;
 						slab.visible = false;
@@ -506,7 +571,10 @@ const createTunnel = (
 					continue;
 				}
 				reveal.elapsed += delta;
-				const progress = Math.min(1, Math.max(0, (reveal.elapsed - reveal.delay) / reveal.duration));
+				const progress = Math.min(
+					1,
+					Math.max(0, (reveal.elapsed - reveal.delay) / reveal.duration),
+				);
 				if (reveal.elapsed <= reveal.delay) {
 					slab.visible = false;
 					material.opacity = 0;
@@ -514,9 +582,11 @@ const createTunnel = (
 					continue;
 				}
 				slab.visible = true;
-				const eased = 1 - Math.pow(1 - progress, 3);
+				const eased = 1 - (1 - progress) ** 3;
 				material.opacity = 0.9 * eased;
-				slab.scale.setScalar(reveal.startScale + (1 - reveal.startScale) * eased);
+				slab.scale.setScalar(
+					reveal.startScale + (1 - reveal.startScale) * eased,
+				);
 				if (progress >= 1) slab.userData.portalReveal = null;
 			}
 			renderer.render(scene, camera);
@@ -562,7 +632,8 @@ const createTunnel = (
 				running = true;
 				frame.style.opacity = "1";
 				last = 0;
-				if (textureCursor < imageRecords.length && !textureTimer) loadTextureBatch();
+				if (textureCursor < imageRecords.length && !textureTimer)
+					loadTextureBatch();
 				renderer.render(scene, camera);
 				raf = requestAnimationFrame(animate);
 			},
@@ -575,7 +646,7 @@ const createTunnel = (
 				setBoost(false);
 				camera.zoom = 1;
 				camera.updateProjectionMatrix();
-				segments.forEach((segment) => segment.scale.set(1, 1, 1));
+				for (const segment of segments) segment.scale.set(1, 1, 1);
 				setCursor(false, false);
 			},
 			setBoost,
@@ -598,7 +669,7 @@ const createTunnel = (
 				wallGeometry.dispose();
 				lineGeometry.dispose();
 				lineMaterial.dispose();
-				slabMaterials.forEach((material) => material.dispose());
+				for (const material of slabMaterials) material.dispose();
 				imageRecords.forEach((record) => {
 					record.texture?.dispose();
 					record.materials.clear();
@@ -613,7 +684,9 @@ const createTunnel = (
 
 const setupPortal = () => {
 	const root = document.querySelector<HTMLElement>("[data-friends-portal]");
-	const trigger = document.querySelector<HTMLElement>("[data-friends-portal-trigger]");
+	const trigger = document.querySelector<HTMLElement>(
+		"[data-friends-portal-trigger]",
+	);
 	const isRoute = root?.dataset.friendsPortalRoute === "true";
 	if (!root || (!trigger && !isRoute)) {
 		clearActiveRuntime();
@@ -635,11 +708,18 @@ const setupPortal = () => {
 	const jump = root.querySelector<HTMLButtonElement>("[data-portal-jump]");
 	const jumpLabel = root.querySelector<HTMLElement>("[data-portal-jump-label]");
 	if (!frame || !canvas) return;
-	const targets = [...root.querySelectorAll<HTMLImageElement>("[data-portal-target]")]
+	const targets = [
+		...root.querySelectorAll<HTMLImageElement>("[data-portal-target]"),
+	]
 		.map((image) => image.dataset.portalTarget?.trim())
 		.filter((url): url is string => Boolean(url));
 
-	const setCursor = (visible: boolean, pressed: boolean, x?: number, y?: number) => {
+	const setCursor = (
+		visible: boolean,
+		pressed: boolean,
+		x?: number,
+		y?: number,
+	) => {
 		if (!cursor) return;
 		cursor.style.opacity = visible ? "1" : "0";
 		cursor.textContent = pressed ? "松开取消" : "长按跳转";
@@ -666,8 +746,12 @@ const setupPortal = () => {
 	let holdCompleted = false;
 	let navigationTimer = 0;
 	const cleanups: Array<() => void> = [];
-	const closeButtons = root.querySelectorAll<HTMLElement>("[data-portal-close]");
-	const themeObserver = new MutationObserver(() => tunnel?.setDarkMode(isDarkMode()));
+	const closeButtons = root.querySelectorAll<HTMLElement>(
+		"[data-portal-close]",
+	);
+	const themeObserver = new MutationObserver(() =>
+		tunnel?.setDarkMode(isDarkMode()),
+	);
 	themeObserver.observe(document.documentElement, {
 		attributes: true,
 		attributeFilter: ["class", "data-theme"],
@@ -675,10 +759,16 @@ const setupPortal = () => {
 	cleanups.push(() => themeObserver.disconnect());
 
 	const updateJump = (progress: number, label: string) => {
-		root.style.setProperty("--portal-caption-scale", `${1 + (MAX_CAPTION_SCALE - 1) * progress}`);
+		root.style.setProperty(
+			"--portal-caption-scale",
+			`${1 + (MAX_CAPTION_SCALE - 1) * progress}`,
+		);
 		root.classList.toggle("is-holding", holdActive);
 		if (!jump) return;
-		jump.style.setProperty("--portal-hold-progress", `${Math.round(progress * 100)}%`);
+		jump.style.setProperty(
+			"--portal-hold-progress",
+			`${Math.round(progress * 100)}%`,
+		);
 		jump.classList.toggle("is-holding", holdActive);
 		if (jumpLabel) jumpLabel.textContent = label;
 	};
@@ -698,7 +788,9 @@ const setupPortal = () => {
 	const pickRandomTarget = () => {
 		const externalTargets = targets.filter((url) => {
 			try {
-				return new URL(url, window.location.href).origin !== window.location.origin;
+				return (
+					new URL(url, window.location.href).origin !== window.location.origin
+				);
 			} catch {
 				return false;
 			}
@@ -742,12 +834,21 @@ const setupPortal = () => {
 	const animateHold = (now: number) => {
 		if (!holdActive) return;
 		const progress = Math.min(1, (now - holdStartedAt) / HOLD_TO_JUMP_MS);
-		const remaining = Math.max(0, (HOLD_TO_JUMP_MS - (now - holdStartedAt)) / 1000);
-		updateJump(progress, progress > 0.02 ? `${remaining.toFixed(1)}s` : "长按跳转");
+		const remaining = Math.max(
+			0,
+			(HOLD_TO_JUMP_MS - (now - holdStartedAt)) / 1000,
+		);
+		updateJump(
+			progress,
+			progress > 0.02 ? `${remaining.toFixed(1)}s` : "长按跳转",
+		);
 		holdFrame = requestAnimationFrame(animateHold);
 	};
 
-	const startHold = (source: "pointer" | "keyboard", pointerId: number | null = null) => {
+	const startHold = (
+		source: "pointer" | "keyboard",
+		pointerId: number | null = null,
+	) => {
 		if (!isOpen || holdActive || holdCompleted) return false;
 		cancelHold();
 		holdCompleted = false;
@@ -835,7 +936,13 @@ const setupPortal = () => {
 			const target = event.target instanceof Element ? event.target : null;
 			if (target?.closest("[data-portal-close]")) return;
 			event.preventDefault();
-			if (event.repeat || holdSource === "keyboard" || holdActive || holdCompleted) return;
+			if (
+				event.repeat ||
+				holdSource === "keyboard" ||
+				holdActive ||
+				holdCompleted
+			)
+				return;
 			startHold("keyboard");
 			return;
 		}
@@ -845,7 +952,11 @@ const setupPortal = () => {
 			return;
 		}
 		if (event.key !== "Tab") return;
-		const focusable = [...root.querySelectorAll<HTMLElement>("button, [tabindex]:not([tabindex=\"-1\"]), a[href]")];
+		const focusable = [
+			...root.querySelectorAll<HTMLElement>(
+				'button, [tabindex]:not([tabindex="-1"]), a[href]',
+			),
+		];
 		if (!focusable.length) return;
 		const first = focusable[0];
 		const last = focusable[focusable.length - 1];
@@ -858,7 +969,11 @@ const setupPortal = () => {
 		}
 	};
 	const onKeyUp = (event: KeyboardEvent) => {
-		if ((event.code !== "Space" && event.key !== " ") || holdSource !== "keyboard") return;
+		if (
+			(event.code !== "Space" && event.key !== " ") ||
+			holdSource !== "keyboard"
+		)
+			return;
 		event.preventDefault();
 		if (!holdCompleted) cancelHold();
 	};

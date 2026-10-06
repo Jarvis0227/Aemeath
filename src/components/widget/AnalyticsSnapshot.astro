@@ -17,7 +17,9 @@ const shareId = umamiAnalytics?.shareId ?? "";
 const shareApiBase = umamiAnalytics?.shareApiBase ?? "";
 const historicalVisitors = umamiAnalytics?.historicalStats?.visitors ?? 0;
 const historicalPageviews = umamiAnalytics?.historicalStats?.pageviews ?? 0;
-const hasPublicStats = Boolean(umamiAnalytics?.websiteId && shareId && shareApiBase);
+const hasPublicStats = Boolean(
+	umamiAnalytics?.websiteId && shareId && shareApiBase,
+);
 ---
 
 <WidgetLayout showTitle={false} id="analytics-snapshot" class={className} style={style}>

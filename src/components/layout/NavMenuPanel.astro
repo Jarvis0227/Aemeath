@@ -1,7 +1,9 @@
 ---
-import type { NavBarLink } from "@/types/config";
 import { Icon } from "astro-icon/components";
-import { siteConfig } from "@/config";
+import ImageWrapper from "@/components/common/ImageWrapper.astro";
+import { profileConfig } from "@/config/profileConfig";
+import { siteConfig } from "@/config/siteConfig";
+import type { NavBarLink } from "@/types/config";
 import { url } from "@/utils/url-utils";
 
 interface Props {
@@ -9,6 +11,7 @@ interface Props {
 }
 
 const processedLinks = Astro.props.links;
+const mobileProfileName = siteConfig.title;
 
 const normalizePath = (path: string) => {
 	let pathname = path.split(/[?#]/)[0] || "/";
@@ -62,22 +65,64 @@ const getLinkIcon = (item: NavBarLink, fallback: string) =>
 	<button class="mobile-bg" type="button" aria-label="关闭导航菜单" data-mobile-menu-close></button>
 	<aside class="mobile-content" role="dialog" aria-modal="true" aria-label="网站导航" tabindex="-1">
 		<header class="mobile-nav-header">
-			<a class="mobile-nav-brand" href={url("/")} data-mobile-menu-close>
-				<img
-					src={url("/favicon/chaoc-tingyu-avatar-512.png")}
-					alt=""
-					class="mobile-nav-brand-icon h-7 w-7 rounded-md bg-white object-contain ring-1 ring-sky-100/80 dark:ring-white/20"
+			<a class="mobile-profile" href={url("/about/")} aria-label={`${mobileProfileName}个人主页`} data-mobile-menu-close>
+				<ImageWrapper
+					src={profileConfig.avatar || ""}
+					alt={`${mobileProfileName}头像`}
+					class="mobile-profile-avatar"
+					loading="eager"
+					fetchpriority="high"
+					widths={[160]}
+					sizes="88px"
 				/>
-				<span>{siteConfig.navbar.title || siteConfig.title}</span>
+				<strong class="mobile-profile-name">{mobileProfileName}</strong>
+				{profileConfig.bio && <span class="mobile-profile-bio">{profileConfig.bio}</span>}
 			</a>
 			<button class="mobile-nav-close" type="button" aria-label="关闭导航菜单" data-mobile-menu-close>
 				<Icon is:inline name="material-symbols:close-rounded" />
 			</button>
 		</header>
 
-		<p class="mobile-nav-eyebrow">MENU</p>
+		{profileConfig.links.length > 0 && (
+			<div class="mobile-profile-links" aria-label="个人社交链接">
+				<a
+					class="mobile-profile-social"
+					href={url("/rss.xml")}
+					aria-label="RSS订阅"
+					title="RSS订阅"
+				>
+					<Icon is:inline name="material-symbols:rss-feed-rounded" aria-hidden="true" />
+				</a>
+				{profileConfig.links.map((link) =>
+					link.url.startsWith("copy:") ? (
+						<button
+							type="button"
+							class="mobile-profile-social"
+							aria-label={link.name}
+							title={link.name}
+							data-mobile-social-copy
+							data-copy-value={link.url.slice(5)}
+						>
+							<Icon is:inline name={link.icon} aria-hidden="true" />
+						</button>
+					) : (
+						<a
+							class="mobile-profile-social"
+							href={link.url}
+							aria-label={link.name}
+							title={link.name}
+							target={link.url.startsWith("mailto:") ? undefined : "_blank"}
+							rel="me noopener noreferrer"
+						>
+							<Icon is:inline name={link.icon} aria-hidden="true" />
+						</a>
+					),
+				)}
+			</div>
+		)}
+
 		<nav class="mobile-links" aria-label="移动端主导航">
-			{mobileGroups.map((group) =>
+			{mobileGroups.map((group, groupIndex) =>
 				group.children ? (
 					<section
 						class:list={[
@@ -85,34 +130,49 @@ const getLinkIcon = (item: NavBarLink, fallback: string) =>
 							group.children.some((child) => isLinkActive(child)) &&
 								"mobile-nav-group-active",
 						]}
+						data-open={group.children.some((child) => isLinkActive(child)) ? "true" : "false"}
 						data-mobile-nav-item
 						data-active-paths={group.activePaths.join("|")}
 					>
-						<h2 class="mobile-group-title">
+						<button
+							type="button"
+							class="mobile-group-title"
+							aria-expanded={group.children.some((child) => isLinkActive(child)) ? "true" : "false"}
+							aria-controls={`mobile-nav-submenu-${groupIndex}`}
+						>
+							<Icon is:inline name={getLinkIcon(group, "material-symbols:folder-rounded")} class="mobile-group-icon" aria-hidden="true" />
 							<span>{group.name}</span>
-						</h2>
-						<div class="mobile-group-links">
-							{group.children.map((child) => (
-								<a
-									href={child.external ? child.url : url(child.url)}
-									class:list={[
-										"mobile-link mobile-sub-link",
-										isLinkActive(child) && "mobile-nav-active",
-									]}
-									target={child.external ? "_blank" : null}
+							<Icon is:inline name="material-symbols:keyboard-arrow-down-rounded" class="mobile-group-chevron" aria-hidden="true" />
+						</button>
+						<div
+							class="mobile-group-panel"
+							id={`mobile-nav-submenu-${groupIndex}`}
+							inert={!group.children.some((child) => isLinkActive(child))}
+							aria-hidden={!group.children.some((child) => isLinkActive(child)) ? "true" : undefined}
+						>
+							<div class="mobile-group-links">
+								{group.children.map((child) => (
+									<a
+										href={child.external ? child.url : url(child.url)}
+										class:list={[
+											"mobile-link mobile-sub-link",
+											isLinkActive(child) && "mobile-nav-active",
+										]}
+										target={child.external ? "_blank" : null}
 					aria-current={isLinkActive(child) ? "page" : undefined}
 					data-mobile-nav-item
 					data-active-paths={!child.external ? normalizePath(child.url) : ""}
-				>
-					{child.external && child.iconImage ? (
-						<img src={child.iconImage} alt="" aria-hidden="true" class="mobile-nav-item-icon object-contain" loading="eager" decoding="async" />
-					) : (
-						<Icon is:inline name={getLinkIcon(child, "material-symbols:arrow-forward-rounded")} class="mobile-nav-item-icon" />
-					)}
+					>
+										{child.external && child.iconImage ? (
+											<img src={child.iconImage} alt="" aria-hidden="true" class="mobile-nav-item-icon object-contain" loading="eager" decoding="async" />
+										) : (
+											<Icon is:inline name={getLinkIcon(child, "material-symbols:arrow-forward-rounded")} class="mobile-nav-item-icon" />
+										)}
 									<span class="mobile-nav-item-text">{child.name}</span>
 									{child.external && <Icon is:inline name="material-symbols:open-in-new-rounded" class="mobile-nav-external" />}
-								</a>
-							))}
+									</a>
+								))}
+							</div>
 						</div>
 					</section>
 				) : (
@@ -159,6 +219,7 @@ const getLinkIcon = (item: NavBarLink, fallback: string) =>
 		menuPanel?.classList.add("float-panel-closed");
 		menuPanel?.classList.remove("active");
 		menuPanel?.setAttribute("aria-hidden", "true");
+		document.getElementById("top-row")?.classList.remove("mobile-nav-open");
 		menuBtn?.classList.remove("active");
 		menuBtn?.setAttribute("aria-expanded", "false");
 		document.body.style.overflow = "";
@@ -167,7 +228,51 @@ const getLinkIcon = (item: NavBarLink, fallback: string) =>
 	document.addEventListener("click", function(event) {
 		const target = event.target;
 		if (!(target instanceof Element)) return;
+
+		const groupButton = target.closest<HTMLButtonElement>(".mobile-group-title");
+		if (groupButton) {
+			const group = groupButton.closest<HTMLElement>(".mobile-nav-group");
+			if (!group) return;
+			const expanded = group.dataset.open === "true";
+			const nextExpanded = !expanded;
+			group.dataset.open = String(nextExpanded);
+			groupButton.setAttribute("aria-expanded", String(nextExpanded));
+			const panel = group.querySelector<HTMLElement>(".mobile-group-panel");
+			panel?.toggleAttribute("inert", !nextExpanded);
+			if (nextExpanded) panel?.removeAttribute("aria-hidden");
+			else panel?.setAttribute("aria-hidden", "true");
+			return;
+		}
+
 		if (target.closest(".mobile-link, [data-mobile-menu-close]")) closeMobileMenu();
+
+		const copyButton = target.closest<HTMLButtonElement>("[data-mobile-social-copy]");
+		if (!copyButton) return;
+
+		const value = copyButton.getAttribute("data-copy-value");
+		if (!value) return;
+
+		const copy = async () => {
+			let copied = false;
+			try {
+				await navigator.clipboard.writeText(value);
+				copied = true;
+			} catch {
+				// Clipboard access can be denied or unavailable outside a secure context.
+			}
+
+			const label = copyButton.getAttribute("title") || copyButton.getAttribute("aria-label") || "链接";
+			if (copied) copyButton.dataset.copied = "true";
+			copyButton.title = copied ? `${label}已复制` : "复制失败，请手动复制";
+			copyButton.setAttribute("aria-label", copyButton.title);
+			window.setTimeout(() => {
+				delete copyButton.dataset.copied;
+				copyButton.title = label;
+				copyButton.setAttribute("aria-label", label);
+			}, 1400);
+		};
+
+		void copy();
 	});
 
 	document.addEventListener("keydown", function(event) {

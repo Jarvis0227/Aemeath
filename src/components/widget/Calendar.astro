@@ -61,15 +61,15 @@ const postUrlPrefix = url("/posts/");
 <WidgetLayout name={i18n(I18nKey.calendar)} showTitle={showTitle} id="calendar-widget" class={className} style={style}>
   <div class="calendar-container">
     <div class="flex justify-between items-center mb-2">
-        <button id="prev-month-btn" class="btn-plain rounded-lg w-8 h-8 flex items-center justify-center hover:bg-(--btn-plain-bg-hover) transition-colors" aria-label="Previous Month">
+        <button id="prev-month-btn" class="btn-plain rounded-lg w-8 h-8 flex items-center justify-center border border-(--glass-control-border) text-(--primary) hover:bg-transparent transition-colors" aria-label="Previous Month">
             <Icon is:inline name="fa7-solid:chevron-left" class="text-sm" />
         </button>
         <div id="current-month-display" class="text-lg font-bold text-neutral-900 dark:text-neutral-100 cursor-pointer hover:text-(--primary) transition-colors select-none"></div>
         <div class="flex gap-2">
-            <button id="reset-month-btn" class="btn-plain rounded-lg w-8 h-8 flex items-center justify-center hover:bg-(--btn-plain-bg-hover) transition-colors" aria-label="Back to Today">
+            <button id="reset-month-btn" class="btn-plain rounded-lg w-8 h-8 flex items-center justify-center border border-(--glass-control-border) text-(--primary) hover:bg-transparent transition-colors" aria-label="Back to Today">
                 <Icon is:inline name="fa7-solid:arrow-rotate-left" class="text-sm" />
             </button>
-            <button id="next-month-btn" class="btn-plain rounded-lg w-8 h-8 flex items-center justify-center hover:bg-(--btn-plain-bg-hover) transition-colors" aria-label="Next Month">
+            <button id="next-month-btn" class="btn-plain rounded-lg w-8 h-8 flex items-center justify-center border border-(--glass-control-border) text-(--primary) hover:bg-transparent transition-colors" aria-label="Next Month">
                 <Icon is:inline name="fa7-solid:chevron-right" class="text-sm" />
             </button>
         </div>
@@ -174,7 +174,7 @@ const postUrlPrefix = url("/posts/");
 
     // Render month labels (numbers 1-12)
     monthsEl.innerHTML = Array.from({length: 12}, (_, i) =>
-      `<span class="text-[10px] text-neutral-400 dark:text-neutral-500 text-center">${i + 1}</span>`
+      `<span class="text-[10px] text-neutral-400 dark:text-neutral-400 text-center">${i + 1}</span>`
     ).join('');
 
     // Build weekly post counts: heatmapData[month][week] = count
@@ -412,10 +412,10 @@ const postUrlPrefix = url("/posts/");
       const isCurrent = index === displayMonth;
       const hasPost = monthsWithPosts.has(index);
       const classes = [
-        "p-2 text-center text-sm rounded cursor-pointer hover:bg-(--btn-plain-bg-hover) transition-colors relative"
+        "p-2 text-center text-sm rounded cursor-pointer border border-(--glass-control-border) hover:bg-transparent transition-colors relative"
       ];
       if (isCurrent) {
-        classes.push("text-(--primary) font-bold bg-(--btn-plain-bg-hover)");
+        classes.push("text-(--primary) font-bold border-(--primary)");
       } else {
         classes.push("text-neutral-700 dark:text-neutral-300");
       }
@@ -441,10 +441,10 @@ const postUrlPrefix = url("/posts/");
     container.innerHTML = availableYears.map(year => {
       const isCurrent = year === displayYear;
       const classes = [
-        "p-2 text-center text-sm rounded cursor-pointer hover:bg-(--btn-plain-bg-hover) transition-colors relative"
+        "p-2 text-center text-sm rounded cursor-pointer border border-(--glass-control-border) hover:bg-transparent transition-colors relative"
       ];
       if (isCurrent) {
-        classes.push("text-(--primary) font-bold bg-(--btn-plain-bg-hover)");
+        classes.push("text-(--primary) font-bold border-(--primary)");
       } else {
         classes.push("text-neutral-700 dark:text-neutral-300");
       }
@@ -478,7 +478,7 @@ const postUrlPrefix = url("/posts/");
         const date = new Date(post.published);
         const dateStr = `${date.getMonth() + 1}-${date.getDate()}`;
         return `
-        <a href="${postUrlPrefix}${post.id}/" class="flex justify-between items-center text-sm text-neutral-700 dark:text-neutral-300 hover:text-(--primary) dark:hover:text-(--primary) transition-colors px-2 py-1 rounded hover:bg-(--btn-plain-bg-hover)">
+        <a href="${postUrlPrefix}${post.id}/" class="flex justify-between items-center text-sm text-neutral-700 dark:text-neutral-300 hover:text-(--primary) dark:hover:text-(--primary) transition-colors px-2 py-1 rounded hover:bg-transparent">
           <span class="truncate">${post.title}</span>
           <span class="text-xs text-neutral-500 dark:text-neutral-400 ml-2 whitespace-nowrap">${dateStr}</span>
         </a>
@@ -538,7 +538,7 @@ const postUrlPrefix = url("/posts/");
             const date = new Date(post.published);
             const dateStr = `${date.getMonth() + 1}-${date.getDate()}`;
             return `
-            <a href="${postUrlPrefix}${post.id}/" class="flex justify-between items-center text-sm text-neutral-700 dark:text-neutral-300 hover:text-(--primary) dark:hover:text-(--primary) transition-colors px-2 py-1 rounded hover:bg-(--btn-plain-bg-hover)">
+            <a href="${postUrlPrefix}${post.id}/" class="flex justify-between items-center text-sm text-neutral-700 dark:text-neutral-300 hover:text-(--primary) dark:hover:text-(--primary) transition-colors px-2 py-1 rounded hover:bg-transparent">
               <span class="truncate">${post.title}</span>
               <span class="text-xs text-neutral-500 dark:text-neutral-400 ml-2 whitespace-nowrap">${dateStr}</span>
             </a>
@@ -617,6 +617,13 @@ const postUrlPrefix = url("/posts/");
 </script>
 
 <style>
+  :global(#prev-month-btn:hover),
+  :global(#reset-month-btn:hover),
+  :global(#next-month-btn:hover) {
+    background: transparent;
+    color: var(--primary);
+  }
+
   :global(.calendar-day) {
     transition: all 0.2s ease;
     min-height: 32px;
@@ -628,7 +635,8 @@ const postUrlPrefix = url("/posts/");
 
   /* 自定义选中日期样式 */
   :global(.calendar-day-selected) {
-    background-color: var(--btn-regular-bg);
+    background-color: transparent;
+    outline: 1px solid var(--primary);
     border-radius: 0.25rem;
   }
 

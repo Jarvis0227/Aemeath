@@ -353,10 +353,10 @@ a.card-github.fetch-error
 .mermaid-ctrl-btn
   width: 28px
   height: 28px
-  border: none
+  border: 1px solid var(--glass-control-border)
   border-radius: 6px
-  background: var(--btn-regular-bg)
-  color: var(--btn-content)
+  background: transparent
+  color: var(--primary)
   font-size: 14px
   line-height: 28px
   text-align: center
@@ -366,14 +366,15 @@ a.card-github.fetch-error
   align-items: center
   justify-content: center
   transition: all 0.15s ease
-  backdrop-filter: blur(8px)
+  backdrop-filter: none
 
   &:hover
-    background: var(--btn-regular-bg-hover)
+    background: transparent
+    border-color: var(--primary)
     transform: translateY(-1px)
 
   &:active
-    background: var(--btn-regular-bg-active)
+    background: transparent
     transform: translateY(0)
 
 // Mermaid 全屏遮罩
@@ -546,10 +547,10 @@ a.card-github.fetch-error
 .plantuml-ctrl-btn
   width: 28px
   height: 28px
-  border: none
+  border: 1px solid var(--glass-control-border)
   border-radius: 6px
-  background: var(--btn-regular-bg)
-  color: var(--btn-content)
+  background: transparent
+  color: var(--primary)
   font-size: 14px
   line-height: 28px
   text-align: center
@@ -559,14 +560,15 @@ a.card-github.fetch-error
   align-items: center
   justify-content: center
   transition: all 0.15s ease
-  backdrop-filter: blur(8px)
+  backdrop-filter: none
 
   &:hover
-    background: var(--btn-regular-bg-hover)
+    background: transparent
+    border-color: var(--primary)
     transform: translateY(-1px)
 
   &:active
-    background: var(--btn-regular-bg-active)
+    background: transparent
     transform: translateY(0)
 
 // PlantUML 全屏遮罩

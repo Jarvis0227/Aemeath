@@ -4,6 +4,13 @@ import "@waline/client/style";
 
 <script>
 	import { getIconSvg } from "@/constants/icons";
+	import {
+		curatedLottieQqEmojiIds,
+		featuredLottieEmojis,
+		qqLottieEmojiLabels,
+		type LottieEmojiItem,
+	} from "@/constants/lottieEmojis";
+	import { walineKaomoji } from "@/constants/walineKaomoji";
 
 	(() => {
 		const runtimeWindow = window as typeof window & {
@@ -36,10 +43,13 @@ import "@waline/client/style";
 		let avatarPreviewCleanup: (() => void) | undefined;
 		let pickerPositionCleanup: (() => void) | undefined;
 		let emojiFallbackCleanup: (() => void) | undefined;
+		let lottiePickerCleanup: (() => void) | undefined;
+		let lottieCommentsCleanup: (() => void) | undefined;
 		let commentPresentationCleanup: (() => void) | undefined;
 		let ownedCommentFilterCleanup: (() => void) | undefined;
 		let replyCollapseCleanup: (() => void) | undefined;
 		let commentHintCleanup: (() => void) | undefined;
+		let commentModeCleanup: (() => void) | undefined;
 		let commentAnchorCleanup: (() => void) | undefined;
 		let initQueued = false;
 
@@ -85,10 +95,81 @@ import "@waline/client/style";
 			url: string;
 		};
 
+		const getStoredWalineUser = (loginNick: string): WalineUserSnapshot | null => {
+			const stores: Storage[] = [];
+			try {
+				stores.push(sessionStorage);
+			} catch {
+				// Storage can be unavailable in privacy-restricted browsing contexts.
+			}
+			try {
+				stores.push(localStorage);
+			} catch {
+				// Keep the native editor usable when persistent storage is disabled.
+			}
+
+			const snapshots: WalineUserSnapshot[] = [];
+			stores.forEach((store) => {
+				try {
+					const raw = store.getItem("WALINE_USER");
+					if (!raw || raw === "null") return;
+
+					const user = JSON.parse(raw) as WalineStoredUser;
+					if (
+						!user ||
+						typeof user !== "object" ||
+						typeof user.token !== "string" ||
+						!user.token ||
+						typeof user.display_name !== "string" ||
+						typeof user.objectId !== "number" ||
+						!Number.isInteger(user.objectId) ||
+						(user.type !== "administrator" && user.type !== "guest")
+					) {
+						return;
+					}
+
+					snapshots.push({
+						displayName: user.display_name.trim(),
+						objectId: user.objectId,
+						type: user.type,
+						url: typeof user.url === "string" ? user.url : "",
+					});
+				} catch {
+					// Ignore malformed or inaccessible Waline cache entries.
+				}
+			});
+
+			return snapshots.find((user) => user.displayName === loginNick) || null;
+		};
+
 		type EmojiManifest = {
 			prefix?: string;
 			type?: string;
 			items?: string[];
+		};
+
+		type LottieAnimation = {
+			addEventListener: (eventName: string, callback: () => void) => void;
+			destroy: () => void;
+			goToAndStop?: (value: number, isFrame: boolean) => void;
+			pause: () => void;
+			play: () => void;
+		};
+
+		type LottieRuntime = {
+			loadAnimation: (options: {
+				autoplay: boolean;
+				container: HTMLElement;
+				loop: boolean;
+				path: string;
+				renderer: "canvas" | "svg";
+				rendererSettings?: Record<string, unknown>;
+			}) => LottieAnimation;
+		};
+
+		type LottieWindow = Window & {
+			lottie?: LottieRuntime;
+			__rainztLottieRuntimePromise?: Promise<LottieRuntime>;
 		};
 
 		const getQQAvatarUrl = (value: string) => {
@@ -260,53 +341,648 @@ import "@waline/client/style";
 		};
 
 		const setupPickerPositioning = (root: HTMLElement) => {
-			let frameId: number | undefined;
-
 			const pickerSelector = ".wl-emoji-popup, .wl-gif-popup";
 			const openUpwardClass = "waline-picker-open-upward";
-			const edgeGap = 12;
 
-			const syncPickerPosition = () => {
-				frameId = undefined;
-				const commentCard = root.closest<HTMLElement>("#post-comments");
-				const cardBottom = commentCard?.getBoundingClientRect().bottom ?? Number.POSITIVE_INFINITY;
-
+			const clearLegacyDirection = () => {
 				root.querySelectorAll<HTMLElement>(pickerSelector).forEach((picker) => {
-					if (!picker.classList.contains("display")) {
-						picker.classList.remove(openUpwardClass);
-						return;
-					}
-
-					// Measure the native downward layout first. The class is restored before the next paint,
-					// so users never see it jump between directions.
 					picker.classList.remove(openUpwardClass);
-					const pickerRect = picker.getBoundingClientRect();
-					const pickerAnchor = picker.parentElement?.getBoundingClientRect();
-					const constrainedBottom = Math.min(window.innerHeight - edgeGap, cardBottom - edgeGap);
-					const wouldOverflow = pickerRect.bottom > constrainedBottom;
-					const upwardTop = pickerAnchor ? pickerAnchor.top - edgeGap - pickerRect.height : pickerRect.top;
-
-					if (wouldOverflow && upwardTop >= edgeGap) {
-						picker.classList.add(openUpwardClass);
-					}
 				});
 			};
 
-			const schedulePickerPosition = () => {
-				if (frameId !== undefined) return;
-				frameId = requestAnimationFrame(syncPickerPosition);
-			};
-
-			root.addEventListener("click", schedulePickerPosition);
-			window.addEventListener("resize", schedulePickerPosition, { passive: true });
-			document.addEventListener("scroll", schedulePickerPosition, { capture: true, passive: true });
-			schedulePickerPosition();
+			// Pickers now stay in document flow, so viewport-based upward positioning is unnecessary.
+			clearLegacyDirection();
+			root.addEventListener("click", clearLegacyDirection);
 
 			return () => {
-				root.removeEventListener("click", schedulePickerPosition);
-				window.removeEventListener("resize", schedulePickerPosition);
-				document.removeEventListener("scroll", schedulePickerPosition, true);
-				if (frameId !== undefined) cancelAnimationFrame(frameId);
+				root.removeEventListener("click", clearLegacyDirection);
+			};
+		};
+
+		/* Add the local Lottie library as a fourth tab inside Waline's native emoji
+		 * picker. Players are created only for visible cells and stay on frame zero
+		 * until their button is hovered or keyboard-focused. */
+		const setupLottieEmojiPicker = (root: HTMLElement) => {
+			const runtimePath = `${import.meta.env.BASE_URL}assets/lottie-web-5.12.2.min.js`;
+			const animationBasePath = `${import.meta.env.BASE_URL}lottie/`;
+			const indexPath = `${import.meta.env.BASE_URL}lottie/qq-index.json`;
+			const runtimeWindow = window as LottieWindow;
+			const animations = new Map<HTMLElement, LottieAnimation>();
+			const loadingAnimations = new Set<HTMLElement>();
+			let pickerItems: LottieEmojiItem[] = [...featuredLottieEmojis];
+			let itemsLoaded = false;
+			let itemsPromise: Promise<void> | undefined;
+			let runtimePromise: Promise<LottieRuntime> | undefined;
+			let scanFrame: number | undefined;
+			let disposed = false;
+
+			type PickerState = {
+				count: HTMLElement;
+				grid: HTMLElement;
+				handleInput: () => void;
+				handlePanelClick: (event: MouseEvent) => void;
+				handlePanelFocusIn: (event: FocusEvent) => void;
+				handlePanelFocusOut: (event: FocusEvent) => void;
+				handlePanelMouseDown: (event: MouseEvent) => void;
+				handlePanelMouseOut: (event: MouseEvent) => void;
+				handlePanelMouseOver: (event: MouseEvent) => void;
+			handlePopupClick: (event: MouseEvent) => void;
+			handleKaomojiClick: (event: MouseEvent) => void;
+			handleKaomojiMouseDown: (event: MouseEvent) => void;
+			input: HTMLInputElement;
+			kaomojiPanel: HTMLElement;
+			kaomojiLive: HTMLElement;
+			kaomojiTab?: HTMLButtonElement;
+				live: HTMLElement;
+				panel: HTMLElement;
+				popup: HTMLElement;
+				renderFrame?: number;
+				tab?: HTMLButtonElement;
+			};
+
+			const states = new Map<HTMLElement, PickerState>();
+			const prefersReducedMotion = () =>
+				window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
+			const loadRuntime = () => {
+				if (runtimeWindow.lottie) return Promise.resolve(runtimeWindow.lottie);
+				if (runtimePromise) return runtimePromise;
+				if (runtimeWindow.__rainztLottieRuntimePromise) {
+					runtimePromise = runtimeWindow.__rainztLottieRuntimePromise;
+					return runtimePromise;
+				}
+
+				runtimePromise = new Promise<LottieRuntime>((resolve, reject) => {
+					const existingScript = document.querySelector<HTMLScriptElement>(
+						"script[data-rainzt-lottie-runtime]",
+					);
+					const script = existingScript || document.createElement("script");
+					const handleLoad = () => {
+						if (runtimeWindow.lottie) resolve(runtimeWindow.lottie);
+						else reject(new Error("Lottie runtime loaded without a global API"));
+					};
+					const handleError = () =>
+						reject(new Error("Failed to load the local Lottie runtime"));
+
+					script.addEventListener("load", handleLoad, { once: true });
+					script.addEventListener("error", handleError, { once: true });
+					if (!existingScript) {
+						script.src = runtimePath;
+						script.async = true;
+						script.dataset.rainztLottieRuntime = "true";
+						document.head.appendChild(script);
+					}
+				});
+				runtimeWindow.__rainztLottieRuntimePromise = runtimePromise;
+				return runtimePromise;
+			};
+
+			const freezePreview = (preview: HTMLElement) => {
+				delete preview.dataset.walineLottiePlaying;
+				const animation = animations.get(preview);
+				animation?.pause();
+				animation?.goToAndStop?.(0, true);
+			};
+
+			const releasePreview = (preview: HTMLElement) => {
+				const animation = animations.get(preview);
+				animation?.destroy();
+				animations.delete(preview);
+				loadingAnimations.delete(preview);
+				preview.replaceChildren();
+				delete preview.dataset.walineLottieReady;
+				delete preview.dataset.walineLottiePlaying;
+			};
+
+			const markPreviewFallback = (preview: HTMLElement) => {
+				releasePreview(preview);
+				preview.dataset.walineLottieError = "true";
+				preview.textContent =
+					preview.dataset.walineLottieTabIcon === "true" ? "" : "L";
+			};
+
+			const updatePreviewPlayback = (preview: HTMLElement) => {
+				const animation = animations.get(preview);
+				if (!animation) return;
+				if (
+					preview.dataset.walineLottiePlaying === "true" &&
+					preview.dataset.walineLottieVisible === "true" &&
+					!prefersReducedMotion()
+				) {
+					animation.play();
+					return;
+				}
+				animation.pause();
+				animation.goToAndStop?.(0, true);
+			};
+
+			const loadAnimation = async (preview: HTMLElement) => {
+				if (
+					disposed ||
+					!preview.isConnected ||
+					preview.dataset.walineLottieVisible !== "true" ||
+					preview.dataset.walineLottieError === "true" ||
+					animations.has(preview) ||
+					loadingAnimations.has(preview)
+				)
+					return;
+
+				const name = preview.dataset.walineLottieName || "";
+				if (!/^[a-z0-9_-]+$/iu.test(name)) {
+					markPreviewFallback(preview);
+					return;
+				}
+
+				loadingAnimations.add(preview);
+				try {
+					const runtime = await loadRuntime();
+					if (
+						disposed ||
+						!preview.isConnected ||
+						preview.dataset.walineLottieVisible !== "true"
+					)
+						return;
+
+					const animation = runtime.loadAnimation({
+						container: preview,
+						loop: true,
+						autoplay: false,
+						path: `${animationBasePath}${encodeURIComponent(name)}.json`,
+						renderer: "svg",
+						rendererSettings: { preserveAspectRatio: "xMidYMid meet" },
+					});
+					const syncPlayback = () => updatePreviewPlayback(preview);
+					animation.addEventListener("data_ready", syncPlayback);
+					animation.addEventListener("DOMLoaded", syncPlayback);
+					animation.addEventListener("data_failed", () => markPreviewFallback(preview));
+					animations.set(preview, animation);
+					delete preview.dataset.walineLottieError;
+					preview.dataset.walineLottieReady = "true";
+					updatePreviewPlayback(preview);
+				} catch {
+					markPreviewFallback(preview);
+				} finally {
+					loadingAnimations.delete(preview);
+				}
+			};
+
+			const previewObserver = "IntersectionObserver" in window
+				? new IntersectionObserver(
+						(entries) => {
+							entries.forEach((entry) => {
+								const preview = entry.target as HTMLElement;
+								if (entry.isIntersecting) {
+									preview.dataset.walineLottieVisible = "true";
+									void loadAnimation(preview);
+									return;
+								}
+								delete preview.dataset.walineLottieVisible;
+								freezePreview(preview);
+							});
+						},
+						{ rootMargin: "72px", threshold: 0.02 },
+					)
+				: undefined;
+
+			const getButtonPreview = (event: Event) => {
+				const target = event.target as Element | null;
+				const button = target?.closest<HTMLButtonElement>(
+					".waline-lottie-picker__item[data-waline-lottie-name]",
+				);
+				return button?.querySelector<HTMLElement>(".waline-lottie-picker__preview");
+			};
+
+			const setPreviewPlaying = (preview: HTMLElement | null | undefined, playing: boolean) => {
+				if (!preview) return;
+				if (playing && !prefersReducedMotion()) {
+					preview.dataset.walineLottiePlaying = "true";
+					const animation = animations.get(preview);
+					if (animation) animation.play();
+					else void loadAnimation(preview);
+					return;
+				}
+				freezePreview(preview);
+			};
+
+			const releasePanelAnimations = (panel: HTMLElement) => {
+				panel
+					.querySelectorAll<HTMLElement>(".waline-lottie-picker__preview")
+					.forEach((preview) => {
+						previewObserver?.unobserve(preview);
+						releasePreview(preview);
+					});
+			};
+
+			const renderState = (state: PickerState) => {
+				state.renderFrame = undefined;
+				if (disposed || !state.panel.isConnected) return;
+				releasePanelAnimations(state.panel);
+
+				const query = state.input.value.trim().toLocaleLowerCase("zh-CN");
+				const filteredItems = pickerItems.filter((item) => {
+					if (!query) return true;
+					return [item.name, item.label, item.emojiId, item.description]
+						.filter(Boolean)
+						.join(" ")
+						.toLocaleLowerCase("zh-CN")
+						.includes(query);
+				});
+
+				state.grid.replaceChildren();
+				state.count.textContent = itemsLoaded
+					? `${filteredItems.length}/${pickerItems.length}`
+					: `${filteredItems.length}+`;
+
+				if (!filteredItems.length) {
+					const empty = document.createElement("p");
+					empty.className = "waline-lottie-picker__empty";
+					empty.textContent = "没有找到这个动态表情";
+					state.grid.append(empty);
+					return;
+				}
+
+				const fragment = document.createDocumentFragment();
+				filteredItems.forEach((item) => {
+					const button = document.createElement("button");
+					button.type = "button";
+					button.className = "waline-lottie-picker__item";
+					button.dataset.walineLottieName = item.name;
+					button.title = `${item.label} · :lottie_${item.name}:`;
+					button.setAttribute("aria-label", `插入动态表情：${item.label}`);
+
+					const preview = document.createElement("span");
+					preview.className = "waline-lottie-picker__preview";
+					preview.dataset.walineLottieName = item.name;
+					preview.setAttribute("aria-hidden", "true");
+					button.append(preview);
+					fragment.append(button);
+				});
+				state.grid.append(fragment);
+
+				state.grid
+					.querySelectorAll<HTMLElement>(".waline-lottie-picker__preview")
+					.forEach((preview) => {
+						if (previewObserver) previewObserver.observe(preview);
+						else {
+							preview.dataset.walineLottieVisible = "true";
+							void loadAnimation(preview);
+						}
+					});
+			};
+
+			const scheduleRender = (state: PickerState) => {
+				if (state.renderFrame !== undefined || disposed) return;
+				state.renderFrame = requestAnimationFrame(() => renderState(state));
+			};
+
+			const loadItems = () => {
+				if (itemsPromise) return itemsPromise;
+				itemsPromise = fetch(indexPath, { cache: "force-cache" })
+					.then(async (response) => {
+						if (!response.ok) throw new Error(`HTTP ${response.status}`);
+						const data = (await response.json()) as {
+							items?: Array<{ describe?: string; emojiId?: string; name?: string }>;
+						};
+						const qqItems = (data.items || [])
+							.filter(
+								(item): item is { describe?: string; emojiId?: string; name: string } =>
+									typeof item.name === "string" &&
+									/^[a-z0-9_-]+$/iu.test(item.name) &&
+									typeof item.emojiId === "string" &&
+									curatedLottieQqEmojiIds.has(item.emojiId),
+							)
+							.map((item) => ({
+								name: item.name,
+								label:
+									item.describe?.replace(/^\//u, "").trim() ||
+									qqLottieEmojiLabels[item.emojiId || ""] ||
+									`QQ 表情 ${item.emojiId || item.name}`,
+								group: "QQ" as const,
+								emojiId: item.emojiId,
+								description: item.describe,
+							}));
+						pickerItems = [...featuredLottieEmojis, ...qqItems];
+					})
+					.catch((error) => {
+						console.error("[Waline] Failed to load the Lottie emoji index.", error);
+					})
+					.finally(() => {
+						itemsLoaded = true;
+						states.forEach((state) => {
+							if (state.popup.classList.contains("waline-lottie-picker-active")) {
+								scheduleRender(state);
+							}
+						});
+					});
+				return itemsPromise;
+			};
+
+			const insertShortcode = (state: PickerState, name: string) => {
+				if (!/^[a-z0-9_-]+$/iu.test(name)) return;
+				const editor =
+					state.popup.closest(".wl-panel")?.querySelector<HTMLTextAreaElement>(".wl-editor") ||
+					root.querySelector<HTMLTextAreaElement>(".wl-editor");
+				if (!editor) return;
+
+				const shortcode = `:lottie_${name}:`;
+				const start = editor.selectionStart ?? editor.value.length;
+				const end = editor.selectionEnd ?? start;
+				editor.setRangeText(shortcode, start, end, "end");
+				editor.dispatchEvent(
+					new InputEvent("input", {
+						bubbles: true,
+						data: shortcode,
+						inputType: "insertText",
+					}),
+				);
+				editor.focus({ preventScroll: true });
+				state.live.textContent = `已插入动态表情 ${name}`;
+			};
+
+			const setPickerActive = (state: PickerState, mode: "native" | "lottie" | "kaomoji") => {
+				const lottieActive = mode === "lottie";
+				const kaomojiActive = mode === "kaomoji";
+				state.popup.classList.toggle("waline-lottie-picker-active", lottieActive);
+				state.popup.classList.toggle("waline-kaomoji-picker-active", kaomojiActive);
+				state.panel.hidden = !lottieActive;
+				state.kaomojiPanel.hidden = !kaomojiActive;
+				state.popup.querySelectorAll<HTMLButtonElement>(":scope > .wl-tabs > .wl-tab").forEach((tab) => {
+					if (tab === state.tab || tab === state.kaomojiTab) {
+						tab.classList.toggle("active", lottieActive ? tab === state.tab : kaomojiActive && tab === state.kaomojiTab);
+					} else if (mode !== "native") {
+						tab.classList.remove("active");
+					}
+				});
+				state.tab?.setAttribute("aria-selected", String(lottieActive));
+				state.kaomojiTab?.setAttribute("aria-selected", String(kaomojiActive));
+				if (lottieActive) {
+					scheduleRender(state);
+					void loadItems();
+					return;
+				}
+				state.panel
+					.querySelectorAll<HTMLElement>(".waline-lottie-picker__preview")
+					.forEach(freezePreview);
+			};
+
+			const createState = (popup: HTMLElement) => {
+				const panel = document.createElement("div");
+				panel.className = "waline-lottie-picker";
+				panel.hidden = true;
+				panel.setAttribute("aria-label", "动态表情");
+				const kaomojiPanel = document.createElement("div");
+				kaomojiPanel.className = "waline-kaomoji-picker";
+				kaomojiPanel.hidden = true;
+				kaomojiPanel.setAttribute("aria-label", "颜文字");
+				for (const face of walineKaomoji) {
+					const button = document.createElement("button");
+					button.type = "button";
+					button.className = "waline-kaomoji-picker__item";
+					button.textContent = face;
+					button.title = face;
+					button.dataset.walineKaomoji = face;
+					button.setAttribute("aria-label", `插入颜文字 ${face}`);
+					kaomojiPanel.append(button);
+				}
+				const kaomojiLive = document.createElement("span");
+				kaomojiLive.className = "sr-only";
+				kaomojiLive.setAttribute("aria-live", "polite");
+				kaomojiPanel.append(kaomojiLive);
+
+				const toolbar = document.createElement("div");
+				toolbar.className = "waline-lottie-picker__toolbar";
+				const searchWrap = document.createElement("label");
+				searchWrap.className = "waline-lottie-picker__search";
+				const searchText = document.createElement("span");
+				searchText.className = "sr-only";
+				searchText.textContent = "搜索动态表情";
+				const input = document.createElement("input");
+				input.type = "search";
+				input.placeholder = "搜索动态表情…";
+				input.autocomplete = "off";
+				input.spellcheck = false;
+				searchWrap.append(searchText, input);
+				const count = document.createElement("span");
+				count.className = "waline-lottie-picker__count";
+				toolbar.append(searchWrap, count);
+
+				const grid = document.createElement("div");
+				grid.className = "waline-lottie-picker__grid";
+				grid.setAttribute("role", "list");
+				const live = document.createElement("span");
+				live.className = "sr-only";
+				live.setAttribute("aria-live", "polite");
+				panel.append(toolbar, grid, live);
+
+				const state = {} as PickerState;
+				state.popup = popup;
+				state.panel = panel;
+				state.kaomojiPanel = kaomojiPanel;
+				state.kaomojiLive = kaomojiLive;
+				state.input = input;
+				state.count = count;
+				state.grid = grid;
+				state.live = live;
+				state.handleInput = () => scheduleRender(state);
+				state.handlePanelMouseOver = (event) => setPreviewPlaying(getButtonPreview(event), true);
+				state.handlePanelMouseOut = (event) => {
+					const preview = getButtonPreview(event);
+					const button = preview?.closest(".waline-lottie-picker__item");
+					if (button?.contains(event.relatedTarget as Node | null)) return;
+					setPreviewPlaying(preview, false);
+				};
+				state.handlePanelFocusIn = (event) => setPreviewPlaying(getButtonPreview(event), true);
+				state.handlePanelFocusOut = (event) => {
+					const preview = getButtonPreview(event);
+					const button = preview?.closest(".waline-lottie-picker__item");
+					if (button?.contains(event.relatedTarget as Node | null)) return;
+					setPreviewPlaying(preview, false);
+				};
+				state.handlePanelMouseDown = (event) => {
+					if (getButtonPreview(event)) event.preventDefault();
+				};
+				state.handlePanelClick = (event) => {
+					const target = event.target as Element | null;
+					const button = target?.closest<HTMLButtonElement>(
+						".waline-lottie-picker__item[data-waline-lottie-name]",
+					);
+					if (!button) return;
+					event.preventDefault();
+					insertShortcode(state, button.dataset.walineLottieName || "");
+				};
+				state.handleKaomojiMouseDown = (event) => {
+					if ((event.target as Element | null)?.closest(".waline-kaomoji-picker__item")) {
+						event.preventDefault();
+					}
+				};
+				state.handleKaomojiClick = (event) => {
+					const button = (event.target as Element | null)?.closest<HTMLButtonElement>(
+						".waline-kaomoji-picker__item[data-waline-kaomoji]",
+					);
+					if (!button) return;
+					event.preventDefault();
+					const editor =
+						state.popup.closest(".wl-panel")?.querySelector<HTMLTextAreaElement>(".wl-editor") ||
+						root.querySelector<HTMLTextAreaElement>(".wl-editor");
+					if (!editor) return;
+					const face = button.dataset.walineKaomoji || "";
+					const start = editor.selectionStart ?? editor.value.length;
+					const end = editor.selectionEnd ?? start;
+					editor.setRangeText(face, start, end, "end");
+					editor.dispatchEvent(new InputEvent("input", {
+						bubbles: true,
+						data: face,
+						inputType: "insertText",
+					}));
+					editor.focus({ preventScroll: true });
+					state.kaomojiLive.textContent = `已插入颜文字 ${face}`;
+				};
+				state.handlePopupClick = (event) => {
+					const target = event.target as Element | null;
+					const tab = target?.closest<HTMLButtonElement>(".wl-tabs > .wl-tab");
+					if (!tab || tab.parentElement?.parentElement !== popup) return;
+				if (tab.classList.contains("waline-lottie-tab")) {
+					event.preventDefault();
+					event.stopPropagation();
+					setPickerActive(state, "lottie");
+					return;
+				}
+				if (tab.classList.contains("waline-kaomoji-tab")) {
+					event.preventDefault();
+					event.stopPropagation();
+					setPickerActive(state, "kaomoji");
+					return;
+				}
+				setPickerActive(state, "native");
+				};
+
+				input.addEventListener("input", state.handleInput);
+				panel.addEventListener("click", state.handlePanelClick);
+				panel.addEventListener("focusin", state.handlePanelFocusIn);
+				panel.addEventListener("focusout", state.handlePanelFocusOut);
+				panel.addEventListener("mousedown", state.handlePanelMouseDown);
+				panel.addEventListener("mouseout", state.handlePanelMouseOut);
+				panel.addEventListener("mouseover", state.handlePanelMouseOver);
+				kaomojiPanel.addEventListener("click", state.handleKaomojiClick);
+				kaomojiPanel.addEventListener("mousedown", state.handleKaomojiMouseDown);
+				popup.addEventListener("click", state.handlePopupClick, true);
+				states.set(popup, state);
+				return state;
+			};
+
+			const ensurePopup = (popup: HTMLElement) => {
+				const tabs = popup.querySelector<HTMLElement>(":scope > .wl-tabs");
+				if (!tabs) return;
+				const state = states.get(popup) || createState(popup);
+				if (state.panel.parentElement !== popup) popup.insertBefore(state.panel, tabs);
+				if (state.kaomojiPanel.parentElement !== popup) popup.insertBefore(state.kaomojiPanel, tabs);
+
+				let kaomojiTab = tabs.querySelector<HTMLButtonElement>(":scope > .waline-kaomoji-tab");
+				if (!kaomojiTab) {
+					kaomojiTab = document.createElement("button");
+					kaomojiTab.type = "button";
+					kaomojiTab.className = "wl-tab waline-kaomoji-tab";
+					kaomojiTab.textContent = "颜文字";
+					kaomojiTab.title = "颜文字";
+					kaomojiTab.setAttribute("aria-label", "颜文字");
+					tabs.prepend(kaomojiTab);
+				}
+				state.kaomojiTab = kaomojiTab;
+
+				let tab = tabs.querySelector<HTMLButtonElement>(":scope > .waline-lottie-tab");
+				if (!tab) {
+					tab = document.createElement("button");
+					tab.type = "button";
+					tab.className = "wl-tab waline-lottie-tab";
+					tab.title = "动态表情";
+					tab.setAttribute("aria-label", "动态表情");
+					const icon = document.createElement("span");
+					icon.className = "waline-lottie-tab__icon";
+					icon.setAttribute("aria-hidden", "true");
+					icon.dataset.walineLottieName = "bixin";
+					icon.dataset.walineLottieVisible = "true";
+					icon.dataset.walineLottieTabIcon = "true";
+					tab.append(icon);
+					tabs.append(tab);
+					void loadAnimation(icon);
+				}
+				state.tab = tab;
+				const active = popup.classList.contains("waline-lottie-picker-active");
+				state.panel.hidden = !active;
+				const kaomojiActive = popup.classList.contains("waline-kaomoji-picker-active");
+				state.kaomojiPanel.hidden = !kaomojiActive;
+				tab.classList.toggle("active", active);
+				tab.setAttribute("aria-selected", String(active));
+				kaomojiTab.classList.toggle("active", kaomojiActive);
+				kaomojiTab.setAttribute("aria-selected", String(kaomojiActive));
+				if (!popup.classList.contains("display")) {
+					state.panel
+						.querySelectorAll<HTMLElement>(".waline-lottie-picker__preview")
+						.forEach(freezePreview);
+				}
+			};
+
+			const cleanupState = (state: PickerState) => {
+				if (state.renderFrame !== undefined) cancelAnimationFrame(state.renderFrame);
+				releasePanelAnimations(state.panel);
+				const tabIcon = state.tab?.querySelector<HTMLElement>(
+					".waline-lottie-tab__icon",
+				);
+				if (tabIcon) releasePreview(tabIcon);
+				state.input.removeEventListener("input", state.handleInput);
+				state.panel.removeEventListener("click", state.handlePanelClick);
+				state.panel.removeEventListener("focusin", state.handlePanelFocusIn);
+				state.panel.removeEventListener("focusout", state.handlePanelFocusOut);
+				state.panel.removeEventListener("mousedown", state.handlePanelMouseDown);
+				state.panel.removeEventListener("mouseout", state.handlePanelMouseOut);
+				state.panel.removeEventListener("mouseover", state.handlePanelMouseOver);
+				state.kaomojiPanel.removeEventListener("click", state.handleKaomojiClick);
+				state.kaomojiPanel.removeEventListener("mousedown", state.handleKaomojiMouseDown);
+				state.popup.removeEventListener("click", state.handlePopupClick, true);
+				state.panel.remove();
+				state.kaomojiPanel.remove();
+				state.tab?.remove();
+				state.kaomojiTab?.remove();
+			};
+
+			const syncPopups = () => {
+				scanFrame = undefined;
+				if (disposed) return;
+				const popups = new Set(
+					Array.from(root.querySelectorAll<HTMLElement>(".wl-emoji-popup")),
+				);
+				states.forEach((state, popup) => {
+					if (popups.has(popup)) return;
+					cleanupState(state);
+					states.delete(popup);
+				});
+				popups.forEach(ensurePopup);
+			};
+
+			const scheduleSync = () => {
+				if (scanFrame !== undefined || disposed) return;
+				scanFrame = requestAnimationFrame(syncPopups);
+			};
+
+			const observer = new MutationObserver(scheduleSync);
+			observer.observe(root, {
+				attributes: true,
+				attributeFilter: ["class"],
+				childList: true,
+				subtree: true,
+			});
+			scheduleSync();
+
+			return () => {
+				disposed = true;
+				observer.disconnect();
+				previewObserver?.disconnect();
+				if (scanFrame !== undefined) cancelAnimationFrame(scanFrame);
+				states.forEach(cleanupState);
+				states.clear();
+				for (const animation of animations.values()) animation.destroy();
+				animations.clear();
+				loadingAnimations.clear();
 			};
 		};
 
@@ -413,6 +1089,270 @@ import "@waline/client/style";
 				disposed = true;
 				observer.disconnect();
 				if (frameId !== undefined) cancelAnimationFrame(frameId);
+			};
+		};
+
+		/*
+		 * Lottie animations are stored as local JSON files under /lottie. Waline's native
+		 * emoji pipeline renders image URLs, so keep Lottie shortcodes separate from the
+		 * regular emoji namespaces and turn them into small, lazy SVG players in comment
+		 * bodies after Waline has rendered the Markdown.
+		 */
+		const setupLottieComments = (root: HTMLElement) => {
+			const runtimePath = `${import.meta.env.BASE_URL}assets/lottie-web-5.12.2.min.js`;
+			const animationBasePath = `${import.meta.env.BASE_URL}lottie/`;
+			const runtimeWindow = window as LottieWindow;
+			const animations = new Map<HTMLElement, LottieAnimation>();
+			const loadingAnimations = new Set<HTMLElement>();
+			const observedElements = new Set<HTMLElement>();
+			const shortcodePattern = /:lottie_([a-z0-9_-]+):|\[lottie:([a-z0-9_-]+)\]/giu;
+			let runtimePromise: Promise<LottieRuntime> | undefined;
+			let mutationObserver: MutationObserver | undefined;
+			let intersectionObserver: IntersectionObserver | undefined;
+			let scanFrame: number | undefined;
+			let disposed = false;
+
+			const prefersReducedMotion = () =>
+				window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
+			const loadRuntime = () => {
+				if (runtimeWindow.lottie) return Promise.resolve(runtimeWindow.lottie);
+				if (runtimePromise) return runtimePromise;
+				if (runtimeWindow.__rainztLottieRuntimePromise) {
+					runtimePromise = runtimeWindow.__rainztLottieRuntimePromise;
+					return runtimePromise;
+				}
+
+				runtimePromise = new Promise<LottieRuntime>((resolve, reject) => {
+					const existingScript = document.querySelector<HTMLScriptElement>(
+						"script[data-rainzt-lottie-runtime]",
+					);
+					const script = existingScript || document.createElement("script");
+					const handleLoad = () => {
+						if (runtimeWindow.lottie) resolve(runtimeWindow.lottie);
+						else reject(new Error("Lottie runtime loaded without a global API"));
+					};
+					const handleError = () => reject(new Error("Failed to load the local Lottie runtime"));
+
+					script.addEventListener("load", handleLoad, { once: true });
+					script.addEventListener("error", handleError, { once: true });
+					if (!existingScript) {
+						script.src = runtimePath;
+						script.async = true;
+						script.dataset.rainztLottieRuntime = "true";
+						document.head.appendChild(script);
+					}
+				});
+				runtimeWindow.__rainztLottieRuntimePromise = runtimePromise;
+				return runtimePromise;
+			};
+
+			const getAnimationName = (element: HTMLElement) => {
+				const name = element.dataset.walineLottieName?.trim() || "";
+				return /^[a-z0-9_-]+$/iu.test(name) ? name : "";
+			};
+
+			const markFallback = (element: HTMLElement) => {
+				const animation = animations.get(element);
+				animation?.destroy();
+				animations.delete(element);
+				loadingAnimations.delete(element);
+				delete element.dataset.walineLottieReady;
+				element.dataset.walineLottieError = "true";
+				element.textContent = element.dataset.walineLottieToken || "[Lottie]";
+			};
+
+			const loadAnimation = async (element: HTMLElement) => {
+				if (
+					disposed ||
+					!element.isConnected ||
+					element.dataset.walineLottieError === "true" ||
+					animations.has(element) ||
+					loadingAnimations.has(element)
+				)
+					return;
+
+				const name = getAnimationName(element);
+				if (!name) {
+					markFallback(element);
+					return;
+				}
+
+				loadingAnimations.add(element);
+				try {
+					const runtime = await loadRuntime();
+					if (disposed || !element.isConnected) return;
+
+					const reducedMotion = prefersReducedMotion();
+					const animation = runtime.loadAnimation({
+						container: element,
+						loop: true,
+						autoplay: !reducedMotion,
+						path: `${animationBasePath}${encodeURIComponent(name)}.json`,
+						renderer: "svg",
+						rendererSettings: { preserveAspectRatio: "xMidYMid meet" },
+					});
+
+					const freezeFirstFrame = () => {
+						if (!reducedMotion) return;
+						animation.pause();
+						animation.goToAndStop?.(0, true);
+					};
+					animation.addEventListener("data_ready", freezeFirstFrame);
+					animation.addEventListener("DOMLoaded", freezeFirstFrame);
+					animation.addEventListener("data_failed", () => markFallback(element));
+
+					if (disposed || !element.isConnected) {
+						animation.destroy();
+						return;
+					}
+					animations.set(element, animation);
+					delete element.dataset.walineLottieError;
+					element.dataset.walineLottieReady = "true";
+					freezeFirstFrame();
+				} catch {
+					markFallback(element);
+				} finally {
+					loadingAnimations.delete(element);
+				}
+			};
+
+			const createAnimationElement = (name: string, token: string) => {
+				const element = document.createElement("span");
+				element.className = "waline-lottie-emoji";
+				element.dataset.walineLottieName = name;
+				element.dataset.walineLottieToken = token;
+				element.setAttribute("role", "img");
+				element.setAttribute("aria-label", `Lottie 表情：${name}`);
+				element.title = `Lottie 表情：${name}`;
+				return element;
+			};
+
+			const renderShortcodes = () => {
+				root.querySelectorAll<HTMLElement>(".wl-content").forEach((content) => {
+					const textNodes: Text[] = [];
+					const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+						acceptNode: (node) => {
+							if (!node.textContent?.match(shortcodePattern)) return NodeFilter.FILTER_REJECT;
+							const parent = node.parentElement;
+							return parent?.closest(
+								"pre, code, a, .wl-emoji, .waline-lottie-emoji",
+							)
+								? NodeFilter.FILTER_REJECT
+								: NodeFilter.FILTER_ACCEPT;
+						},
+					});
+
+					while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
+
+					textNodes.forEach((node) => {
+						const text = node.textContent || "";
+						const pattern = /:lottie_([a-z0-9_-]+):|\[lottie:([a-z0-9_-]+)\]/giu;
+						let match: RegExpExecArray | null;
+						let cursor = 0;
+						let changed = false;
+						const fragment = document.createDocumentFragment();
+
+						while ((match = pattern.exec(text))) {
+							const name = match[1] || match[2] || "";
+							if (!name || !/^[a-z0-9_-]+$/iu.test(name)) continue;
+
+							const prefix = text.slice(cursor, match.index);
+							if (prefix) fragment.append(document.createTextNode(prefix));
+							fragment.append(createAnimationElement(name, match[0]));
+							cursor = match.index + match[0].length;
+							changed = true;
+						}
+
+						if (!changed) return;
+						const suffix = text.slice(cursor);
+						if (suffix) fragment.append(document.createTextNode(suffix));
+						node.replaceWith(fragment);
+					});
+				});
+			};
+
+			const observeAnimations = () => {
+				if (!intersectionObserver && "IntersectionObserver" in window) {
+					intersectionObserver = new IntersectionObserver(
+						(entries) => {
+							entries.forEach((entry) => {
+								const element = entry.target as HTMLElement;
+								const animation = animations.get(element);
+								if (!animation) {
+									if (entry.isIntersecting) void loadAnimation(element);
+									return;
+								}
+
+								if (prefersReducedMotion()) {
+									animation.pause();
+									animation.goToAndStop?.(0, true);
+								} else if (entry.isIntersecting) {
+									animation.play();
+								} else {
+									animation.pause();
+								}
+							});
+						},
+						{ rootMargin: "180px", threshold: 0.05 },
+					);
+				}
+
+				const elements = new Set(
+					Array.from(
+						root.querySelectorAll<HTMLElement>(
+							".waline-lottie-emoji[data-waline-lottie-name]",
+						),
+					),
+				);
+				for (const [element, animation] of animations) {
+					if (elements.has(element)) continue;
+					animation.destroy();
+					animations.delete(element);
+				}
+
+				for (const element of observedElements) {
+					if (elements.has(element)) continue;
+					intersectionObserver?.unobserve(element);
+					observedElements.delete(element);
+				}
+
+				for (const element of elements) {
+					if (observedElements.has(element)) continue;
+					if (intersectionObserver) {
+						intersectionObserver.observe(element);
+						observedElements.add(element);
+					} else {
+						void loadAnimation(element);
+					}
+				}
+			};
+
+			const scan = () => {
+				scanFrame = undefined;
+				if (disposed) return;
+				renderShortcodes();
+				observeAnimations();
+			};
+
+			const scheduleScan = () => {
+				if (scanFrame !== undefined || disposed) return;
+				scanFrame = requestAnimationFrame(scan);
+			};
+
+			mutationObserver = new MutationObserver(scheduleScan);
+			mutationObserver.observe(root, { childList: true, subtree: true, characterData: true });
+			scheduleScan();
+
+			return () => {
+				disposed = true;
+				mutationObserver?.disconnect();
+				intersectionObserver?.disconnect();
+				if (scanFrame !== undefined) cancelAnimationFrame(scanFrame);
+				for (const animation of animations.values()) animation.destroy();
+				animations.clear();
+				loadingAnimations.clear();
+				observedElements.clear();
 			};
 		};
 
@@ -1184,10 +2124,112 @@ import "@waline/client/style";
 			};
 		};
 
+		const setupCommentMode = (root: HTMLElement) => {
+			const controller = new AbortController();
+			const parseJson = <T,>(value: string | undefined, fallback: T): T => {
+				try {
+					return JSON.parse(value || "") as T;
+				} catch {
+					return fallback;
+				}
+			};
+			const friendHosts = new Set(
+				parseJson<string[]>(root.dataset.walineFriendHosts, [])
+					.map((host) => {
+						try {
+							return new URL(host.includes(":") ? host : `https://${host}`).hostname
+								.toLowerCase()
+								.replace(/^www\./u, "");
+						} catch {
+							return "";
+						}
+					})
+					.filter(Boolean),
+			);
+			let frameId: number | undefined;
+			let disposed = false;
+
+			const normalizeHost = (value: string) => {
+				try {
+					const candidate = /^[a-z][a-z\d+.-]*:/iu.test(value) ? value : `https://${value}`;
+					return new URL(candidate).hostname.toLowerCase().replace(/^www\./u, "");
+				} catch {
+					return "";
+				}
+			};
+
+			const getLoginNick = (panel: HTMLElement) =>
+				Array.from(panel.querySelectorAll<HTMLElement>(".wl-login-info .wl-login-nick"))
+					.map((element) => element.textContent?.trim() || "")
+					.find(Boolean) || "";
+
+			const getCommentLink = (panel: HTMLElement) => {
+				const loginNick = getLoginNick(panel);
+				return panel.querySelector<HTMLInputElement>('input[name="link"]')?.value ||
+					(loginNick ? getStoredWalineUser(loginNick)?.url || "" : "");
+			};
+
+			const getKind = (panel: HTMLElement) =>
+				friendHosts.has(normalizeHost(getCommentLink(panel))) ? "friend" : "visitor";
+
+			const updateRateNote = (panel: HTMLElement) => {
+				let note = panel.querySelector<HTMLElement>(":scope > [data-waline-comment-mode]");
+				if (!note) {
+					note = document.createElement("p");
+					note.className = "waline-comment-mode-note";
+					note.dataset.walineCommentMode = "true";
+					note.setAttribute("role", "note");
+					const header = panel.querySelector<HTMLElement>(":scope > .wl-header");
+					if (header) header.insertAdjacentElement("afterend", note);
+					else panel.prepend(note);
+				}
+
+				note.hidden = !getCommentLink(panel).trim() && !getLoginNick(panel);
+				const message = getKind(panel) === "friend" ? "当前模式：本站友链" : "当前模式：访客";
+				if (note.textContent !== message) note.textContent = message;
+			};
+
+			const updatePanels = () => {
+				frameId = undefined;
+				if (disposed) return;
+				root.querySelectorAll<HTMLElement>(".wl-panel").forEach(updateRateNote);
+			};
+
+			const scheduleUpdate = () => {
+				if (frameId !== undefined || disposed) return;
+				frameId = requestAnimationFrame(updatePanels);
+			};
+
+			root.addEventListener(
+				"input",
+				(event) => {
+					if (!(event.target instanceof HTMLElement)) return;
+					const panel = event.target.closest<HTMLElement>(".wl-panel");
+					if (!panel) return;
+					if (event.target.matches('input[name="link"]')) scheduleUpdate();
+				},
+				{ capture: true, signal: controller.signal },
+			);
+
+			const observer = new MutationObserver(scheduleUpdate);
+			observer.observe(root, { childList: true, subtree: true });
+			scheduleUpdate();
+
+			return () => {
+				disposed = true;
+				controller.abort();
+				observer.disconnect();
+				if (frameId !== undefined) cancelAnimationFrame(frameId);
+				root.querySelectorAll("[data-waline-comment-mode]").forEach((item) => item.remove());
+			};
+		};
+
 		const setupCommentPresentation = (root: HTMLElement) => {
 			const aiNick = "小爱客服";
 			const disclaimerLead = "本信息由Ai自动理解后调用";
 			const avatarSrc = "/favicon/chaoc-tingyu-avatar-512.png?v=20260907";
+			const adminUrl = "https://rainzt.cn/ai-comment-admin/";
+			const adminEntrySelector = '[data-waline-ai-admin-entry="true"]';
 			const ownSiteUrl = normalizeSiteUrl(root.dataset.walineSiteUrl || "");
 			const recommendedSiteUrls = new Set(
 				getRecommendedSiteUrls(root).map(normalizeSiteUrl).filter(Boolean),
@@ -1196,8 +2238,230 @@ import "@waline/client/style";
 			const aiUserIds = getConfiguredUserIds(root.dataset.walineAiUserIds);
 			const eventController = new AbortController();
 			let frameId: number | undefined;
+			let composerFrameId: number | undefined;
 			let disposed = false;
+			const mobileComposerQuery = window.matchMedia("(max-width: 580px)");
+			const commentsSection = root.closest<HTMLElement>("#post-comments") ?? root;
+			const mobileComposerBackdrop = document.createElement("button");
+			const mobileCommentBar = document.createElement("div");
+			let activeMobileComposer: HTMLElement | undefined;
+			let mainComposerOpen = false;
+			let openingEmoji = false;
+			let composerResizeAnimation: Animation | undefined;
+			let returnFocus: HTMLElement | null = null;
+			let pendingMainSubmission: { composer: HTMLElement; count: number } | undefined;
 
+			mobileComposerBackdrop.type = "button";
+			mobileComposerBackdrop.className = "waline-mobile-composer-backdrop";
+			mobileComposerBackdrop.setAttribute("aria-label", "关闭评论编辑面板");
+			mobileComposerBackdrop.tabIndex = -1;
+			mobileComposerBackdrop.hidden = true;
+			mobileCommentBar.className = "waline-mobile-comment-bar";
+			mobileCommentBar.hidden = true;
+			mobileCommentBar.innerHTML = `<button type="button" class="waline-mobile-comment-entry">欢迎评论</button><button type="button" class="waline-mobile-comment-emoji" aria-label="打开评论表情"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 9h.01M16 9h.01M8 14c2 3 6 3 8 0"/></svg></button>`;
+			document.body.append(mobileComposerBackdrop, mobileCommentBar);
+
+			const updateMobileViewport = () => {
+				const viewport = window.visualViewport;
+				const bottom = Math.max(0, window.innerHeight - (viewport?.height ?? window.innerHeight) - (viewport?.offsetTop ?? 0));
+				activeMobileComposer?.style.setProperty("--waline-mobile-keyboard-bottom", `${bottom}px`);
+			};
+
+			const getMissingMobileIdentity = (composer: HTMLElement) =>
+				Array.from(composer.querySelectorAll<HTMLInputElement>(
+					'.wl-header input[name="nick"], .wl-header input[name="mail"]',
+				)).find((input) => !input.value.trim());
+
+			const closeMobileComposer = () => {
+				const composer = activeMobileComposer;
+				mainComposerOpen = false;
+				pendingMainSubmission = undefined;
+				composerResizeAnimation?.cancel();
+				if (composer) {
+					const emoji = composer.querySelector<HTMLButtonElement>('.wl-action[title="表情"]');
+					if (composer.querySelector(".wl-emoji-popup.display")) emoji?.click();
+					composer.querySelector<HTMLButtonElement>(":scope > .wl-close")?.click();
+					if (composer.matches(":popover-open")) composer.hidePopover();
+				}
+				updateMobileComposer();
+				returnFocus?.focus({ preventScroll: true });
+			};
+
+			const updateMobileComposer = () => {
+				composerFrameId = undefined;
+				if (disposed) return;
+				const isMobile = mobileComposerQuery.matches;
+				root.toggleAttribute("data-waline-mobile", isMobile);
+				const mainComposer = root.querySelector<HTMLElement>("[data-waline] > .wl-comment");
+				if (pendingMainSubmission && pendingMainSubmission.composer === mainComposer &&
+					!mainComposer.querySelector<HTMLTextAreaElement>(".wl-editor")?.value &&
+					root.querySelectorAll(".wl-card-item").length > pendingMainSubmission.count) {
+					mainComposerOpen = false;
+					pendingMainSubmission = undefined;
+				}
+				const replyComposer = root.querySelector<HTMLElement>(".wl-reply-wrapper > .wl-comment, .wl-edit-wrapper > .wl-comment");
+				const composer = isMobile ? replyComposer ?? (mainComposerOpen ? mainComposer : undefined) : undefined;
+				const sectionRect = commentsSection.getBoundingClientRect();
+				const commentsVisible = sectionRect.bottom > 0 && sectionRect.top < window.innerHeight;
+				mobileCommentBar.hidden = !isMobile || !mainComposer || Boolean(composer) || !commentsVisible;
+				document.body.toggleAttribute("data-waline-mobile-bar", isMobile && Boolean(mainComposer) && commentsVisible);
+				document.body.toggleAttribute("data-waline-mobile-sheet", Boolean(composer));
+
+				if (activeMobileComposer !== composer) {
+					composerResizeAnimation?.cancel();
+					if (activeMobileComposer) {
+						if (activeMobileComposer.matches(":popover-open")) activeMobileComposer.hidePopover();
+						activeMobileComposer.removeAttribute("popover");
+						activeMobileComposer.removeAttribute("data-waline-mobile-composer-active");
+						activeMobileComposer.removeAttribute("data-waline-mobile-identity-open");
+						activeMobileComposer.removeAttribute("role");
+						activeMobileComposer.removeAttribute("aria-modal");
+						activeMobileComposer.removeAttribute("aria-label");
+						activeMobileComposer.style.removeProperty("--waline-mobile-keyboard-bottom");
+					}
+					activeMobileComposer = composer ?? undefined;
+					if (composer) {
+						returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+						composer.setAttribute("data-waline-mobile-composer-active", "true");
+						composer.setAttribute("popover", "manual");
+						composer.setAttribute("role", "dialog");
+						composer.setAttribute("aria-modal", "true");
+						composer.setAttribute("aria-label", "评论编辑");
+						const missingIdentity = getMissingMobileIdentity(composer);
+						composer.toggleAttribute("data-waline-mobile-identity-open", Boolean(missingIdentity));
+						composer.showPopover();
+						const actions = composer.querySelector(".wl-actions");
+						if (actions && composer.querySelector(".wl-header input") && !actions.querySelector(".waline-mobile-identity-toggle")) {
+							const identity = document.createElement("button");
+							identity.type = "button";
+							identity.className = "wl-action waline-mobile-identity-toggle";
+							identity.setAttribute("aria-label", "填写昵称和邮箱");
+							identity.setAttribute("aria-expanded", String(Boolean(missingIdentity)));
+							identity.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>`;
+							identity.addEventListener("click", () => {
+								const open = composer.toggleAttribute("data-waline-mobile-identity-open");
+								identity.setAttribute("aria-expanded", String(open));
+								if (open) composer.querySelector<HTMLInputElement>('input[name="nick"]')?.focus({ preventScroll: true });
+							}, { signal: eventController.signal });
+							actions.append(identity);
+						}
+						actions?.querySelector(".waline-mobile-identity-toggle")?.setAttribute("aria-expanded", String(Boolean(missingIdentity)));
+						const info = composer.querySelector(".wl-info");
+						if (info && !info.querySelector(".waline-mobile-cancel")) {
+							const cancel = document.createElement("button");
+							cancel.type = "button";
+							cancel.className = "wl-btn waline-mobile-cancel";
+							cancel.textContent = "取消";
+							cancel.addEventListener("click", closeMobileComposer, { signal: eventController.signal });
+							info.insertBefore(cancel, info.querySelector(".primary"));
+						}
+						const nativeLogout = composer.querySelector<HTMLButtonElement>(".wl-logout-btn");
+						if (info && nativeLogout && !info.querySelector(".waline-mobile-logout")) {
+							const logout = document.createElement("button");
+							logout.type = "button";
+							logout.className = "wl-btn waline-mobile-logout";
+							logout.textContent = "退出登录";
+							logout.addEventListener("click", (event) => {
+								event.stopPropagation();
+								nativeLogout.click();
+							}, { signal: eventController.signal });
+							info.insertBefore(logout, info.querySelector(".waline-mobile-cancel, .primary"));
+						}
+						const editor = composer.querySelector<HTMLTextAreaElement>(".wl-editor");
+						if (editor?.placeholder.startsWith("@")) editor.placeholder = `回复 ${editor.placeholder}：`;
+						if (!openingEmoji) (missingIdentity ?? editor)?.focus({ preventScroll: true });
+					}
+				}
+				mobileComposerBackdrop.hidden = !composer;
+				updateMobileViewport();
+			};
+
+			const scheduleMobileComposerUpdate = () => {
+				if (composerFrameId !== undefined) return;
+				composerFrameId = requestAnimationFrame(updateMobileComposer);
+			};
+
+			mobileCommentBar.addEventListener("click", (event) => {
+				// Waline's document listener would otherwise treat this launcher click
+				// as an outside click and immediately close the newly opened picker.
+				event.stopPropagation();
+				openingEmoji = Boolean((event.target as Element).closest(".waline-mobile-comment-emoji"));
+				mainComposerOpen = true;
+				updateMobileComposer();
+				if (openingEmoji) {
+					activeMobileComposer?.querySelector<HTMLButtonElement>('.wl-action[title="表情"]')?.click();
+					activeMobileComposer?.querySelector<HTMLTextAreaElement>(".wl-editor")?.blur();
+				}
+				openingEmoji = false;
+			}, { signal: eventController.signal });
+			root.addEventListener("click", (event) => {
+				const target = event.target as Element;
+				if (mobileComposerQuery.matches && target.closest(".wl-reply, .wl-edit")) mainComposerOpen = false;
+				if (activeMobileComposer && target.closest('.wl-action[title="表情"], .wl-tab-wrapper button, .waline-lottie-picker__item, .waline-kaomoji-picker__item')) {
+					const currentComposer = activeMobileComposer;
+					const animateResize = !openingEmoji && Boolean(target.closest('.wl-action[title="表情"]'));
+					const previousHeight = currentComposer.getBoundingClientRect().height;
+					requestAnimationFrame(() => {
+						if (disposed || activeMobileComposer !== currentComposer) return;
+						if (animateResize) composerResizeAnimation?.cancel();
+						const nextHeight = currentComposer.getBoundingClientRect().height;
+						if (animateResize && Math.abs(nextHeight - previousHeight) > 1 &&
+							!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+							composerResizeAnimation = currentComposer.animate(
+								[{ height: `${previousHeight}px` }, { height: `${nextHeight}px` }],
+								{ duration: 220, easing: "cubic-bezier(0.22, 0.61, 0.36, 1)" },
+							);
+						}
+						const editor = activeMobileComposer?.querySelector<HTMLTextAreaElement>(".wl-editor");
+						if (activeMobileComposer?.querySelector(".wl-emoji-popup.display")) editor?.blur();
+						else editor?.focus({ preventScroll: true });
+					});
+				}
+				scheduleMobileComposerUpdate();
+			}, { signal: eventController.signal });
+			// Reveal required guest details before Waline handles submission.
+			root.addEventListener("click", (event) => {
+				if (!activeMobileComposer || !(event.target as Element).closest('.wl-btn[type="submit"]')) return;
+				const missing = getMissingMobileIdentity(activeMobileComposer);
+				if (!missing) {
+					if (activeMobileComposer.matches("[data-waline] > .wl-comment") &&
+						activeMobileComposer.querySelector<HTMLTextAreaElement>(".wl-editor")?.value.trim()) {
+						pendingMainSubmission = { composer: activeMobileComposer, count: root.querySelectorAll(".wl-card-item").length };
+					}
+					return;
+				}
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				activeMobileComposer.setAttribute("data-waline-mobile-identity-open", "true");
+				activeMobileComposer.querySelector(".waline-mobile-identity-toggle")?.setAttribute("aria-expanded", "true");
+				missing.focus({ preventScroll: true });
+			}, { capture: true, signal: eventController.signal });
+			mobileComposerQuery.addEventListener("change", scheduleMobileComposerUpdate, { signal: eventController.signal });
+			window.addEventListener("scroll", scheduleMobileComposerUpdate, { passive: true, signal: eventController.signal });
+			window.addEventListener("resize", updateMobileViewport, { signal: eventController.signal });
+			window.visualViewport?.addEventListener("resize", updateMobileViewport, { signal: eventController.signal });
+			window.visualViewport?.addEventListener("scroll", updateMobileViewport, { signal: eventController.signal });
+			mobileComposerBackdrop.addEventListener("click", closeMobileComposer, { signal: eventController.signal });
+			document.addEventListener("keydown", (event) => {
+				if (!activeMobileComposer) return;
+				if (event.key === "Escape") {
+					event.preventDefault();
+					closeMobileComposer();
+				} else if (event.key === "Tab") {
+					const controls = Array.from(activeMobileComposer.querySelectorAll<HTMLElement>(
+						'button:not(:disabled), input:not(:disabled), textarea, a[href]',
+					)).filter((element) => element.getClientRects().length > 0);
+					const first = controls[0];
+					const last = controls.at(-1);
+					if (event.shiftKey && document.activeElement === first) {
+						event.preventDefault();
+						last?.focus();
+					} else if (!event.shiftKey && document.activeElement === last) {
+						event.preventDefault();
+						first?.focus();
+					}
+				}
+			}, { signal: eventController.signal });
 			const getNickUrl = (nick: HTMLElement | null) =>
 				nick instanceof HTMLAnchorElement
 					? normalizeSiteUrl(nick.getAttribute("href") || nick.href)
@@ -1285,55 +2549,6 @@ import "@waline/client/style";
 				if (browser) syncMetaFieldIcon(browser, "browser");
 			};
 
-			// This cache is used only for a local visual cue. Server-side Waline permissions remain
-			// authoritative, and no token or email is copied into the rendered DOM.
-			const getStoredWalineUser = (loginNick: string): WalineUserSnapshot | null => {
-				const stores: Storage[] = [];
-				try {
-					stores.push(sessionStorage);
-				} catch {
-					// Storage can be unavailable in privacy-restricted browsing contexts.
-				}
-				try {
-					stores.push(localStorage);
-				} catch {
-					// Keep the native editor usable even when persistent storage is disabled.
-				}
-
-				const snapshots: WalineUserSnapshot[] = [];
-				stores.forEach((store) => {
-					try {
-						const raw = store.getItem("WALINE_USER");
-						if (!raw || raw === "null") return;
-
-						const user = JSON.parse(raw) as WalineStoredUser;
-						if (
-							!user ||
-							typeof user !== "object" ||
-							typeof user.token !== "string" ||
-							!user.token ||
-							typeof user.display_name !== "string" ||
-							typeof user.objectId !== "number" ||
-							!Number.isInteger(user.objectId) ||
-							(user.type !== "administrator" && user.type !== "guest")
-						) {
-							return;
-						}
-
-						snapshots.push({
-							displayName: user.display_name.trim(),
-							objectId: user.objectId,
-							type: user.type,
-							url: typeof user.url === "string" ? user.url : "",
-						});
-					} catch {
-						// Ignore malformed or inaccessible Waline cache entries.
-					}
-				});
-
-				return snapshots.find((user) => user.displayName === loginNick) || null;
-			};
-
 			const getComposerRole = (comment: HTMLElement): WalineRole | null => {
 				const loginInfo = comment.querySelector<HTMLElement>(":scope > .wl-login-info");
 				if (loginInfo) {
@@ -1388,6 +2603,15 @@ import "@waline/client/style";
 					identity.setAttribute("aria-live", "polite");
 				}
 
+				const action = comment.parentElement?.classList.contains("wl-reply-wrapper")
+					? "回复"
+					: comment.parentElement?.classList.contains("wl-edit-wrapper")
+						? "编辑"
+						: null;
+				const labelText = action
+					? `${roleLabels[role].label} · 正在${action}`
+					: composerRoleLabels[role].label;
+
 				if (identity.dataset.walineComposerRole !== role) {
 					const icon = document.createElement("span");
 					icon.className = "wl-composer-identity-icon";
@@ -1395,11 +2619,14 @@ import "@waline/client/style";
 
 					const label = document.createElement("span");
 					label.className = "wl-composer-identity-label";
-					label.textContent = composerRoleLabels[role].label;
 					identity.replaceChildren(icon, label);
 					identity.dataset.walineComposerRole = role;
-					identity.title = composerRoleLabels[role].title;
 				}
+				const label = identity.querySelector<HTMLElement>(":scope > .wl-composer-identity-label");
+				if (label && label.textContent !== labelText) label.textContent = labelText;
+				identity.title = action
+					? `当前以${roleLabels[role].label}身份${action}`
+					: composerRoleLabels[role].title;
 
 				const header = panel.querySelector<HTMLElement>(":scope > .wl-header");
 				if (header) {
@@ -1458,11 +2685,51 @@ import "@waline/client/style";
 					});
 			};
 
-			const clearAiEntry = (content: HTMLElement | null) => {
+			const clearAiEntry = (nick: HTMLElement | null, content: HTMLElement | null) => {
+				if (nick?.dataset.walineAiAdminEntry === "true") {
+					delete nick.dataset.walineAiAdminEntry;
+					nick.removeAttribute("tabindex");
+					nick.removeAttribute("title");
+					nick.removeAttribute("aria-label");
+					if (!(nick instanceof HTMLAnchorElement) && nick.getAttribute("role") === "link") {
+						nick.removeAttribute("role");
+					}
+				}
 				content
 					?.querySelectorAll<HTMLElement>(".wl-ai-disclaimer")
 					.forEach((element) => element.classList.remove("wl-ai-disclaimer"));
 			};
+
+			const getAdminEntry = (target: EventTarget | null) =>
+				target instanceof Element
+					? target.closest<HTMLElement>(adminEntrySelector)
+					: null;
+
+			root.addEventListener(
+				"click",
+				(event) => {
+					if (getAdminEntry(event.target)) event.preventDefault();
+				},
+				{ signal: eventController.signal },
+			);
+			root.addEventListener(
+				"dblclick",
+				(event) => {
+					if (!getAdminEntry(event.target)) return;
+					event.preventDefault();
+					window.location.assign(adminUrl);
+				},
+				{ signal: eventController.signal },
+			);
+			root.addEventListener(
+				"keydown",
+				(event) => {
+					if (event.key !== "Enter" || !getAdminEntry(event.target)) return;
+					event.preventDefault();
+					window.location.assign(adminUrl);
+				},
+				{ signal: eventController.signal },
+			);
 
 			const decorate = () => {
 				frameId = undefined;
@@ -1533,7 +2800,7 @@ import "@waline/client/style";
 					}
 
 					if (role !== "ai" || !nick || !content) {
-						clearAiEntry(content);
+						clearAiEntry(nick, content);
 						return;
 					}
 
@@ -1573,6 +2840,12 @@ import "@waline/client/style";
 						avatar.dataset.xiaoaiAvatar = "true";
 					}
 
+					nick.dataset.walineAiAdminEntry = "true";
+					nick.tabIndex = 0;
+					nick.title = "双击进入小爱客服后台";
+					nick.setAttribute("aria-label", "小爱客服，双击或按 Enter 进入管理后台");
+					if (!(nick instanceof HTMLAnchorElement)) nick.setAttribute("role", "link");
+
 					const disclaimer = Array.from(content.querySelectorAll<HTMLElement>("p, small, div"))
 						.find((element) => element.textContent?.trim().startsWith(disclaimerLead));
 					if (disclaimer) disclaimer.classList.add("wl-ai-disclaimer");
@@ -1607,15 +2880,35 @@ import "@waline/client/style";
 				{ signal: eventController.signal },
 			);
 
-			const observer = new MutationObserver(schedule);
+			const observer = new MutationObserver(() => {
+				schedule();
+				scheduleMobileComposerUpdate();
+			});
 			observer.observe(root, { childList: true, subtree: true, characterData: true });
 			schedule();
+			scheduleMobileComposerUpdate();
 
 			return () => {
 				disposed = true;
 				eventController.abort();
 				observer.disconnect();
 				if (frameId !== undefined) cancelAnimationFrame(frameId);
+				if (composerFrameId !== undefined) cancelAnimationFrame(composerFrameId);
+				composerResizeAnimation?.cancel();
+				if (activeMobileComposer?.matches(":popover-open")) activeMobileComposer.hidePopover();
+				activeMobileComposer?.removeAttribute("popover");
+				activeMobileComposer?.removeAttribute("data-waline-mobile-composer-active");
+				activeMobileComposer?.removeAttribute("data-waline-mobile-identity-open");
+				activeMobileComposer?.removeAttribute("role");
+				activeMobileComposer?.removeAttribute("aria-modal");
+				activeMobileComposer?.removeAttribute("aria-label");
+				activeMobileComposer?.style.removeProperty("--waline-mobile-keyboard-bottom");
+				root.removeAttribute("data-waline-mobile");
+				document.body.removeAttribute("data-waline-mobile-bar");
+				document.body.removeAttribute("data-waline-mobile-sheet");
+				mobileComposerBackdrop.remove();
+				mobileCommentBar.remove();
+				root.querySelectorAll(".waline-mobile-identity-toggle, .waline-mobile-cancel, .waline-mobile-logout").forEach((button) => button.remove());
 				root.querySelectorAll<HTMLElement>(".wl-comment").forEach((comment) => {
 					delete comment.dataset.walineComposerRole;
 					comment
@@ -1662,12 +2955,18 @@ import "@waline/client/style";
 			pickerPositionCleanup = undefined;
 			emojiFallbackCleanup?.();
 			emojiFallbackCleanup = undefined;
+			lottiePickerCleanup?.();
+			lottiePickerCleanup = undefined;
+			lottieCommentsCleanup?.();
+			lottieCommentsCleanup = undefined;
 			replyCollapseCleanup?.();
 			replyCollapseCleanup = undefined;
 			ownedCommentFilterCleanup?.();
 			ownedCommentFilterCleanup = undefined;
 			commentHintCleanup?.();
 			commentHintCleanup = undefined;
+			commentModeCleanup?.();
+			commentModeCleanup = undefined;
 			commentAnchorCleanup?.();
 			commentAnchorCleanup = undefined;
 			commentPresentationCleanup?.();
@@ -1716,7 +3015,18 @@ import "@waline/client/style";
 				// Disable Waline's built-in image button. Its default uploader embeds files as
 				// Base64 in the comment body, which can exceed the configured word limit even
 				// for very small screenshots.
-				const runtimeConfig = isLocalPreview ? { ...config, pageview: false } : config;
+				const mobile = window.matchMedia("(max-width: 580px)").matches;
+				const emoji = Array.isArray(config.emoji)
+					? config.emoji.map((source: unknown) => typeof source === "string" && source.endsWith("/bilibili")
+						? `${import.meta.env.BASE_URL}assets/waline-emojis/bilibili`
+						: source)
+					: config.emoji;
+				// Keep the reference sticker set local so opening it needs no CDN request.
+				if (mobile && Array.isArray(emoji)) {
+					const bilibili = emoji.findIndex((source) => typeof source === "string" && source.endsWith("/bilibili"));
+					if (bilibili > 0) emoji.unshift(...emoji.splice(bilibili, 1));
+				}
+				const runtimeConfig = { ...config, emoji, ...(isLocalPreview ? { pageview: false } : {}) };
 				const instance = init({ ...runtimeConfig, imageUploader: false, el: root });
 				if (generation !== initGeneration || pendingRoot !== root) {
 					instance?.destroy?.();
@@ -1728,11 +3038,14 @@ import "@waline/client/style";
 				root.dataset.walineReady = "true";
 				avatarPreviewCleanup = setupAvatarPreview(root);
 				pickerPositionCleanup = setupPickerPositioning(root);
-				emojiFallbackCleanup = setupEmojiFallback(root, config.emoji);
+				emojiFallbackCleanup = setupEmojiFallback(root, runtimeConfig.emoji);
+				lottiePickerCleanup = setupLottieEmojiPicker(root);
+				lottieCommentsCleanup = setupLottieComments(root);
 				replyCollapseCleanup = setupReplyCollapse(root);
 				commentPresentationCleanup = setupCommentPresentation(root);
 				ownedCommentFilterCleanup = setupOwnedCommentFilter(root, config);
 				commentHintCleanup = setupCommentHint(root);
+				commentModeCleanup = setupCommentMode(root);
 				commentAnchorCleanup = setupCommentAnchorNavigation(root);
 			} catch (error) {
 				delete root.dataset.walineReady;
@@ -1755,6 +3068,7 @@ import "@waline/client/style";
 			disconnectRootObserver();
 			if (
 				window.location.hash ||
+				window.matchMedia("(max-width: 580px)").matches ||
 				!("IntersectionObserver" in window) ||
 				shouldLoadPageviewEarly
 			) {
@@ -1802,6 +3116,47 @@ import "@waline/client/style";
 				syncWalineRoot();
 			});
 		};
+
+		const friendApplicationTemplate = [
+			"站点名称：",
+			"站点描述：",
+			"站点链接：",
+			"头像链接：",
+			"主页截图：",
+			"RSS地址：",
+		].join("\n");
+		document.addEventListener("click", (event) => {
+			if (!(event.target instanceof Element)) return;
+			if (!event.target.closest("[data-friends-application]")) return;
+			if (!document.querySelector("#post-comments [data-waline-root]")) return;
+
+			let attempts = 0;
+			const fillEditor = () => {
+				const editor = document.querySelector<HTMLTextAreaElement>(
+					"#post-comments [data-waline-root] .wl-editor",
+				);
+				if (editor) {
+					if (!editor.value.trim()) {
+						editor.value = friendApplicationTemplate;
+						editor.dispatchEvent(
+							new InputEvent("input", {
+								bubbles: true,
+								data: friendApplicationTemplate,
+								inputType: "insertText",
+							}),
+						);
+					}
+					return;
+				}
+
+				if (attempts < 100) {
+					attempts += 1;
+					window.setTimeout(fillEditor, 100);
+				}
+			};
+
+			window.setTimeout(fillEditor, 0);
+		});
 
 		scheduleWalineInit();
 		document.addEventListener("astro:page-load", scheduleWalineInit);

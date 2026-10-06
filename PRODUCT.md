@@ -46,7 +46,7 @@ web
 - 真实文章内容位于 `src/content/posts/`，包含技术项目、博客改造、自动化实践和个人写作。
 - 页面与站点配置位于 `src/pages/`、`src/config/` 和 `src/components/`；当前路由包含 `/about/`、`/friends/`、`/moments/`、`/guestbook/`、`/tools/` 和 `/changelog/` 等。
 - 友链配置位于 `src/config/friendsConfig.ts`，朋友圈快照位于 `src/data/friends-feed-snapshot.json`。
-- `README.md` 描述 Aemeath 公开快照；产品行为以当前代码、配置和真实文章内容为准。
+- `README.md` 介绍 Aemeath 公开源码，应与当前站点身份、功能和公开快照边界保持一致。
 - 没有把外部评论、访问统计或 RSS 可用性当作固定数据；这些数据需要在对应服务或下一次构建时重新验证。
 
 ## Product Principles

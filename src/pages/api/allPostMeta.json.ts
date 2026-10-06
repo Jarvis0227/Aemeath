@@ -56,7 +56,7 @@ export async function GET(): Promise<Response> {
 			password: !!post.data.password,
 		})),
 	);
-		// 日历按纯日期排序，忽略置顶
+	// 日历按纯日期排序，忽略置顶
 	allPostsData.sort((a, b) => b.published - a.published);
 
 	return new Response(JSON.stringify(allPostsData));

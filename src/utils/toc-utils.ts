@@ -52,9 +52,9 @@ export class TOCManager {
 	 */
 	private getContentContainer(): Element | null {
 		for (const selector of [".custom-md", ".prose", ".markdown-content"]) {
-			const visibleContainer = Array.from(document.querySelectorAll(selector)).find(
-				(element) => this.isVisibleElement(element),
-			);
+			const visibleContainer = Array.from(
+				document.querySelectorAll(selector),
+			).find((element) => this.isVisibleElement(element));
 			if (visibleContainer) return visibleContainer;
 		}
 		return null;

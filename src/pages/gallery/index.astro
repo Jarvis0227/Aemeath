@@ -56,27 +56,29 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
           <div class="relative mb-3">
             <Icon is:inline
               name="material-symbols:search"
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 text-lg pointer-events-none"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-400 text-lg pointer-events-none"
             />
             <input
               type="text"
               data-search
               placeholder={i18n(I18nKey.searchAlbums)}
-              class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-(--line-divider) bg-transparent text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:border-(--primary) focus:ring-1 focus:ring-(--primary) outline-none transition-all duration-200 text-sm"
+              class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-(--line-divider) bg-transparent text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-400 focus:border-(--primary) focus:ring-1 focus:ring-(--primary) outline-none transition-all duration-200 text-sm"
             />
           </div>
           {allTags.length > 0 && (
             <div class="flex flex-wrap gap-2">
               <button
                 data-tag="all"
-                class="btn-regular px-3 py-1.5 rounded-lg bg-(--primary) text-white hover:bg-(--primary) transition-colors duration-200 text-sm font-medium"
+                aria-pressed="true"
+                class="btn-regular px-3 py-1.5 rounded-lg transition-colors duration-200 text-sm font-medium"
               >
                 {i18n(I18nKey.all)}
               </button>
               {allTags.map((tag) => (
                 <button
                   data-tag={tag}
-                  class="btn-regular px-3 py-1.5 rounded-lg bg-(--btn-regular-bg) text-(--btn-content) hover:bg-(--btn-regular-bg-hover) transition-colors duration-200 text-sm font-medium"
+                  aria-pressed="false"
+                  class="btn-regular px-3 py-1.5 rounded-lg transition-colors duration-200 text-sm font-medium"
                 >
                   {tag}
                 </button>
@@ -105,13 +107,13 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
             ))}
           </div>
           {/* 搜索无结果提示 */}
-          <div class="albums-empty hidden flex-col items-center justify-center py-12 text-neutral-400 dark:text-neutral-500">
+          <div class="albums-empty hidden flex-col items-center justify-center py-12 text-neutral-400 dark:text-neutral-400">
             <Icon is:inline name="material-symbols:search-off-rounded" class="text-4xl mb-3" />
             <div class="text-sm">{i18n(I18nKey.searchNoResults)}</div>
           </div>
         </>
       ) : (
-        <div class="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-500">
+        <div class="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-400">
           <Icon is:inline name="material-symbols:photo-library" class="text-6xl mb-4 opacity-50" />
           <p class="text-lg">{i18n(I18nKey.galleryNoAlbums)}</p>
         </div>
@@ -149,17 +151,7 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
           const filters = this.querySelectorAll("button");
 
           filters.forEach((f) => {
-            f.classList.remove("bg-(--primary)", "text-white");
-            f.classList.remove("hover:bg-(--primary)");
-            f.classList.add("bg-(--btn-regular-bg)", "text-(--btn-content)");
-            f.classList.add("hover:bg-(--btn-regular-bg-hover)");
-
-            if (f === button) {
-              f.classList.remove("bg-(--btn-regular-bg)", "text-(--btn-content)");
-              f.classList.remove("hover:bg-(--btn-regular-bg-hover)");
-              f.classList.add("bg-(--primary)", "text-white");
-              f.classList.add("hover:bg-(--primary)");
-            }
+            f.setAttribute("aria-pressed", String(f === button));
           });
 
           this.applyFilters();
@@ -213,3 +205,9 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
     }
   </script>
 </MainGridLayout>
+
+<style>
+  gallery-filter button[aria-pressed="true"] {
+    border-color: var(--primary);
+  }
+</style>

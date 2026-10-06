@@ -4,6 +4,8 @@ export type AnalyticsConfig = {
 	umamiAnalytics?: {
 		websiteId?: string; // Umami Website ID
 		scriptUrl?: string; // Umami JS地址，支持使用自建
+		/** Umami 接收事件的地址；使用路径反代时与 scriptUrl 不同 */
+		hostUrl?: string;
 		/** 公开分享链接对应的 Share ID，只读，可安全用于前端浏览量展示 */
 		shareId?: string;
 		/** Umami 实例地址，例如 https://cloud.umami.is */

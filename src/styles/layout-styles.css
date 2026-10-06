@@ -393,7 +393,37 @@ html.is-page-transitioning .banner-home-text-overlay {
     }
 }
 
+/* Only the active theme and viewport resolve a wallpaper fallback URL. */
+#wallpaper-wrapper {
+    background-image: var(--wallpaper-fallback-normal-desktop, none);
+    background-position: var(--wallpaper-fallback-normal-desktop-position, center);
+    background-size: cover;
+    background-color: transparent;
+}
+
+html[data-national-day-theme="true"] #wallpaper-wrapper {
+    background-image: var(--wallpaper-fallback-national-desktop, none);
+    background-position: var(--wallpaper-fallback-national-desktop-position, center top);
+}
+
+@media (max-width: 1023px) {
+    #wallpaper-wrapper {
+        background-image: var(--wallpaper-fallback-normal-mobile, none);
+        background-position: var(--wallpaper-fallback-normal-mobile-position, center);
+    }
+
+    html[data-national-day-theme="true"] #wallpaper-wrapper {
+        background-image: var(--wallpaper-fallback-national-mobile, none);
+        background-position: var(--wallpaper-fallback-national-mobile-position, center top);
+    }
+}
+
 /* ===== 壁纸轮播样式（基于 CSS transition） ===== */
+html[data-national-day-theme="true"] .slide-item:not([data-original-wallpaper="true"]),
+html:not([data-national-day-theme="true"]) .slide-item[data-original-wallpaper="true"] {
+    display: none !important;
+}
+
 .slide-item {
     position: absolute;
     inset: 0;
@@ -451,6 +481,12 @@ html.is-page-transitioning .banner-home-text-overlay {
 .no-banner-layout {
     top: 5.5rem !important;
     min-height: calc(100vh - 5.5rem) !important;
+}
+
+/* 非首页的壁纸已隐藏，内容始终从导航栏下方开始，切页时不做 top 动画。 */
+.w-full.z-30.pointer-events-none.non-home-main-layout {
+    top: 5.5rem !important;
+    transition: none !important;
 }
 
 /* 全屏壁纸模式：主内容在壁纸下方 */
@@ -735,9 +771,32 @@ html[data-wallpaper-mode="fullscreen"] body:not(.sticky-navbar) #top-row {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
-    object-position: center !important;
     filter: none !important;
     opacity: 1 !important;
+}
+
+/* Keep the anniversary source image untouched while it is the active wallpaper. */
+#wallpaper-wrapper[data-original-wallpaper-active="true"] {
+    opacity: 1 !important;
+}
+
+html[data-national-day-theme="true"] #wallpaper-wrapper.homepage-fullscreen-decor #banner-dim-container {
+    display: none !important;
+}
+
+#wallpaper-wrapper.wallpaper-overlay[data-original-wallpaper-active="true"] {
+    opacity: 1 !important;
+}
+
+#wallpaper-wrapper[data-original-wallpaper-active="true"] #banner-dim-container {
+    display: none !important;
+}
+
+#wallpaper-wrapper[data-original-wallpaper-active="true"] .wallpaper-image-plain img {
+    filter: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
 }
 
 /* Fullscreen 模式隐藏 overlay 专属的半透明效果 */
@@ -806,7 +865,7 @@ html:not([data-wallpaper-mode="overlay"]):not([data-wallpaper-mode="none"]):not(
 }
 
 /* Fullscreen 模式下主内容在壁纸下方，用 relative 定位紧跟壁纸 */
-html[data-wallpaper-mode="fullscreen"] .w-full.z-30.pointer-events-none {
+html[data-wallpaper-mode="fullscreen"] .w-full.z-30.pointer-events-none:not(.non-home-main-layout) {
     top: 0 !important;
 }
 

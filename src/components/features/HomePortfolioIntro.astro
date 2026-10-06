@@ -8,23 +8,31 @@ interface Props {
 }
 
 const { initialHome = false } = Astro.props;
-const defaultCharacter = homePortfolioIntroSettings.characters.find(
-	(character) => character.id === homePortfolioIntroSettings.defaultCharacterId,
-) ?? homePortfolioIntroSettings.characters[0];
+const defaultCharacter =
+	homePortfolioIntroSettings.characters.find(
+		(character) =>
+			character.id === homePortfolioIntroSettings.defaultCharacterId,
+	) ?? homePortfolioIntroSettings.characters[0];
 const desktopBanners = homePortfolioIntroSettings.banners.desktop;
 const mobileBanners = homePortfolioIntroSettings.banners.mobile;
-const defaultTopBanner = desktopBanners.top.find(
-	(banner) => banner.id === homePortfolioIntroSettings.defaultTopBannerId,
-) ?? desktopBanners.top[0];
-const defaultBottomBanner = desktopBanners.bottom.find(
-	(banner) => banner.id === homePortfolioIntroSettings.defaultBottomBannerId,
-) ?? desktopBanners.bottom[0];
-const defaultMobileTopBanner = mobileBanners.top.find(
-	(banner) => banner.id === homePortfolioIntroSettings.defaultMobileTopBannerId,
-) ?? mobileBanners.top[0];
-const defaultMobileBottomBanner = mobileBanners.bottom.find(
-	(banner) => banner.id === homePortfolioIntroSettings.defaultMobileBottomBannerId,
-) ?? mobileBanners.bottom[0];
+const defaultTopBanner =
+	desktopBanners.top.find(
+		(banner) => banner.id === homePortfolioIntroSettings.defaultTopBannerId,
+	) ?? desktopBanners.top[0];
+const defaultBottomBanner =
+	desktopBanners.bottom.find(
+		(banner) => banner.id === homePortfolioIntroSettings.defaultBottomBannerId,
+	) ?? desktopBanners.bottom[0];
+const defaultMobileTopBanner =
+	mobileBanners.top.find(
+		(banner) =>
+			banner.id === homePortfolioIntroSettings.defaultMobileTopBannerId,
+	) ?? mobileBanners.top[0];
+const defaultMobileBottomBanner =
+	mobileBanners.bottom.find(
+		(banner) =>
+			banner.id === homePortfolioIntroSettings.defaultMobileBottomBannerId,
+	) ?? mobileBanners.bottom[0];
 const initialStyle = initialHome
 	? "position: fixed; inset: 0; z-index: 49; background: #f8e4ad;"
 	: undefined;
@@ -50,10 +58,10 @@ const initialStyle = initialHome
 	<div class="home-portfolio-intro__backdrop"></div>
 	<div class="home-portfolio-intro__scenes">
 		<picture>
-			<source media="(max-width: 779px)" srcset={defaultMobileTopBanner.src} />
+			<source media="(max-width: 779px)" srcset={initialHome ? defaultMobileTopBanner.src : undefined} />
 			<img
 				class="home-portfolio-intro__scene home-portfolio-intro__scene--top"
-				src={defaultTopBanner.src}
+				src={initialHome ? defaultTopBanner.src : undefined}
 				data-banner-id={defaultTopBanner.id}
 				alt=""
 				aria-hidden="true"
@@ -62,10 +70,10 @@ const initialStyle = initialHome
 			/>
 		</picture>
 		<picture>
-			<source media="(max-width: 779px)" srcset={defaultMobileBottomBanner.src} />
+			<source media="(max-width: 779px)" srcset={initialHome ? defaultMobileBottomBanner.src : undefined} />
 			<img
 				class="home-portfolio-intro__scene home-portfolio-intro__scene--bottom"
-				src={defaultBottomBanner.src}
+				src={initialHome ? defaultBottomBanner.src : undefined}
 				data-banner-id={defaultBottomBanner.id}
 				alt=""
 				aria-hidden="true"
@@ -82,7 +90,7 @@ const initialStyle = initialHome
 	</div>
 	<img
 		class="home-portfolio-intro__character"
-		src={defaultCharacter.src}
+		src={initialHome ? defaultCharacter.src : undefined}
 		data-character-id={defaultCharacter.id}
 		alt=""
 		aria-hidden="true"
@@ -399,10 +407,11 @@ const initialStyle = initialHome
 		const syncIntro = () => {
 			const intro = document.getElementById("home-portfolio-intro");
 			if (!intro) return;
-			syncCharacter(intro);
-			syncBanners(intro);
-
 			const onHome = isHomePath();
+			if (onHome) {
+				syncCharacter(intro);
+				syncBanners(intro);
+			}
 			if (!isIntroEnabled()) {
 				resetIntro(intro);
 				notifyIntroComplete(intro);
@@ -433,8 +442,10 @@ const initialStyle = initialHome
 		window.addEventListener("home-portfolio-intro-settings-change", (event) => {
 			const intro = document.getElementById("home-portfolio-intro");
 			if (!intro) return;
-			syncCharacter(intro);
-			syncBanners(intro);
+			if (isHomePath()) {
+				syncCharacter(intro);
+				syncBanners(intro);
+			}
 			const detail = event instanceof CustomEvent ? event.detail : undefined;
 			if (!isIntroEnabled()) {
 				resetIntro(intro);

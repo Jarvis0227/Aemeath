@@ -3,7 +3,7 @@ description: Suggest an idea for this project
 title: "[Feature]: "
 labels: ["enhancement"]
 assignees:
-  - CuteLeaf
+  - Jarvis0227
 body:
   - type: markdown
     attributes:
@@ -38,4 +38,4 @@ body:
       value: |
         **Disclaimer**
 
-        Please note that this feature request is at the discretion of the repository owner, @saicaca, and its implementation is not guaranteed.
+        Please note that feature requests are reviewed according to the Aemeath project direction, and implementation is not guaranteed.

@@ -1,7 +1,7 @@
 ---
 title: KaTeX 数学公式示例
 published: 1970-01-02
-description: 展示 Rain 主题对 KaTeX 数学公式的支持，包括行内公式、块级公式和复杂数学符号。
+description: 展示 Aemeath 对 KaTeX 数学公式的支持，包括行内公式、块级公式和复杂数学符号。
 aiSummary: 这篇公式示例从行内与块级 KaTeX 开始，进一步展示矩阵、极限求和、麦克斯韦方程组和化学方程式，作为主题数学渲染的回归样例。
 tags: [KaTeX, Math, 示例]
 category: 文章示例
@@ -9,7 +9,7 @@ draft: true
 image: api
 ---
 
-本文展示了 [Rain](https://github.com/CuteLeaf/Firefly) 主题对 KaTeX 数学公式的渲染支持。
+本文展示了 Aemeath 对 KaTeX 数学公式的渲染支持。
 
 ## 行内公式 (Inline)
 

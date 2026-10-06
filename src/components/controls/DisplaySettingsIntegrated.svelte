@@ -9,8 +9,8 @@ import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import { getBackgroundImages } from "@utils/layout-utils";
 import {
+	applyStoredSelectedWallpaper,
 	clearSelectedWallpaper,
-	getDefaultBannerCarouselEnabled,
 	getDefaultBannerTitleEnabled,
 	getDefaultGradientEnabled,
 	getDefaultHue,
@@ -20,9 +20,12 @@ import {
 	getDefaultSakuraEnabled,
 	getDefaultWavesEnabled,
 	getHue,
+	getNationalDayThemeEnabled,
 	getStoredBannerCarouselEnabled,
 	getStoredBannerTitleEnabled,
+	getStoredCardDecorationMode,
 	getStoredGradientEnabled,
+	getStoredNavbarBehavior,
 	getStoredOverlayBlur,
 	getStoredOverlayCardOpacity,
 	getStoredOverlayOpacity,
@@ -32,19 +35,28 @@ import {
 	getStoredWavesEnabled,
 	setBannerCarouselEnabled,
 	setBannerTitleEnabled,
+	setCardDecorationMode,
 	setGradientEnabled,
 	setHue,
+	setNavbarBehavior,
 	setOverlayBlur,
 	setOverlayCardOpacity,
 	setOverlayOpacity,
 	setSakuraEnabled,
 	setSelectedWallpaperIndex,
+	setNationalDayThemeEnabled,
 	setWallpaperMode,
 	setWavesEnabled,
 } from "@utils/setting-utils";
 import { onMount } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
+import FontSwitch from "@/components/controls/FontSwitch.svelte";
 import { backgroundWallpaper, sakuraConfig, siteConfig } from "@/config";
+import {
+	alternateHomepageWallpaper,
+	homepageWallpaper,
+	mobileHomepageWallpaper,
+} from "@/config/backgroundWallpaper";
 import { homePortfolioIntroSettings } from "@/config/homePortfolioIntro";
 import type { WALLPAPER_MODE } from "@/types/config";
 
@@ -75,7 +87,19 @@ const wallpaperPreviewModules = import.meta.glob<string>(
 	{ eager: true, import: "default", query: "?url" },
 );
 
+const nationalDayWallpaperPreviews: Record<string, string> = {
+	[homepageWallpaper]:
+		"/assets/images/wallpaper/thumbs/homepage-anniversary-fireworks.webp",
+	[alternateHomepageWallpaper]:
+		"/assets/images/wallpaper/thumbs/homepage-anniversary-blossoms.webp",
+	[mobileHomepageWallpaper]:
+		"/assets/images/wallpaper/thumbs/homepage-anniversary-mobile.webp",
+};
+
 function getWallpaperPreview(src: string): string {
+	if (nationalDayWallpaperPreviews[src]) {
+		return nationalDayWallpaperPreviews[src];
+	}
 	if (
 		src.startsWith("/assets/images/wallpaper/wallpaper-") &&
 		src.endsWith(".webp")
@@ -90,7 +114,12 @@ function getWallpaperPreview(src: string): string {
 }
 
 const configuredWallpapers = getBackgroundImages();
-const builtInWallpapers: WallpaperOption[] = configuredWallpapers.desktop.map(
+const nationalDayWallpaperSources = new Set([
+	homepageWallpaper,
+	alternateHomepageWallpaper,
+	mobileHomepageWallpaper,
+]);
+const allBuiltInWallpapers: WallpaperOption[] = configuredWallpapers.desktop.map(
 	(src, index) => ({
 		index,
 		src,
@@ -100,6 +129,34 @@ const builtInWallpapers: WallpaperOption[] = configuredWallpapers.desktop.map(
 );
 
 let hue = $state(getHue());
+let nationalDayThemeEnabled = $state(getNationalDayThemeEnabled());
+let isDesktopWallpaperViewport = $state(
+	typeof window === "undefined" || window.innerWidth >= 1024,
+);
+let builtInWallpapers = $derived.by(() => {
+	const availableWallpapers =
+		nationalDayThemeEnabled && !isDesktopWallpaperViewport
+			? [
+					{
+						index: 0,
+						src: mobileHomepageWallpaper,
+						preview: getWallpaperPreview(mobileHomepageWallpaper),
+						label: `${i18n(I18nKey.builtinWallpaper)} 1`,
+					},
+				]
+			: allBuiltInWallpapers.filter((wallpaper) =>
+					nationalDayThemeEnabled
+						? nationalDayWallpaperSources.has(wallpaper.src)
+						: !nationalDayWallpaperSources.has(wallpaper.src),
+				);
+
+	return availableWallpapers.map((wallpaper, index) => ({
+		...wallpaper,
+		label: `${i18n(I18nKey.builtinWallpaper)} ${index + 1}`,
+	}));
+});
+let cardDecorationMode = $state(getStoredCardDecorationMode());
+let navbarBehavior = $state(getStoredNavbarBehavior());
 const defaultHue = getDefaultHue();
 let wallpaperMode: WALLPAPER_MODE = $state(backgroundWallpaper.mode);
 const defaultWallpaperMode = backgroundWallpaper.mode;
@@ -123,7 +180,11 @@ const defaultGradientEnabled = getDefaultGradientEnabled();
 let bannerTitleEnabled = $state(true);
 const defaultBannerTitleEnabled = getDefaultBannerTitleEnabled();
 let bannerCarouselEnabled = $state(true);
-const defaultBannerCarouselEnabled = getDefaultBannerCarouselEnabled();
+const normalModeDefaultBannerCarouselEnabled =
+	backgroundWallpaper.common?.carousel?.enable ?? false;
+let defaultBannerCarouselEnabled = $derived(
+	nationalDayThemeEnabled ? false : normalModeDefaultBannerCarouselEnabled,
+);
 let sakuraEnabled = $state(true);
 const defaultSakuraEnabled = getDefaultSakuraEnabled();
 let selectedWallpaperIndex: number | null = $state(null);
@@ -134,13 +195,20 @@ const defaultOverlayBlur = getDefaultOverlayBlur();
 let overlayCardOpacity = $state(getDefaultOverlayCardOpacity());
 const defaultOverlayCardOpacity = getDefaultOverlayCardOpacity();
 let introEnabled = $state(homePortfolioIntroSettings.defaultEnabled);
-let selectedIntroCharacterId = $state(homePortfolioIntroSettings.defaultCharacterId);
-let selectedIntroTopBannerId = $state(homePortfolioIntroSettings.defaultTopBannerId);
-let selectedIntroBottomBannerId = $state(homePortfolioIntroSettings.defaultBottomBannerId);
+let selectedIntroCharacterId = $state(
+	homePortfolioIntroSettings.defaultCharacterId,
+);
+let selectedIntroTopBannerId = $state(
+	homePortfolioIntroSettings.defaultTopBannerId,
+);
+let selectedIntroBottomBannerId = $state(
+	homePortfolioIntroSettings.defaultBottomBannerId,
+);
 const defaultIntroEnabled = homePortfolioIntroSettings.defaultEnabled;
 const defaultIntroCharacterId = homePortfolioIntroSettings.defaultCharacterId;
 const defaultIntroTopBannerId = homePortfolioIntroSettings.defaultTopBannerId;
-const defaultIntroBottomBannerId = homePortfolioIntroSettings.defaultBottomBannerId;
+const defaultIntroBottomBannerId =
+	homePortfolioIntroSettings.defaultBottomBannerId;
 
 const isWallpaperSwitchable = backgroundWallpaper.switchable ?? true;
 const allowLayoutSwitch = siteConfig.postListLayout.allowSwitch;
@@ -148,6 +216,7 @@ let effectiveDefaultLayout = $derived(
 	isMobileWidth ? mobileDefaultLayout : defaultLayout,
 );
 const showThemeColor = !siteConfig.themeColor.fixed;
+const showFontSettings = true;
 // 是否允许用户切换水波纹动画（只看 switchable 配置）
 const isWavesSwitchable =
 	backgroundWallpaper.common?.waves?.switchable ?? false;
@@ -164,7 +233,7 @@ const isBannerTitleSwitchable =
 // 是否允许用户切换横幅轮播
 const isBannerCarouselSwitchable =
 	backgroundWallpaper.common?.carousel?.switchable ?? false;
-const isBuiltInWallpaperSwitchable = builtInWallpapers.length > 1;
+const isBuiltInWallpaperSwitchable = configuredWallpapers.desktop.length > 1;
 // 是否允许用户切换樱花特效
 const isSakuraSwitchable = sakuraConfig?.switchable ?? false;
 // 是否有任何横幅设置可显示（后续添加新设置时在此处添加条件）
@@ -214,6 +283,7 @@ let bannerSettingsIsDefault = $derived(
 		selectedWallpaperIndex === null,
 );
 const hasAnyContent =
+	showFontSettings ||
 	showThemeColor ||
 	isWallpaperSwitchable ||
 	allowLayoutSwitch ||
@@ -224,9 +294,9 @@ const hasAnyContent =
 
 const introSettingsIsDefault = $derived(
 	introEnabled === defaultIntroEnabled &&
-	selectedIntroCharacterId === defaultIntroCharacterId &&
-	selectedIntroTopBannerId === defaultIntroTopBannerId &&
-	selectedIntroBottomBannerId === defaultIntroBottomBannerId,
+		selectedIntroCharacterId === defaultIntroCharacterId &&
+		selectedIntroTopBannerId === defaultIntroTopBannerId &&
+		selectedIntroBottomBannerId === defaultIntroBottomBannerId,
 );
 
 let overlaySliderItems = $derived<OverlaySliderItem[]>([
@@ -277,6 +347,41 @@ let overlaySliderItems = $derived<OverlaySliderItem[]>([
 function resetHue() {
 	hue = getDefaultHue();
 	requestAnimationFrame(refreshAllRangeProgress);
+}
+
+function toggleNationalDayTheme() {
+	nationalDayThemeEnabled = !nationalDayThemeEnabled;
+	setNationalDayThemeEnabled(nationalDayThemeEnabled);
+	bannerCarouselEnabled = getStoredBannerCarouselEnabled();
+	selectedWallpaperIndex = bannerCarouselEnabled
+		? null
+		: getStoredSelectedWallpaperIndex();
+	applyStoredSelectedWallpaper();
+}
+
+function isNationalDayWallpaperIndex(index: number): boolean {
+	return nationalDayWallpaperSources.has(configuredWallpapers.desktop[index]);
+}
+
+function isWallpaperOptionSelected(index: number, src: string): boolean {
+	if (selectedWallpaperIndex === index) return true;
+	return (
+		!isDesktopWallpaperViewport &&
+		nationalDayThemeEnabled &&
+		src === mobileHomepageWallpaper &&
+		selectedWallpaperIndex !== null &&
+		isNationalDayWallpaperIndex(selectedWallpaperIndex)
+	);
+}
+
+function selectCardDecoration(mode: "soft" | "flat") {
+	cardDecorationMode = mode;
+	setCardDecorationMode(mode);
+}
+
+function selectNavbarBehavior(behavior: "auto" | "static") {
+	navbarBehavior = behavior;
+	setNavbarBehavior(behavior);
 }
 
 function resetWallpaperMode() {
@@ -402,7 +507,9 @@ function toggleSakuraEnabled() {
 
 function getStoredIntroEnabled() {
 	try {
-		return localStorage.getItem(homePortfolioIntroSettings.enabledStorageKey) !== "0";
+		return (
+			localStorage.getItem(homePortfolioIntroSettings.enabledStorageKey) !== "0"
+		);
 	} catch {
 		return defaultIntroEnabled;
 	}
@@ -410,8 +517,12 @@ function getStoredIntroEnabled() {
 
 function getStoredIntroCharacterId() {
 	try {
-		const storedId = localStorage.getItem(homePortfolioIntroSettings.characterStorageKey);
-		return homePortfolioIntroSettings.characters.some((character) => character.id === storedId)
+		const storedId = localStorage.getItem(
+			homePortfolioIntroSettings.characterStorageKey,
+		);
+		return homePortfolioIntroSettings.characters.some(
+			(character) => character.id === storedId,
+		)
 			? storedId!
 			: defaultIntroCharacterId;
 	} catch {
@@ -419,13 +530,11 @@ function getStoredIntroCharacterId() {
 	}
 }
 
-function getStoredIntroBannerId(
-	position: "top" | "bottom",
-	defaultId: string,
-) {
-	const storageKey = position === "top"
-		? homePortfolioIntroSettings.topBannerStorageKey
-		: homePortfolioIntroSettings.bottomBannerStorageKey;
+function getStoredIntroBannerId(position: "top" | "bottom", defaultId: string) {
+	const storageKey =
+		position === "top"
+			? homePortfolioIntroSettings.topBannerStorageKey
+			: homePortfolioIntroSettings.bottomBannerStorageKey;
 	const options = homePortfolioIntroSettings.banners.desktop[position];
 	try {
 		const storedId = localStorage.getItem(storageKey);
@@ -451,7 +560,6 @@ function dispatchIntroSettingsChange(preview = false) {
 	);
 }
 
-
 function toggleIntroEnabled() {
 	introEnabled = !introEnabled;
 	try {
@@ -459,7 +567,8 @@ function toggleIntroEnabled() {
 			homePortfolioIntroSettings.enabledStorageKey,
 			introEnabled ? "1" : "0",
 		);
-		if (introEnabled) sessionStorage.removeItem("rainzt.home-portfolio-intro-seen.v1");
+		if (introEnabled)
+			sessionStorage.removeItem("rainzt.home-portfolio-intro-seen.v1");
 	} catch {
 		// 私有浏览模式下无法持久化时，仍让当前页面立即响应切换。
 	}
@@ -467,10 +576,18 @@ function toggleIntroEnabled() {
 }
 
 function selectIntroCharacter(characterId: string) {
-	if (!homePortfolioIntroSettings.characters.some((character) => character.id === characterId)) return;
+	if (
+		!homePortfolioIntroSettings.characters.some(
+			(character) => character.id === characterId,
+		)
+	)
+		return;
 	selectedIntroCharacterId = characterId;
 	try {
-		localStorage.setItem(homePortfolioIntroSettings.characterStorageKey, characterId);
+		localStorage.setItem(
+			homePortfolioIntroSettings.characterStorageKey,
+			characterId,
+		);
 	} catch {
 		// 私有浏览模式下无法持久化时，仍让当前页面立即响应切换。
 	}
@@ -480,9 +597,10 @@ function selectIntroCharacter(characterId: string) {
 function selectIntroBanner(position: "top" | "bottom", bannerId: string) {
 	const options = homePortfolioIntroSettings.banners.desktop[position];
 	if (!options.some((banner) => banner.id === bannerId)) return;
-	const storageKey = position === "top"
-		? homePortfolioIntroSettings.topBannerStorageKey
-		: homePortfolioIntroSettings.bottomBannerStorageKey;
+	const storageKey =
+		position === "top"
+			? homePortfolioIntroSettings.topBannerStorageKey
+			: homePortfolioIntroSettings.bottomBannerStorageKey;
 	if (position === "top") {
 		selectedIntroTopBannerId = bannerId;
 	} else {
@@ -518,8 +636,7 @@ function switchWallpaperMode(newMode: WALLPAPER_MODE) {
 	setWallpaperMode(newMode);
 
 	if (isMobileWidth) {
-		mobileSettingsTab =
-			newMode === WALLPAPER_NONE ? "appearance" : "wallpaper";
+		mobileSettingsTab = newMode === WALLPAPER_NONE ? "appearance" : "wallpaper";
 		requestAnimationFrame(() => {
 			document
 				.getElementById("display-setting")
@@ -530,7 +647,8 @@ function switchWallpaperMode(newMode: WALLPAPER_MODE) {
 	}
 
 	window.scrollTo({ top: 0 });
-	if (newMode === WALLPAPER_OVERLAY) requestAnimationFrame(refreshAllRangeProgress);
+	if (newMode === WALLPAPER_OVERLAY)
+		requestAnimationFrame(refreshAllRangeProgress);
 }
 
 function selectMobileSettingsTab(tab: MobileSettingsTab) {
@@ -547,6 +665,7 @@ function selectMobileSettingsTab(tab: MobileSettingsTab) {
 function checkScreenSize() {
 	isSmallScreen = window.innerWidth < 1200;
 	isMobileWidth = window.innerWidth < 780;
+	isDesktopWallpaperViewport = window.innerWidth >= 1024;
 	// 低于380px强制网格模式
 	if (window.innerWidth < 380 && currentLayout === "list") {
 		currentLayout = "grid";
@@ -658,11 +777,19 @@ onMount(() => {
 	// 从localStorage读取首页开屏动画偏好
 	introEnabled = getStoredIntroEnabled();
 	selectedIntroCharacterId = getStoredIntroCharacterId();
-	selectedIntroTopBannerId = getStoredIntroBannerId("top", defaultIntroTopBannerId);
-	selectedIntroBottomBannerId = getStoredIntroBannerId("bottom", defaultIntroBottomBannerId);
+	selectedIntroTopBannerId = getStoredIntroBannerId(
+		"top",
+		defaultIntroTopBannerId,
+	);
+	selectedIntroBottomBannerId = getStoredIntroBannerId(
+		"bottom",
+		defaultIntroBottomBannerId,
+	);
 
 	// 从localStorage读取保存的壁纸模式
 	wallpaperMode = getStoredWallpaperMode();
+	cardDecorationMode = getStoredCardDecorationMode();
+	navbarBehavior = getStoredNavbarBehavior();
 
 	// 从localStorage读取水波纹动画状态
 	wavesEnabled = getStoredWavesEnabled();
@@ -676,11 +803,9 @@ onMount(() => {
 	// 从localStorage读取横幅轮播状态
 	bannerCarouselEnabled = getStoredBannerCarouselEnabled();
 	const cleanupWallpaperPreviewLoading = initWallpaperPreviewLoading();
-	selectedWallpaperIndex = getStoredSelectedWallpaperIndex();
-	if (bannerCarouselEnabled && selectedWallpaperIndex !== null) {
-		selectedWallpaperIndex = null;
-		clearSelectedWallpaper();
-	}
+	selectedWallpaperIndex = bannerCarouselEnabled
+		? null
+		: getStoredSelectedWallpaperIndex();
 
 	// 从localStorage读取樱花特效状态
 	sakuraEnabled = getStoredSakuraEnabled();
@@ -844,38 +969,191 @@ $effect(() => {
             </button>
     </nav>
 
-    <!-- Theme Color Section -->
-    {#if showThemeColor}
+    <!-- Font Settings Section -->
+    {#if showFontSettings}
     <div
         class="mt-2 mb-2 mobile-settings-section"
         class:mobile-settings-section-hidden={mobileSettingsTab !== "appearance"}
     >
-        <div class="flex flex-row gap-2 mb-2 items-center justify-between">
-            <div class="flex gap-2 font-bold text-lg text-neutral-900 dark:text-neutral-100 transition relative ml-3
+        <div class="flex gap-2 font-bold text-lg text-neutral-900 dark:text-neutral-100 transition relative ml-3 mb-2
+            before:w-1 before:h-4 before:rounded-md before:bg-(--primary)
+            before:absolute before:-left-3 before:top-1/2 before:-translate-y-1/2"
+        >
+            字体样式
+        </div>
+        <FontSwitch />
+    </div>
+    {/if}
+
+    <!-- National Day theme and custom hue -->
+    <div
+        class="mt-2 mb-2 mobile-settings-section"
+        class:mobile-settings-section-hidden={mobileSettingsTab !== "appearance"}
+    >
+        {#if showThemeColor}
+            <div class="flex gap-2 font-bold text-lg text-neutral-900 dark:text-neutral-100 transition relative ml-3 mb-2
                 before:w-1 before:h-4 before:rounded-md before:bg-(--primary)
                 before:absolute before:-left-3 before:top-1/2 before:-translate-y-1/2"
             >
                 {i18n(I18nKey.themeColor)}
-                <button aria-label="Reset to Default" class="btn-regular w-7 h-7 rounded-md  active:scale-90"
-                        class:opacity-0={hue === defaultHue} class:pointer-events-none={hue === defaultHue} onclick={resetHue}>
-                    <div class="text-(--btn-content)">
-                        <Icon icon="fa7-solid:arrow-rotate-left" class="text-[0.875rem]"></Icon>
-                    </div>
-                </button>
             </div>
-            <div class="flex gap-1">
-                <div id="hueValue" class="transition bg-(--btn-regular-bg) w-10 h-7 rounded-md flex justify-center
-                font-bold text-sm items-center text-(--btn-content)">
-                    {hue}
+        {/if}
+        <button
+            type="button"
+            class="national-day-theme-toggle"
+            class:national-day-theme-toggle-active={nationalDayThemeEnabled}
+            role="switch"
+            aria-checked={nationalDayThemeEnabled}
+            aria-label="中国红-国庆专属主题"
+            onclick={toggleNationalDayTheme}
+        >
+            <span class="national-day-theme-toggle__copy">
+                <span class="national-day-theme-toggle__title">中国红-国庆专属</span>
+                <span class="national-day-theme-toggle__description">
+                    {nationalDayThemeEnabled
+                        ? "国庆配色、壁纸和贴纸已启用"
+                        : "常规配色与原版主页已恢复"}
+                </span>
+            </span>
+            <span class="national-day-theme-toggle__state">
+                {nationalDayThemeEnabled ? "开启" : "关闭"}
+                <span class="national-day-theme-toggle__track" aria-hidden="true">
+                    <span class="national-day-theme-toggle__thumb"></span>
+                </span>
+            </span>
+        </button>
+
+        {#if showThemeColor && !nationalDayThemeEnabled}
+            <div class="mt-3">
+                <div class="flex flex-row gap-2 mb-2 items-center justify-between">
+                    <div class="flex gap-2 text-sm font-semibold text-neutral-800 dark:text-neutral-200 transition relative ml-3
+                        before:w-1 before:h-3 before:rounded-md before:bg-(--primary)
+                        before:absolute before:-left-3 before:top-1/2 before:-translate-y-1/2"
+                    >
+                        自定义色相
+                        <button
+                            type="button"
+                            aria-label="恢复默认色相"
+                            class="btn-regular w-7 h-7 rounded-md active:scale-90"
+                            class:opacity-0={hue === defaultHue}
+                            class:pointer-events-none={hue === defaultHue}
+                            onclick={resetHue}
+                        >
+                            <div class="text-(--btn-content)">
+                                <Icon icon="fa7-solid:arrow-rotate-left" class="text-[0.875rem]"></Icon>
+                            </div>
+                        </button>
+                    </div>
+                    <div id="hueValue" class="transition bg-(--btn-regular-bg) w-10 h-7 rounded-md flex justify-center font-bold text-sm items-center text-(--btn-content)">
+                        {hue}
+                    </div>
+                </div>
+                <div class="w-full h-6 px-1 bg-[oklch(0.80_0.10_0)] dark:bg-[oklch(0.70_0.10_0)] rounded select-none">
+                    <input
+                        aria-label={i18n(I18nKey.themeColor)}
+                        type="range"
+                        min="0"
+                        max="360"
+                        bind:value={hue}
+                        class="slider"
+                        id="colorSlider"
+                        step="5"
+                        style="width: 100%"
+                    >
                 </div>
             </div>
+        {/if}
+    </div>
+
+    <!-- Card Decoration Section -->
+    <div
+        class="mt-2 mb-2 mobile-settings-section"
+        class:mobile-settings-section-hidden={mobileSettingsTab !== "appearance"}
+    >
+        <div class="flex gap-2 font-bold text-lg text-neutral-900 dark:text-neutral-100 transition relative ml-3 mb-2
+            before:w-1 before:h-4 before:rounded-md before:bg-(--primary)
+            before:absolute before:-left-3 before:top-1/2 before:-translate-y-1/2"
+        >
+            卡片装饰
         </div>
-        <div class="w-full h-6 px-1 bg-[oklch(0.80_0.10_0)] dark:bg-[oklch(0.70_0.10_0)] rounded select-none">
-            <input aria-label={i18n(I18nKey.themeColor)} type="range" min="0" max="360" bind:value={hue}
-                   class="slider" id="colorSlider" step="5" style="width: 100%">
+        <div class="card-decoration-options" role="group" aria-label="卡片装饰模式">
+            <button
+                type="button"
+                class="card-decoration-option"
+                class:card-decoration-option-active={cardDecorationMode === "soft"}
+                aria-pressed={cardDecorationMode === "soft"}
+                onclick={() => selectCardDecoration("soft")}
+            >
+                <span class="card-decoration-preview" aria-hidden="true">
+                    <span class="card-decoration-preview-card card-decoration-preview-soft"></span>
+                </span>
+                <span class="card-decoration-label">柔和蓝调</span>
+                <span class="card-decoration-description">浅蓝边框与淡淡阴影</span>
+            </button>
+            <button
+                type="button"
+                class="card-decoration-option"
+                class:card-decoration-option-active={cardDecorationMode === "flat"}
+                aria-pressed={cardDecorationMode === "flat"}
+                onclick={() => selectCardDecoration("flat")}
+            >
+                <span class="card-decoration-preview" aria-hidden="true">
+                    <span class="card-decoration-preview-card card-decoration-preview-flat"></span>
+                </span>
+                <span class="card-decoration-label">轻薄边框</span>
+                <span class="card-decoration-description">浅色边框，不加阴影</span>
+            </button>
         </div>
     </div>
-    {/if}
+
+    <!-- Navbar Behavior Section -->
+    <div
+        class="mt-2 mb-2 mobile-settings-section"
+        class:mobile-settings-section-hidden={mobileSettingsTab !== "appearance"}
+    >
+        <div class="flex gap-2 font-bold text-lg text-neutral-900 dark:text-neutral-100 transition relative ml-3 mb-2
+            before:w-1 before:h-4 before:rounded-md before:bg-(--primary)
+            before:absolute before:-left-3 before:top-1/2 before:-translate-y-1/2"
+        >
+            导航栏
+        </div>
+        <div class="card-decoration-options" role="group" aria-label="导航栏滚动方式">
+            <button
+                type="button"
+                class="card-decoration-option"
+                class:card-decoration-option-active={navbarBehavior === "auto"}
+                aria-pressed={navbarBehavior === "auto"}
+                onclick={() => selectNavbarBehavior("auto")}
+            >
+                <span class="card-decoration-preview" aria-hidden="true">
+                    <span class="navbar-preview-shell navbar-preview-shell-compact">
+                        <span class="navbar-preview-item navbar-preview-item-active"></span>
+                    </span>
+                </span>
+                <span class="card-decoration-label">滚动收缩</span>
+                <span class="card-decoration-description">下滚收缩，上滚展开</span>
+            </button>
+            <button
+                type="button"
+                class="card-decoration-option"
+                class:card-decoration-option-active={navbarBehavior === "static"}
+                aria-pressed={navbarBehavior === "static"}
+                onclick={() => selectNavbarBehavior("static")}
+            >
+                <span class="card-decoration-preview" aria-hidden="true">
+                    <span class="navbar-preview-shell navbar-preview-shell-expanded">
+                        <span class="navbar-preview-item navbar-preview-item-active"></span>
+                        <span class="navbar-preview-item"></span>
+                        <span class="navbar-preview-item"></span>
+                        <span class="navbar-preview-item"></span>
+                        <span class="navbar-preview-item"></span>
+                    </span>
+                </span>
+                <span class="card-decoration-label">始终展开</span>
+                <span class="card-decoration-description">滚动时保持完整导航</span>
+            </button>
+        </div>
+    </div>
 
     <!-- Wallpaper Mode Section -->
     {#if isWallpaperSwitchable}
@@ -897,18 +1175,18 @@ $effect(() => {
             </div>
             <div class="flex gap-2">
                 <button
-                    class="flex-1 btn-regular rounded-md py-2 px-3 flex items-center justify-center gap-2 active:scale-95 transition-all relative overflow-hidden"
-                    class:opacity-60={wallpaperMode !== WALLPAPER_BANNER}
-                    class:bg-(--btn-regular-bg-hover)={wallpaperMode === WALLPAPER_BANNER}
+                    class="wallpaper-mode-option flex-1 btn-regular rounded-md py-2 px-3 flex items-center justify-center gap-2 active:scale-95 transition-all relative overflow-hidden"
+                    class:wallpaper-mode-option-active={wallpaperMode === WALLPAPER_BANNER}
+                    aria-pressed={wallpaperMode === WALLPAPER_BANNER}
                     onclick={() => switchWallpaperMode(WALLPAPER_BANNER)}
                 >
                     <Icon icon="material-symbols:image-outline" class="text-[1.25rem] shrink-0"></Icon>
                     <span class="text-xs font-medium">{i18n(I18nKey.wallpaperBannerMode)}</span>
                 </button>
                 <button
-                    class="flex-1 btn-regular rounded-md py-2 px-3 flex items-center justify-center gap-2 active:scale-95 transition-all relative overflow-hidden"
-                    class:opacity-60={wallpaperMode !== WALLPAPER_FULLSCREEN}
-                    class:bg-(--btn-regular-bg-hover)={wallpaperMode === WALLPAPER_FULLSCREEN}
+                    class="wallpaper-mode-option flex-1 btn-regular rounded-md py-2 px-3 flex items-center justify-center gap-2 active:scale-95 transition-all relative overflow-hidden"
+                    class:wallpaper-mode-option-active={wallpaperMode === WALLPAPER_FULLSCREEN}
+                    aria-pressed={wallpaperMode === WALLPAPER_FULLSCREEN}
                     onclick={() => switchWallpaperMode(WALLPAPER_FULLSCREEN)}
                 >
                     <Icon icon="material-symbols:wallpaper" class="text-[1.25rem] shrink-0"></Icon>
@@ -917,18 +1195,18 @@ $effect(() => {
             </div>
             <div class="flex gap-2 mt-2">
                 <button
-                    class="flex-1 btn-regular rounded-md py-2 px-3 flex items-center justify-center gap-2 active:scale-95 transition-all relative overflow-hidden"
-                    class:opacity-60={wallpaperMode !== WALLPAPER_OVERLAY}
-                    class:bg-(--btn-regular-bg-hover)={wallpaperMode === WALLPAPER_OVERLAY}
+                    class="wallpaper-mode-option flex-1 btn-regular rounded-md py-2 px-3 flex items-center justify-center gap-2 active:scale-95 transition-all relative overflow-hidden"
+                    class:wallpaper-mode-option-active={wallpaperMode === WALLPAPER_OVERLAY}
+                    aria-pressed={wallpaperMode === WALLPAPER_OVERLAY}
                     onclick={() => switchWallpaperMode(WALLPAPER_OVERLAY)}
                 >
                     <Icon icon="material-symbols:full-coverage-outline-rounded" class="text-[1.25rem] shrink-0"></Icon>
                     <span class="text-xs font-medium">{i18n(I18nKey.wallpaperOverlayMode)}</span>
                 </button>
                 <button
-                    class="flex-1 btn-regular rounded-md py-2 px-3 flex items-center justify-center gap-2 active:scale-95 transition-all relative overflow-hidden"
-                    class:opacity-60={wallpaperMode !== WALLPAPER_NONE}
-                    class:bg-(--btn-regular-bg-hover)={wallpaperMode === WALLPAPER_NONE}
+                    class="wallpaper-mode-option flex-1 btn-regular rounded-md py-2 px-3 flex items-center justify-center gap-2 active:scale-95 transition-all relative overflow-hidden"
+                    class:wallpaper-mode-option-active={wallpaperMode === WALLPAPER_NONE}
+                    aria-pressed={wallpaperMode === WALLPAPER_NONE}
                     onclick={() => switchWallpaperMode(WALLPAPER_NONE)}
                 >
                     <Icon icon="material-symbols:hide-image-outline" class="text-[1.25rem] shrink-0"></Icon>
@@ -964,18 +1242,18 @@ $effect(() => {
                             <span>{i18n(I18nKey.builtinWallpaper)}</span>
                         </div>
                         <div class="wallpaper-picker-scroll hide-scrollbar grid max-h-64 grid-cols-3 gap-1.5 overflow-y-auto overscroll-contain pr-0.5">
-                            {#each builtInWallpapers as wallpaper}
+                            {#each builtInWallpapers as wallpaper (wallpaper.src)}
                                 <button
                                     type="button"
                                     title={wallpaper.label}
                                     aria-label={wallpaper.label}
                                     class="wallpaper-picker-item relative aspect-video overflow-hidden rounded-md border-2 transition-all active:scale-95"
-                                    class:border-(--primary)={selectedWallpaperIndex === wallpaper.index}
-                                    class:border-transparent={selectedWallpaperIndex !== wallpaper.index}
-                                    class:ring-2={selectedWallpaperIndex === wallpaper.index}
-                                    class:ring-(--primary)={selectedWallpaperIndex === wallpaper.index}
-                                    class:ring-offset-1={selectedWallpaperIndex === wallpaper.index}
-                                    class:ring-offset-transparent={selectedWallpaperIndex === wallpaper.index}
+                                    class:border-(--primary)={isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
+                                    class:border-transparent={!isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
+                                    class:ring-2={isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
+                                    class:ring-(--primary)={isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
+                                    class:ring-offset-1={isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
+                                    class:ring-offset-transparent={isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
                                     onclick={() => selectBuiltInWallpaper(wallpaper.index)}
                                 >
                                     <img
@@ -1040,18 +1318,18 @@ $effect(() => {
                         <span>{i18n(I18nKey.builtinWallpaper)}</span>
                     </div>
                     <div class="wallpaper-picker-scroll hide-scrollbar grid max-h-64 grid-cols-3 gap-1.5 overflow-y-auto overscroll-contain pr-0.5">
-                        {#each builtInWallpapers as wallpaper}
+                        {#each builtInWallpapers as wallpaper (wallpaper.src)}
                             <button
                                 type="button"
                                 title={wallpaper.label}
                                 aria-label={wallpaper.label}
                                 class="wallpaper-picker-item relative aspect-video overflow-hidden rounded-md border-2 transition-all active:scale-95"
-                                class:border-(--primary)={selectedWallpaperIndex === wallpaper.index}
-                                class:border-transparent={selectedWallpaperIndex !== wallpaper.index}
-                                class:ring-2={selectedWallpaperIndex === wallpaper.index}
-                                class:ring-(--primary)={selectedWallpaperIndex === wallpaper.index}
-                                class:ring-offset-1={selectedWallpaperIndex === wallpaper.index}
-                                class:ring-offset-transparent={selectedWallpaperIndex === wallpaper.index}
+                                class:border-(--primary)={isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
+                                class:border-transparent={!isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
+                                class:ring-2={isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
+                                class:ring-(--primary)={isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
+                                class:ring-offset-1={isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
+                                class:ring-offset-transparent={isWallpaperOptionSelected(wallpaper.index, wallpaper.src)}
                                 onclick={() => selectBuiltInWallpaper(wallpaper.index)}
                             >
                                 <img
@@ -1380,12 +1658,220 @@ $effect(() => {
 
 
 <style lang="stylus">
+    #display-setting
+        .card-decoration-options
+            display grid
+            grid-template-columns repeat(2, minmax(0, 1fr))
+            gap 0.5rem
+
+        .national-day-theme-toggle
+            display flex
+            width 100%
+            min-height 3.5rem
+            align-items center
+            justify-content space-between
+            gap 0.75rem
+            padding 0.65rem 0.75rem
+            border 1px solid var(--glass-control-border)
+            border-radius 0.75rem
+            background transparent
+            color var(--primary)
+            text-align left
+            transition border-color 180ms ease, background-color 180ms ease, color 180ms ease
+
+            &:hover
+                background transparent
+
+            &:focus-visible
+                outline 2px solid var(--primary)
+                outline-offset 2px
+
+        .national-day-theme-toggle-active
+            border-color var(--primary)
+            background transparent
+
+        .national-day-theme-toggle__copy
+            display flex
+            min-width 0
+            flex-direction column
+            gap 0.18rem
+
+        .national-day-theme-toggle__title
+            color var(--primary)
+            font-size 0.84rem
+            font-weight 700
+            line-height 1.2
+
+        .national-day-theme-toggle__description
+            color var(--text-secondary)
+            font-size 0.7rem
+            font-weight 400
+            line-height 1.35
+
+        .national-day-theme-toggle__state
+            display flex
+            flex 0 0 auto
+            align-items center
+            gap 0.55rem
+            color var(--text-secondary)
+            font-size 0.74rem
+            font-weight 650
+
+        .national-day-theme-toggle-active .national-day-theme-toggle__state
+            color var(--primary)
+
+        .national-day-theme-toggle__track
+            display flex
+            width 2.35rem
+            height 1.35rem
+            align-items center
+            padding 0.15rem
+            border-radius 999px
+            background var(--line-divider)
+            transition background-color 180ms ease
+
+        .national-day-theme-toggle-active .national-day-theme-toggle__track
+            background var(--primary)
+
+        .national-day-theme-toggle__thumb
+            display block
+            width 1.05rem
+            height 1.05rem
+            border-radius 50%
+            background white
+            box-shadow 0 1px 3px rgba(0, 0, 0, 0.2)
+            transform translateX(0)
+            transition transform 180ms ease
+
+        .national-day-theme-toggle-active .national-day-theme-toggle__thumb
+            transform translateX(1rem)
+
+        .card-decoration-option
+            display flex
+            min-width 0
+            flex-direction column
+            align-items flex-start
+            gap 0.35rem
+            padding 0.6rem
+            border 1px solid var(--glass-control-border)
+            border-radius 0.75rem
+            background transparent
+            color var(--primary)
+            opacity 0.7
+            text-align left
+            transition border-color 180ms ease, background-color 180ms ease, color 180ms ease, opacity 180ms ease, transform 180ms ease
+
+            &:hover
+                opacity 1
+                transform translateY(-1px)
+                background transparent
+
+            &:focus-visible
+                outline 2px solid var(--primary)
+                outline-offset 2px
+
+        .card-decoration-option-active
+            opacity 1
+            border-color var(--primary)
+            background transparent
+            color var(--primary)
+            font-weight 700
+
+            &:hover
+                background transparent
+
+        .card-decoration-preview
+            display flex
+            width 100%
+            height 2.4rem
+            align-items center
+            justify-content center
+            border-radius 0.5rem
+            background unquote("color-mix(in oklch, var(--card-bg) 82%, var(--primary) 4%)")
+
+        .card-decoration-preview-card
+            display block
+            width 68%
+            height 1.35rem
+            border-radius 0.4rem
+            background var(--card-bg)
+
+        .card-decoration-preview-soft
+            border 1px solid unquote("color-mix(in oklch, var(--primary) 18%, var(--line-divider))")
+            box-shadow 0 0.2rem 0.45rem unquote("color-mix(in oklch, var(--primary) 12%, transparent)")
+
+        .card-decoration-preview-flat
+            border 1px solid unquote("color-mix(in oklch, var(--text-color) 10%, var(--line-divider))")
+            box-shadow none
+
+        .navbar-preview-shell
+            box-sizing border-box
+            display flex
+            height 1.55rem
+            align-items center
+            justify-content center
+            gap 0.1rem
+            padding 0.17rem
+            border 1px solid unquote("color-mix(in oklch, var(--text-color) 22%, var(--card-bg))")
+            border-radius 999px
+            background var(--card-bg)
+            box-shadow 0 0.1rem 0.28rem unquote("color-mix(in oklch, var(--text-color) 8%, transparent)")
+
+        .navbar-preview-shell-compact
+            width 2.8rem
+
+        .navbar-preview-shell-expanded
+            width min(100%, 7.4rem)
+            justify-content space-between
+
+        .navbar-preview-item
+            box-sizing border-box
+            width 1.12rem
+            height 1rem
+            flex none
+            border 1px solid unquote("color-mix(in oklch, var(--text-color) 34%, var(--card-bg))")
+            border-radius 999px
+            background var(--card-bg)
+
+        .navbar-preview-item-active
+            width 1.65rem
+            border-color unquote("color-mix(in oklch, var(--primary) 55%, var(--card-bg))")
+            background unquote("color-mix(in oklch, var(--primary) 48%, var(--card-bg))")
+
+        .card-decoration-label
+            font-size 0.78rem
+            font-weight 500
+
+        .card-decoration-description
+            color var(--text-secondary)
+            font-size 0.64rem
+            line-height 1.35
+
     :global(html.display-settings-open),
     :global(body.display-settings-open)
         overflow hidden
         overscroll-behavior none
 
     #display-setting
+        .wallpaper-mode-option
+            opacity 0.7
+            color var(--primary)
+            transition background-color 180ms ease, color 180ms ease, opacity 180ms ease, transform 180ms ease
+
+            &:hover
+                opacity 1
+                background transparent
+
+        .wallpaper-mode-option-active
+            opacity 1
+            border-color var(--primary)
+            background transparent
+            color var(--primary)
+            font-weight 700
+
+            &:hover
+                background transparent
+
         .mobile-settings-nav
             position sticky
             top -0.5rem
@@ -1404,9 +1890,10 @@ $effect(() => {
             align-items center
             justify-content center
             gap 0.3rem
+            border 1px solid var(--glass-control-border)
             border-radius 0.75rem
-            background var(--btn-regular-bg)
-            color var(--btn-content)
+            background transparent
+            color var(--primary)
             font-size 0.78rem
             font-weight 700
             transition transform 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease
@@ -1415,9 +1902,10 @@ $effect(() => {
                 transform scale(0.97)
 
             &.mobile-settings-tab-active
-                background var(--primary)
-                color white
-                box-shadow unquote("0 7px 15px -9px hsla(var(--hue), 82%, 50%, 0.46)")
+                border-color var(--primary)
+                background transparent
+                color var(--primary)
+                box-shadow none
 
         .mobile-settings-section-hidden
             display none
@@ -1507,9 +1995,10 @@ $effect(() => {
                 align-items center
                 justify-content center
                 gap 0.3rem
+                border 1px solid var(--glass-control-border)
                 border-radius 0.75rem
-                background var(--btn-regular-bg)
-                color var(--btn-content)
+                background transparent
+                color var(--primary)
                 font-size 0.78rem
                 font-weight 700
                 transition transform 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease
@@ -1518,9 +2007,10 @@ $effect(() => {
                     transform scale(0.97)
 
                 &.mobile-settings-tab-active
-                    background var(--primary)
-                    color white
-                    box-shadow unquote("0 7px 15px -9px hsla(var(--hue), 82%, 50%, 0.46)")
+                    border-color var(--primary)
+                    background transparent
+                    color var(--primary)
+                    box-shadow none
 
             .mobile-settings-section-hidden
                 display none

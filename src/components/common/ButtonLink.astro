@@ -13,11 +13,8 @@ const { badge, url, label } = Astro.props;
             h-10
             rounded-lg
             bg-none
-            hover:bg-(--btn-plain-bg-hover)
-            active:bg-(--btn-plain-bg-active)
             transition-all
             pl-2
-            hover:pl-3
             
             text-neutral-700
             hover:text-(--primary)
@@ -31,9 +28,8 @@ const { badge, url, label } = Astro.props;
                 <slot></slot>
             </div>
             { badge !== undefined && badge !== null && badge !== '' &&
-                <div class="transition px-2 h-7 ml-4 min-w-8 rounded-lg text-sm font-bold
-                    text-(--btn-content) dark:text-(--deep-text)
-                    bg-[oklch(0.95_0.025_var(--hue))] dark:bg-(--primary)
+                <div class="button-link-badge transition px-2 h-7 ml-4 min-w-8 rounded-lg text-sm font-bold
+                    text-(--primary)
                     flex items-center justify-center">
                     { badge }
                 </div>
@@ -41,3 +37,13 @@ const { badge, url, label } = Astro.props;
         </div>
     </button>
 </a>
+
+<style>
+    .button-link-badge {
+        border: 1px solid var(--glass-control-border);
+        background: transparent;
+        box-shadow: none;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+</style>

@@ -1,0 +1,48 @@
+---
+interface Props {
+	label: string;
+	income: number;
+	expense: number;
+	balance: number;
+}
+const { label, income, expense, balance } = Astro.props;
+const fmt = (n: number) =>
+	n.toLocaleString("zh-CN", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	});
+---
+<div class="monthly-card">
+  <div class="monthly-bg" aria-hidden="true"></div>
+  <div class="monthly-overlay"></div>
+  <div class="monthly-content">
+    <div class="monthly-label">{label}</div>
+    <div class="monthly-value">
+      <span class="monthly-num">{fmt(balance)}</span>
+      <span class="monthly-eye" aria-hidden="true">◉</span>
+    </div>
+    <div class="monthly-sub">
+      <span>收入 {fmt(income)}</span>
+      <span class="monthly-divider">|</span>
+      <span>支出 {fmt(expense)}</span>
+    </div>
+  </div>
+</div>
+<style>
+@reference "../../styles/main.css";
+.monthly-card{ position:relative; height:10.2rem; border-radius:0.75rem; overflow:hidden; background:#7cc8d8; border:1px solid oklch(0 0 0 / 0.06); }
+:root.dark .monthly-card{ border-color: oklch(1 0 0 / 0.08); }
+.monthly-bg{ position:absolute; inset:0; background-image:url("/assets/images/bills/bill-monthly-background.webp"); background-size:cover; background-position:center 38%; opacity:0.9; }
+.monthly-overlay{ position:absolute; inset:0; background: linear-gradient(90deg, oklch(0 0 0 / 0.22) 0%, oklch(0 0 0 / 0.05) 50%, transparent 68%); }
+.monthly-content{ position:relative; z-index:1; height:100%; display:flex; flex-direction:column; justify-content:center; gap:0.35rem; padding:1.1rem 1.2rem; color:#fff; }
+.monthly-label{ font-size:0.72rem; opacity:0.92; }
+.monthly-value{ display:flex; align-items:center; gap:0.45rem; line-height:1; }
+.monthly-num{ font-size:1.9rem; font-weight:800; letter-spacing:-0.02em; text-shadow:0 1px 8px oklch(0 0 0 / 0.18); }
+.monthly-eye{ font-size:0.95rem; opacity:0.9; }
+.monthly-sub{ display:flex; align-items:center; gap:0.5rem; font-size:0.7rem; opacity:0.92; margin-top:0.15rem; }
+.monthly-divider{ opacity:0.6; }
+@media(max-width:768px){
+  .monthly-card{ height:9rem; }
+  .monthly-num{ font-size:1.6rem; }
+}
+</style>

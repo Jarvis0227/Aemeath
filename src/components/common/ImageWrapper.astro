@@ -29,6 +29,7 @@ interface Props {
 	widths?: number[];
 	sizes?: string;
 	quality?: number;
+	plainImage?: boolean;
 }
 
 const {
@@ -46,6 +47,7 @@ const {
 	widths,
 	sizes,
 	quality = getImageQuality(),
+	plainImage = false,
 } = Astro.props;
 
 const fallbackFormat = getFallbackFormat();
@@ -82,8 +84,9 @@ if (isLocal) {
 	}
 }
 
-const imageClass =
-	"w-full h-full object-cover opacity-0 transition-opacity duration-500 ease-out";
+const imageClass = plainImage
+	? "w-full h-full object-cover"
+	: "w-full h-full object-cover opacity-0 transition-opacity duration-500 ease-out";
 const imageStyle = `object-position: ${position}`;
 
 // 检查是否需要添加 referrerpolicy（仅对非本地图片）
@@ -107,9 +110,9 @@ const lqipProps = isLocal
 		? getLqipProps(src, basePath, true)
 		: getLqipProps(src);
 ---
-<div id={id} class:list={[className, 'overflow-hidden relative']}>
-    <div class="lqip-placeholder absolute inset-0 pointer-events-none" style={lqipProps.style} aria-hidden="true"></div>
-    <div class="transition absolute inset-0 dark:bg-black/10 pointer-events-none"></div>
+<div id={id} class:list={[className, 'overflow-hidden relative', plainImage && 'wallpaper-image-plain']}>
+    {!plainImage && <div class="lqip-placeholder absolute inset-0 pointer-events-none" style={lqipProps.style} aria-hidden="true"></div>}
+    {!plainImage && <div class="transition absolute inset-0 dark:bg-black/10 pointer-events-none"></div>}
     {isLocal && img && usePicture && (
         <Picture
             src={img}

@@ -17,9 +17,8 @@ const { filters, activeFilter, onFilterChange }: Props = $props();
 <div class="flex flex-wrap gap-1.5 mb-4">
   {#each filters as filter}
     <button
-      class="px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 {filter.value === activeFilter
-        ? 'bg-(--primary) text-white shadow-md'
-        : 'bg-(--btn-regular-bg) text-(--btn-content) hover:bg-(--btn-regular-bg-hover)'}"
+      class="px-3 py-1 rounded-full border border-(--glass-control-border) bg-transparent text-(--primary) text-xs font-medium transition-all duration-200 hover:border-(--primary)"
+      aria-pressed={filter.value === activeFilter}
       onclick={() => onFilterChange(filter.value)}
       type="button"
     >
@@ -30,3 +29,9 @@ const { filters, activeFilter, onFilterChange }: Props = $props();
     </button>
   {/each}
 </div>
+
+<style>
+  button[aria-pressed="true"] {
+    border-color: var(--primary);
+  }
+</style>

@@ -1,0 +1,144 @@
+---
+/**
+ * Live2DWidget 延迟加载包装器
+ * 减少初始包体积，组件在页面加载完成后动态导入
+ */
+import type { Live2DWidgetConfig } from "@/types/config";
+
+interface Props {
+	config: Live2DWidgetConfig;
+}
+
+const { config } = Astro.props;
+
+// 预渲染容器，避免布局偏移
+---
+
+<div id="l2d-widget-lazy-container" data-config={JSON.stringify(config)}></div>
+
+<script>
+	async function initLive2DWidget() {
+		const container = document.getElementById("l2d-widget-lazy-container");
+		if (!container) return;
+
+		try {
+			const config = JSON.parse(container.dataset.config || "{}");
+			if (!config.enable) return;
+
+			// 动态导入 Live2D 模块
+			const { createWidget } = await import("l2d-widget");
+
+			// 创建实际的 widget 容器
+			const widgetContainer = document.createElement("div");
+			widgetContainer.id = "l2d-widget-container";
+			widgetContainer.dataset.models = JSON.stringify(
+				Array.isArray(config.model) ? config.model : [config.model],
+			);
+			widgetContainer.dataset.position = config.position || "bottom-left";
+			widgetContainer.dataset.size = JSON.stringify(config.size || 300);
+			widgetContainer.dataset.primaryColor = config.primaryColor || "";
+			widgetContainer.dataset.transitionDuration = String(
+				config.transitionDuration || 1000,
+			);
+			widgetContainer.dataset.transitionType = config.transitionType || "slide";
+			widgetContainer.dataset.menus = JSON.stringify(config.menus || {});
+			widgetContainer.dataset.tips = JSON.stringify(config.tips || {});
+			widgetContainer.dataset.responsive = JSON.stringify(
+				config.responsive || {},
+			);
+
+			document.body.appendChild(widgetContainer);
+
+			// 修复 l2d-widget 气泡不会自动换行
+			function patchTipBubble(el: HTMLElement) {
+				if (el.style.whiteSpace === "nowrap") {
+					el.style.whiteSpace = "normal";
+					el.style.width = "190px";
+				}
+			}
+
+			const tipObserver = new MutationObserver((mutations) => {
+				for (const m of mutations) {
+					for (const node of m.addedNodes) {
+						if (node instanceof HTMLElement) {
+							if (node.style.whiteSpace === "nowrap") patchTipBubble(node);
+							node.querySelectorAll<HTMLElement>("*").forEach(patchTipBubble);
+						}
+					}
+				}
+			});
+			tipObserver.observe(document.body, { childList: true, subtree: true });
+
+			// 菜单动作映射
+			let currentModelIndex = 0;
+			const menuActions: Record<string, (widget: any) => void> = {
+				home: () => (window.location.href = "/"),
+				scrollToTop: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+				sleep: (widget) => widget.sleep(),
+				github: () =>
+					window.open("https://github.com/Jarvis0227/Aemeath", "_blank"),
+				switchModel: (widget) => {
+					const models = JSON.parse(widgetContainer.dataset.models || "[]");
+					currentModelIndex = (currentModelIndex + 1) % models.length;
+					widget.switchModel(currentModelIndex);
+				},
+			};
+
+			// 响应式检查
+			const responsive = config.responsive || {};
+			if (responsive.hideOnMobile) {
+				const breakpoint = responsive.mobileBreakpoint || 768;
+				if (window.innerWidth <= breakpoint) {
+					widgetContainer.style.display = "none";
+					return;
+				}
+			}
+
+			const models = Array.isArray(config.model)
+				? config.model
+				: [config.model];
+			if (models.length === 0) return;
+
+			const options: any = {
+				model: models.length === 1 ? models[0] : models,
+				position: config.position,
+				size: config.size,
+				primaryColor: config.primaryColor,
+				transitionDuration: config.transitionDuration,
+				transitionType: config.transitionType,
+			};
+
+			if (config.menus?.items || config.menus?.extraItems) {
+				options.menus = {
+					items: (config.menus.items || []).map((item) => ({
+						...item,
+						onClick: () => menuActions[item.action]?.(widget),
+					})),
+					extraItems: (config.menus.extraItems || []).map((item) => ({
+						...item,
+						onClick: () => menuActions[item.action]?.(widget),
+					})),
+					align: config.menus.align,
+				};
+			}
+
+			if (config.tips?.enable) {
+				options.tips = config.tips;
+			}
+
+			const widget = createWidget(options);
+			container.remove();
+		} catch (error) {
+			console.error("Failed to load Live2D widget:", error);
+		}
+	}
+
+	// 页面加载完成后延迟初始化
+	if (document.readyState === "complete") {
+		setTimeout(initLive2DWidget, 1000);
+	} else {
+		window.addEventListener("load", () => {
+			setTimeout(initLive2DWidget, 1000);
+		});
+	}
+</script>

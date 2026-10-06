@@ -24,7 +24,7 @@ const showTitle = widgetConfig?.showTitle !== false;
   name={config.title || i18n(I18nKey.announcement)}
   showTitle={showTitle}
   id="announcement"
-  class={className}
+  class={["announcement-card", className].filter(Boolean).join(" ")}
   style={style}
 >
   <div>
@@ -44,7 +44,7 @@ const showTitle = widgetConfig?.showTitle !== false;
                   href={link.url}
                   target={link.external ? "_blank" : "_self"}
                   rel={link.external ? "noopener noreferrer" : undefined}
-                  class="btn-regular rounded-lg px-3 py-1.5 text-sm font-medium active:scale-95 transition-transform"
+                  class="announcement-link px-3 py-1.5 text-sm font-medium active:scale-95"
                 >
                   {link.text}
                 </a>
@@ -67,3 +67,62 @@ const showTitle = widgetConfig?.showTitle !== false;
     </div>
   </div>
 </WidgetLayout>
+
+<style>
+  :global(widget-layout.announcement-card #announcement) {
+    overflow: visible;
+  }
+
+  :global(.announcement-link) {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgb(120 120 120 / 16%);
+    border-radius: 10px;
+    background-color: transparent;
+    box-shadow:
+      0 2px 5px rgb(38 38 38 / 7%),
+      0 1px 2px rgb(38 38 38 / 4%),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      inset 0 -1px 0 rgb(112 112 112 / 10%);
+    color: var(--primary);
+    transition:
+      color 220ms ease,
+      box-shadow 220ms ease,
+      transform 220ms ease;
+  }
+
+  :global(.announcement-link:hover),
+  :global(.announcement-link:focus-visible),
+  :global(.announcement-link:active) {
+    border-style: dashed;
+    border-color: rgb(120 120 120 / 42%);
+    box-shadow:
+      0 3px 6px rgb(38 38 38 / 10%),
+      0 1px 2px rgb(38 38 38 / 5%),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 0 rgb(112 112 112 / 16%);
+  }
+
+  :global(.announcement-link:focus-visible) {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+  }
+
+  :global(.dark) :global(.announcement-link) {
+    border-color: rgb(224 224 224 / 20%);
+  }
+
+  :global(.dark .announcement-link:hover),
+  :global(.dark .announcement-link:focus-visible),
+  :global(.dark .announcement-link:active) {
+    border-color: rgb(230 230 230 / 42%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.announcement-link) {
+      transition: none;
+    }
+  }
+</style>

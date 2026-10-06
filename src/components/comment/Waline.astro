@@ -5,6 +5,7 @@ import {
 	getEnabledFriends,
 	siteConfig,
 } from "@/config";
+const friendHosts: string[] = [];
 
 interface Props {
 	path: string;
@@ -25,7 +26,10 @@ const config = {
 	)
 		? { pageview: true }
 		: {}),
-	...(import.meta.env.DEV || ["localhost", "127.0.0.1", "::1", "0.0.0.0"].includes(Astro.url.hostname.toLowerCase())
+	...(import.meta.env.DEV ||
+	["localhost", "127.0.0.1", "::1", "0.0.0.0"].includes(
+		Astro.url.hostname.toLowerCase(),
+	)
 		? { pageview: false }
 		: {}),
 };
@@ -33,7 +37,7 @@ const config = {
 const recommendedFriendUrls = getEnabledFriends()
 	.filter((friend) => friend.recommended === true)
 	.map((friend) => friend.siteurl);
-const ownerWalineUserIds = [2];
+const ownerWalineUserIds: number[] = [];
 const aiWalineUserIds: number[] = [];
 ---
 <!-- Waline -->
@@ -45,6 +49,7 @@ const aiWalineUserIds: number[] = [];
     data-waline-path={Astro.props.path}
     data-waline-site-url={siteConfig.site_url}
     data-waline-recommended-links={JSON.stringify(recommendedFriendUrls)}
+    data-waline-friend-hosts={JSON.stringify(friendHosts)}
     data-waline-owner-user-ids={JSON.stringify(ownerWalineUserIds)}
     data-waline-ai-user-ids={JSON.stringify(aiWalineUserIds)}
   ></div>
@@ -65,6 +70,103 @@ const aiWalineUserIds: number[] = [];
 	#waline .wl-panel {
 		border-radius: 0.9rem;
 		background: color-mix(in oklab, var(--card-bg) 76%, transparent);
+	}
+
+	.waline-mobile-composer-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 9000;
+		width: 100%;
+		height: 100dvh;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: rgb(36 47 53 / 42%);
+		backdrop-filter: blur(2px);
+		-webkit-backdrop-filter: blur(2px);
+		touch-action: none;
+		animation: waline-mobile-dim 200ms ease-out;
+	}
+
+	.waline-mobile-composer-backdrop[hidden],
+	.waline-mobile-comment-bar[hidden] {
+		display: none;
+	}
+
+	.waline-mobile-comment-bar {
+		position: fixed;
+		inset: auto 0 0;
+		z-index: 70;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+		background: transparent;
+		pointer-events: none;
+	}
+
+	.waline-mobile-comment-entry {
+		flex: 1;
+		min-width: 0;
+		height: 44px;
+		padding: 0 20px;
+		border: 1px solid #d9eaf6;
+		border-radius: 999px;
+		background: rgb(244 250 253 / 65%);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		box-shadow: 0 2px 8px rgb(71 121 151 / 10%);
+		color: #7b8388;
+		font-size: 14px;
+		text-align: left;
+		pointer-events: auto;
+	}
+
+	.waline-mobile-comment-emoji {
+		display: grid;
+		width: 44px;
+		height: 44px;
+		border: 1px solid rgb(217 234 246 / 70%);
+		border-radius: 50%;
+		background: rgb(244 250 253 / 65%);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		box-shadow: 0 2px 8px rgb(71 121 151 / 10%);
+		place-items: center;
+		color: #7b8388;
+		pointer-events: auto;
+	}
+
+	.waline-mobile-comment-emoji svg {
+		width: 24px;
+		height: 24px;
+	}
+
+	.waline-mobile-comment-entry:focus-visible,
+	.waline-mobile-comment-emoji:focus-visible {
+		outline: 2px solid rgb(6 169 232 / 40%);
+		outline-offset: 2px;
+	}
+
+	@keyframes waline-mobile-dim {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	@keyframes waline-mobile-sheet-in {
+		from { opacity: 0.6; translate: 0 100%; }
+		to { opacity: 1; translate: 0 0; }
+	}
+	#waline .waline-comment-mode-note {
+		margin: 0.25rem 0 0.55rem;
+		color: var(--content-meta);
+		font-size: 0.72rem;
+		line-height: 1.4;
+		opacity: 0.78;
+	}
+
+	#waline .waline-comment-mode-note[hidden] {
+		display: none;
 	}
 
 	/* A compact, page-specific note for the friend-link comment workflow. */
@@ -274,6 +376,16 @@ const aiWalineUserIds: number[] = [];
 
 	#waline .wl-btn.primary {
 		border-radius: 0.75rem;
+		border: 1px solid var(--glass-control-border);
+		background: transparent;
+		color: var(--primary);
+		box-shadow: none;
+	}
+
+	#waline .wl-btn.primary:is(:hover, :active) {
+		border-color: var(--primary);
+		background: transparent;
+		color: var(--primary);
 	}
 
 	#waline .firefly-comment-filter {
@@ -295,8 +407,8 @@ const aiWalineUserIds: number[] = [];
 		padding: 0.36rem 0.68rem;
 		border: 1px solid color-mix(in oklab, var(--primary) 22%, var(--line-divider));
 		border-radius: 999px;
-		background: color-mix(in oklab, var(--card-bg) 78%, transparent);
-		color: var(--content-meta);
+		background: transparent;
+		color: var(--primary);
 		font-size: 0.75rem;
 		font-weight: 700;
 		line-height: 1.2;
@@ -312,7 +424,8 @@ const aiWalineUserIds: number[] = [];
 	#waline .firefly-comment-filter-toggle:hover {
 		border-color: color-mix(in oklab, var(--primary) 48%, var(--line-divider));
 		color: var(--primary);
-		box-shadow: 0 0.25rem 0.8rem color-mix(in oklab, var(--primary) 11%, transparent);
+		background: transparent;
+		box-shadow: none;
 		transform: translateY(-1px);
 	}
 
@@ -326,9 +439,9 @@ const aiWalineUserIds: number[] = [];
 
 	#waline .firefly-comment-filter-toggle[data-active="true"] {
 		border-color: color-mix(in oklab, var(--primary) 58%, transparent);
-		background: color-mix(in oklab, var(--primary) 12%, var(--card-bg));
+		background: transparent;
 		color: var(--primary);
-		box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary) 10%, transparent);
+		box-shadow: none;
 	}
 
 	#waline .firefly-comment-filter-icon {
@@ -410,7 +523,7 @@ const aiWalineUserIds: number[] = [];
 
 	#waline .firefly-comment-filter-confirm {
 		border-color: color-mix(in oklab, var(--primary) 40%, transparent);
-		background: color-mix(in oklab, var(--primary) 15%, var(--card-bg));
+		background: transparent;
 		color: var(--primary);
 	}
 
@@ -698,6 +811,92 @@ const aiWalineUserIds: number[] = [];
 	#waline .wl-card-item[data-waline-side="right"] > .wl-card > .wl-content {
 		margin-inline-start: auto;
 		border-radius: 0.38rem 0.38rem 0.12rem 0.38rem;
+	}
+
+	/* Waline floats the reply mention, so a fit-content bubble measures only the
+	 * message body and wraps short replies before the available space runs out. */
+	#waline .wl-card-item > .wl-card > .wl-content > .wl-reply-to {
+		display: inline;
+		float: none;
+		margin: 0 0.35em 0 0;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-content > .wl-reply-to + div {
+		display: contents;
+	}
+
+	#waline .wl-card-item > .wl-card > .wl-content > .wl-reply-to + div > p:first-child {
+		display: inline;
+	}
+
+	#waline .wl-content img.wl-emoji {
+		display: inline-block;
+		width: auto;
+		height: 2.15rem;
+		max-width: 2.5rem;
+		max-height: none;
+		margin-inline: 0.04rem;
+		object-fit: contain;
+		vertical-align: -0.68rem;
+	}
+
+	#waline .wl-content .waline-lottie-emoji {
+		position: relative;
+		display: inline-flex;
+		box-sizing: border-box;
+		width: 2.55rem;
+		height: 2.55rem;
+		align-items: center;
+		justify-content: center;
+		margin-inline: 0.08rem;
+		overflow: hidden;
+		border-radius: 0.55rem;
+		background: radial-gradient(circle, color-mix(in oklab, var(--primary) 8%, transparent), transparent 68%);
+		line-height: 1;
+		vertical-align: -0.92rem;
+		isolation: isolate;
+		contain: layout paint style;
+	}
+
+	#waline .wl-content .waline-lottie-emoji::before {
+		position: absolute;
+		inset: 31%;
+		border: 1.5px solid color-mix(in oklab, var(--primary) 18%, transparent);
+		border-top-color: color-mix(in oklab, var(--primary) 64%, transparent);
+		border-radius: 50%;
+		animation: waline-lottie-loading 0.8s linear infinite;
+		content: "";
+	}
+
+	#waline .wl-content .waline-lottie-emoji[data-waline-lottie-ready="true"]::before,
+	#waline .wl-content .waline-lottie-emoji[data-waline-lottie-error="true"]::before {
+		display: none;
+	}
+
+	#waline .wl-content .waline-lottie-emoji > svg,
+	#waline .wl-content .waline-lottie-emoji > canvas {
+		position: relative;
+		z-index: 1;
+		display: block;
+		width: 100% !important;
+		height: 100% !important;
+	}
+
+	#waline .wl-content .waline-lottie-emoji[data-waline-lottie-error="true"] {
+		width: auto;
+		height: auto;
+		padding: 0.18rem 0.34rem;
+		border: 1px dashed color-mix(in oklab, var(--primary) 25%, var(--line-divider));
+		background: color-mix(in oklab, var(--primary) 7%, transparent);
+		color: var(--waline-bubble-ink);
+		font: 600 0.68rem/1.35 ui-monospace, SFMono-Regular, Consolas, monospace;
+		vertical-align: 0.04rem;
+	}
+
+	@keyframes waline-lottie-loading {
+		to {
+			transform: rotate(1turn);
+		}
 	}
 
 	/* Keep the thread stamp in the metadata line so it reads as a status, not another message. */
@@ -1276,11 +1475,37 @@ const aiWalineUserIds: number[] = [];
 		text-wrap: pretty;
 	}
 
-	/* The comment box sits immediately above the footer. Let the controller flip a picker inward
-	 * when opening downward would leave the comment card or the visible viewport. */
+	/* Keep emoji and GIF pickers in document flow so they never cover the editor or comments. */
 	body .wl-emoji-popup,
 	body .wl-gif-popup {
 		z-index: 60;
+	}
+
+	body .wl-emoji-popup {
+		max-width: 36rem;
+	}
+
+	body .wl-emoji-popup > .wl-tab-wrapper {
+		max-height: 15.75rem;
+		padding: 0.75rem;
+	}
+
+	body .wl-emoji-popup > .wl-tab-wrapper button {
+		width: 3rem;
+		height: 3rem;
+		margin: 0.14rem;
+		line-height: 3rem;
+	}
+
+	body .wl-emoji-popup > .wl-tab-wrapper .wl-emoji {
+		max-width: 2.5rem;
+		max-height: 2.5rem;
+	}
+
+	body .wl-emoji-popup .wl-emoji-preview {
+		top: -4.75rem;
+		max-width: 3.75rem;
+		max-height: 3.75rem;
 	}
 
 	body .wl-emoji-popup.waline-picker-open-upward,
@@ -1288,6 +1513,391 @@ const aiWalineUserIds: number[] = [];
 		top: auto;
 		bottom: calc(100% + 0.625rem);
 		transform-origin: left bottom;
+	}
+
+	body .wl-emoji-popup.waline-lottie-picker-active > .wl-tab-wrapper,
+	body .wl-emoji-popup.waline-kaomoji-picker-active > .wl-tab-wrapper {
+		display: none;
+	}
+
+	body .waline-kaomoji-picker[hidden] {
+		display: none;
+	}
+
+	body .waline-kaomoji-picker {
+		display: flex;
+		box-sizing: border-box;
+		height: 15.75rem;
+		align-content: flex-start;
+		align-items: flex-start;
+		flex-wrap: wrap;
+		gap: 0.1rem 0.14rem;
+		padding: 0.6rem;
+		overflow: auto;
+		overscroll-behavior: contain;
+		background: color-mix(in oklab, var(--card-bg) 96%, transparent);
+		scrollbar-width: thin;
+	}
+
+	#waline .wl-emoji-popup .waline-kaomoji-picker__item {
+		display: inline-flex;
+		width: max-content;
+		max-width: 100%;
+		min-height: 2.3rem;
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: center;
+		min-width: 0;
+		padding: 0.2rem 0.36rem;
+		border: 1px solid transparent;
+		border-radius: 0.5rem;
+		outline: none;
+		background: transparent;
+		color: var(--btn-content);
+		font: 500 0.76rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+		cursor: pointer;
+		text-align: center;
+		white-space: normal;
+		transition: background 0.16s ease, border-color 0.16s ease;
+		overflow-wrap: anywhere;
+	}
+
+	#waline .wl-emoji-popup .waline-kaomoji-picker__item:hover,
+	#waline .wl-emoji-popup .waline-kaomoji-picker__item:focus-visible {
+		border-color: color-mix(in oklab, var(--primary) 28%, var(--line-divider));
+		background: color-mix(in oklab, var(--primary) 9%, var(--card-bg));
+	}
+
+	#waline .wl-emoji-popup .waline-kaomoji-picker__item:focus-visible {
+		box-shadow: 0 0 0 0.13rem color-mix(in oklab, var(--primary) 13%, transparent);
+	}
+
+	body .waline-lottie-picker[hidden] {
+		display: none;
+	}
+
+	body .waline-lottie-picker {
+		display: grid;
+		box-sizing: border-box;
+		height: 15.75rem;
+		grid-template-rows: auto minmax(0, 1fr);
+		gap: 0.58rem;
+		padding: 0.62rem 0.7rem 0.55rem;
+		background:
+			radial-gradient(circle at 86% -30%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 48%),
+			color-mix(in oklab, var(--card-bg) 96%, transparent);
+		contain: layout paint style;
+	}
+
+	body .waline-lottie-picker__toolbar {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		gap: 0.6rem;
+	}
+
+	body .waline-lottie-picker__search {
+		position: relative;
+		display: flex;
+		min-width: 0;
+		flex: 1;
+		align-items: center;
+	}
+
+	body .waline-lottie-picker__search::before {
+		position: absolute;
+		left: 0.55rem;
+		width: 0.58rem;
+		height: 0.58rem;
+		border: 1.5px solid color-mix(in oklab, var(--primary) 64%, var(--content-meta));
+		border-radius: 50%;
+		content: "";
+		pointer-events: none;
+	}
+
+	body .waline-lottie-picker__search::after {
+		position: absolute;
+		left: 1.06rem;
+		width: 0.32rem;
+		height: 1.5px;
+		background: color-mix(in oklab, var(--primary) 64%, var(--content-meta));
+		content: "";
+		pointer-events: none;
+		transform: rotate(45deg);
+		transform-origin: left center;
+	}
+
+	body .waline-lottie-picker__search input {
+		box-sizing: border-box;
+		width: 100%;
+		height: 2.1rem;
+		padding: 0 0.7rem 0 1.7rem;
+		border: 1px solid color-mix(in oklab, var(--primary) 18%, var(--line-divider));
+		border-radius: 0.52rem;
+		outline: none;
+		background: color-mix(in oklab, var(--card-bg) 86%, transparent);
+		color: var(--btn-content);
+		font: inherit;
+		font-size: 0.8rem;
+		transition:
+			border-color 0.18s ease,
+			box-shadow 0.18s ease,
+			background 0.18s ease;
+	}
+
+	body .waline-lottie-picker__search input::placeholder {
+		color: color-mix(in oklab, var(--content-meta) 78%, transparent);
+	}
+
+	body .waline-lottie-picker__search input:focus {
+		border-color: color-mix(in oklab, var(--primary) 62%, var(--line-divider));
+		background: var(--card-bg);
+		box-shadow: 0 0 0 0.15rem color-mix(in oklab, var(--primary) 11%, transparent);
+	}
+
+	body .waline-lottie-picker__count {
+		flex: 0 0 auto;
+		min-width: 3rem;
+		color: var(--content-meta);
+		font: 700 0.68rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+		text-align: right;
+	}
+
+	body .waline-lottie-picker__grid {
+		display: grid;
+		min-height: 0;
+		grid-template-columns: repeat(auto-fill, minmax(3.2rem, 1fr));
+		grid-auto-rows: 3.2rem;
+		gap: 0.14rem;
+		padding: 0.04rem 0.1rem 0.18rem;
+		overflow: auto;
+		overscroll-behavior: contain;
+		scrollbar-width: thin;
+		scrollbar-color: color-mix(in oklab, var(--primary) 32%, transparent) transparent;
+	}
+
+	body .waline-lottie-picker__item {
+		position: relative;
+		display: grid;
+		min-width: 0;
+		min-height: 0;
+		padding: 0;
+		border: 1px solid transparent;
+		border-radius: 0.72rem;
+		outline: none;
+		background: transparent;
+		cursor: pointer;
+		place-items: center;
+		transition:
+			border-color 0.16s ease,
+			background 0.16s ease,
+			transform 0.16s ease;
+	}
+
+	body .waline-lottie-picker__item:hover,
+	body .waline-lottie-picker__item:focus-visible {
+		border-color: color-mix(in oklab, var(--primary) 28%, var(--line-divider));
+		background: color-mix(in oklab, var(--primary) 9%, var(--card-bg));
+		transform: translateY(-1px);
+	}
+
+	body .waline-lottie-picker__item:focus-visible {
+		box-shadow: 0 0 0 0.13rem color-mix(in oklab, var(--primary) 13%, transparent);
+	}
+
+	body .waline-lottie-picker__preview {
+		position: relative;
+		display: grid;
+		width: 2.8rem;
+		height: 2.8rem;
+		color: var(--content-meta);
+		font: 800 0.62rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+		place-items: center;
+		filter: drop-shadow(0 0.18rem 0.2rem color-mix(in oklab, var(--primary) 10%, transparent));
+		contain: layout paint style;
+	}
+
+	body .waline-lottie-picker__preview::before {
+		position: absolute;
+		inset: 31%;
+		border: 1.4px solid color-mix(in oklab, var(--primary) 14%, transparent);
+		border-top-color: color-mix(in oklab, var(--primary) 55%, transparent);
+		border-radius: 50%;
+		animation: waline-lottie-loading 0.8s linear infinite;
+		content: "";
+	}
+
+	body .waline-lottie-picker__preview[data-waline-lottie-ready="true"]::before,
+	body .waline-lottie-picker__preview[data-waline-lottie-error="true"]::before {
+		display: none;
+	}
+
+	body .waline-lottie-picker__preview > svg,
+	body .waline-lottie-picker__preview > canvas {
+		display: block;
+		width: 100% !important;
+		height: 100% !important;
+	}
+
+	body .waline-lottie-picker__empty {
+		display: grid;
+		grid-column: 1 / -1;
+		grid-row: span 3;
+		margin: 0;
+		color: var(--content-meta);
+		font-size: 0.72rem;
+		place-items: center;
+	}
+
+	body .wl-emoji-popup > .wl-tabs {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.38rem 0.55rem 0.44rem;
+		border-top: 1px solid color-mix(in oklab, var(--primary) 12%, var(--line-divider));
+		overflow-x: auto;
+		background: color-mix(in oklab, var(--card-bg) 97%, var(--primary) 3%);
+		scrollbar-width: none;
+		white-space: normal;
+	}
+
+	body .wl-emoji-popup > .wl-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	body .wl-emoji-popup > .wl-tabs::before {
+		display: none;
+	}
+
+	body .wl-emoji-popup > .wl-tabs > .wl-tab {
+		display: inline-grid;
+		box-sizing: border-box;
+		flex: 0 0 2.5rem;
+		width: 2.5rem;
+		height: 2.5rem;
+		margin: 0;
+		padding: 0;
+		border: 1px solid transparent;
+		border-radius: 0.65rem;
+		outline: none;
+		background: transparent;
+		line-height: 1;
+		place-items: center;
+		transition:
+			border-color 0.16s ease,
+			background 0.16s ease;
+	}
+
+	body .wl-emoji-popup > .wl-tabs > .wl-tab:hover {
+		background: color-mix(in oklab, var(--primary) 7%, var(--card-bg));
+	}
+
+	body .wl-emoji-popup > .wl-tabs > .wl-tab:focus-visible {
+		border-color: color-mix(in oklab, var(--primary) 46%, var(--line-divider));
+		box-shadow: 0 0 0 0.13rem color-mix(in oklab, var(--primary) 13%, transparent);
+	}
+
+	body .wl-emoji-popup > .wl-tabs > .wl-tab.active {
+		border-color: color-mix(in oklab, var(--primary) 32%, var(--line-divider));
+		border-radius: 0.65rem;
+		background: color-mix(in oklab, var(--primary) 10%, var(--card-bg));
+	}
+
+	body .wl-emoji-popup > .wl-tabs > .wl-tab > img {
+		display: block;
+		width: 1.72rem;
+		height: 1.72rem;
+		max-width: none;
+		max-height: none;
+		margin: 0;
+		object-fit: contain;
+	}
+
+	body .wl-emoji-popup > .wl-tabs > .waline-kaomoji-tab {
+		flex: 0 0 auto;
+		width: auto;
+		min-width: 4rem;
+		padding: 0 0.55rem;
+		color: var(--btn-content);
+		font-size: 0.75rem;
+		font-weight: 600;
+		white-space: nowrap;
+	}
+
+	body .wl-emoji-popup .waline-lottie-tab__icon {
+		display: inline-grid;
+		width: 1.72rem;
+		height: 1.72rem;
+		place-items: center;
+		contain: layout paint style;
+	}
+
+	body .wl-emoji-popup .waline-lottie-tab__icon > svg,
+	body .wl-emoji-popup .waline-lottie-tab__icon > canvas {
+		display: block;
+		width: 100% !important;
+		height: 100% !important;
+	}
+
+	@media (max-width: 580px) {
+		body .wl-emoji-popup > .wl-tab-wrapper {
+			max-height: min(14rem, 48dvh);
+			padding: 0.58rem;
+		}
+
+		body .wl-emoji-popup > .wl-tabs > .wl-tab {
+			flex-basis: 2.9rem;
+			width: 2.9rem;
+			height: 2.9rem;
+		}
+
+		body .wl-emoji-popup > .wl-tabs > .wl-tab > img,
+		body .wl-emoji-popup .waline-lottie-tab__icon {
+			width: 1.85rem;
+			height: 1.85rem;
+		}
+
+		body .wl-emoji-popup > .wl-tab-wrapper button {
+			width: 2.7rem;
+			height: 2.7rem;
+			margin: 0.1rem;
+			line-height: 2.7rem;
+		}
+
+		body .wl-emoji-popup > .wl-tab-wrapper .wl-emoji {
+			max-width: 2.25rem;
+			max-height: 2.25rem;
+		}
+
+		body .waline-lottie-picker {
+			height: min(14.5rem, 50dvh);
+			padding: 0.55rem 0.58rem 0.48rem;
+		}
+
+		body .waline-kaomoji-picker {
+			height: min(14.5rem, 50dvh);
+			padding: 0.45rem;
+		}
+
+		body .waline-lottie-picker__grid {
+			grid-template-columns: repeat(auto-fill, minmax(2.85rem, 1fr));
+			grid-auto-rows: 2.85rem;
+		}
+
+		body .waline-lottie-picker__preview {
+			width: 2.5rem;
+			height: 2.5rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		body .waline-lottie-picker *,
+		body .waline-lottie-picker *::before,
+		body .waline-lottie-picker *::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+		}
 	}
 
 	/* Keep Waline's native avatar column, then reveal the resolved QQ avatar in place. */
@@ -1342,7 +1952,7 @@ const aiWalineUserIds: number[] = [];
 			margin-inline: auto;
 			margin-block: 0.02rem 0.28rem;
 			padding-block: 0.16rem;
-			font-size: 0.66rem;
+			font-size: 11px;
 		}
 
 		#waline .waline-reply-toggle::after {
@@ -1364,11 +1974,11 @@ const aiWalineUserIds: number[] = [];
 		}
 
 		#waline .waline-link-tip-title {
-			font-size: 0.76rem;
+			font-size: 14px;
 		}
 
 		#waline .waline-link-tip-text {
-			font-size: 0.7rem;
+			font-size: 12px;
 			line-height: 1.65;
 		}
 
@@ -1401,8 +2011,25 @@ const aiWalineUserIds: number[] = [];
 		#waline .wl-card-item > .wl-card > .wl-content {
 			padding: 0.56rem 0.68rem 0.62rem;
 			border-radius: 0.35rem 0.35rem 0.35rem 0.1rem;
-			font-size: 0.82rem;
-			line-height: 1.76;
+			font-size: 14px;
+			line-height: 1.8;
+		}
+
+		#waline .wl-card-item > .wl-card > .wl-head > .wl-nick {
+			font-size: 15px;
+		}
+
+		#waline .wl-card-item > .wl-card > .wl-head > .wl-time,
+		#waline .wl-card-item > .wl-card > .wl-head > .wl-meta > span {
+			font-size: 11px;
+		}
+
+		#waline .firefly-comment-filter-toggle {
+			font-size: 12px;
+		}
+
+		#waline .firefly-comment-filter-status {
+			font-size: 11px;
 		}
 
 		#waline .wl-card-item[data-waline-side="right"] > .wl-card > .wl-content {
@@ -1414,7 +2041,7 @@ const aiWalineUserIds: number[] = [];
 			gap: 0.18rem;
 			margin-inline-end: 0.28rem;
 			padding-inline: 0.34rem;
-			font-size: 0.58rem;
+			font-size: 10px;
 		}
 
 		#waline .wl-card-item[data-waline-role] > .wl-card > .wl-head > .wl-role-badge::before,
@@ -1424,7 +2051,7 @@ const aiWalineUserIds: number[] = [];
 		}
 
 		#waline .wl-card-item[data-waline-role="ai"] > .wl-card > .wl-content .wl-ai-disclaimer {
-			font-size: 0.68rem;
+			font-size: 11px;
 			line-height: 1.6;
 		}
 
@@ -1472,6 +2099,902 @@ const aiWalineUserIds: number[] = [];
 		#waline .wl-composer-identity {
 			animation: none;
 			transition: none;
+		}
+	}
+
+	@media (max-width: 580px) {
+		#post-comments.comment-section {
+			padding: 1rem !important;
+			border-radius: 1rem;
+		}
+
+		#post-comments .comment-section-decoration,
+		#post-comments .comment-section-heading {
+			display: none;
+		}
+
+		#post-comments .comment-section-content {
+			padding-inline: 0 !important;
+		}
+
+		/* Reorder the live count above the composer on compact screens. */
+		#waline [data-waline] {
+			display: flex;
+			min-width: 0;
+			flex-direction: column;
+		}
+
+		#waline [data-waline] > .wl-meta-head {
+			order: -1;
+			display: flex;
+			min-height: 2.75rem;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 0.35rem 0.55rem;
+			margin: 0 0 0.45rem;
+			padding: 0;
+		}
+
+		#waline .wl-count {
+			flex: 0 0 auto;
+			width: auto;
+			max-width: 100%;
+			margin: 0;
+			padding: 0.35rem 0.68rem;
+			border-radius: 999px;
+			background: color-mix(in oklab, var(--primary) 7%, var(--card-bg));
+			color: var(--btn-content);
+			font-size: 12px;
+			line-height: 1.35;
+		}
+
+		#waline .wl-count .wl-num {
+			color: var(--deep-text);
+		}
+
+		#waline .wl-sort {
+			display: flex;
+			min-width: 0;
+			align-items: center;
+			gap: 0.12rem;
+			margin-inline-start: auto;
+		}
+
+		#waline .wl-sort li,
+		#waline .wl-sort li + li {
+			display: inline-flex;
+			min-height: 2.75rem;
+			align-items: center;
+			margin: 0;
+			padding-inline: 0.35rem;
+			font-size: 12px;
+			white-space: nowrap;
+		}
+
+		/* Inline reply/edit composers need the same single-column layout as
+		 * the main composer; Waline otherwise keeps its narrow flex columns. */
+		#waline [data-waline] > .wl-comment,
+		#waline .wl-reply-wrapper > .wl-comment,
+		#waline .wl-edit-wrapper > .wl-comment {
+			position: relative;
+			display: grid;
+			min-width: 0;
+			grid-template-columns: minmax(0, 1fr);
+			gap: 0.55rem;
+			margin: 0 0 0.75rem;
+		}
+
+		#waline [data-waline] > .wl-comment {
+			order: 0;
+		}
+
+		/* The inline composer sits directly under the comment. Its separate
+		 * avatar/name bubble duplicates the identity inside the form. */
+		#waline .wl-reply-wrapper > .wl-comment > .wl-login-info,
+		#waline .wl-edit-wrapper > .wl-comment > .wl-login-info {
+			display: none;
+		}
+
+		#waline .wl-reply-wrapper > .wl-comment > .wl-panel,
+		#waline .wl-edit-wrapper > .wl-comment > .wl-panel {
+			padding: 0.48rem 0.6rem 0.38rem;
+			border-radius: 0.75rem;
+		}
+
+		#waline .wl-reply-wrapper .wl-composer-identity,
+		#waline .wl-edit-wrapper .wl-composer-identity {
+			min-height: 0;
+			max-width: 100%;
+			margin: 0.1rem 0 0;
+			padding: 0;
+			background: transparent;
+			box-shadow: none;
+		}
+
+		#waline .wl-reply-wrapper > .wl-comment > .wl-panel > .wl-header,
+		#waline .wl-edit-wrapper > .wl-comment > .wl-panel > .wl-header {
+			margin: 0 0 0.35rem;
+		}
+
+		#waline .wl-reply-wrapper > .wl-comment > .wl-panel > .wl-editor,
+		#waline .wl-edit-wrapper > .wl-comment > .wl-panel > .wl-editor {
+			width: 100%;
+			min-height: 5.5rem;
+			max-height: 32dvh;
+			margin: 0.3rem 0 0;
+			padding: 0.45rem 0.25rem;
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+			line-height: 1.6;
+		}
+
+		#waline .wl-reply-wrapper > .wl-comment > .wl-panel > .wl-editor:focus,
+		#waline .wl-edit-wrapper > .wl-comment > .wl-panel > .wl-editor:focus {
+			background: transparent;
+			outline: none;
+		}
+
+		#waline .wl-reply-wrapper > .wl-comment > .wl-panel > .wl-footer,
+		#waline .wl-edit-wrapper > .wl-comment > .wl-panel > .wl-footer {
+			margin: 0.1rem 0 0;
+			padding-top: 0.25rem;
+			border-top: 1px solid var(--line-divider);
+		}
+
+		#waline .wl-comment > .wl-login-info {
+			grid-column: 1;
+			display: flex;
+			width: 100%;
+			max-width: none;
+			align-items: center;
+			gap: 0.72rem;
+			margin: 0.12rem 0 0.08rem;
+			text-align: start;
+		}
+
+		#waline .wl-comment > .wl-login-info > .wl-avatar {
+			flex: 0 0 2.5rem;
+			width: 2.5rem;
+			height: 2.5rem;
+			margin: 0;
+		}
+
+		#waline .wl-comment > .wl-login-info > .wl-avatar > .wl-login-nick,
+		#waline .wl-comment > .wl-login-info > .wl-avatar > .wl-login-nick img {
+			display: block;
+			width: 100%;
+			height: 100%;
+		}
+
+		#waline .wl-comment > .wl-login-info > .wl-avatar > .wl-login-nick img {
+			object-fit: cover;
+		}
+
+		#waline .wl-comment > .wl-login-info > .wl-login-nick {
+			display: inline-flex;
+			min-width: 0;
+			min-height: 2.5rem;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 0.2rem;
+			padding: 0.38rem 0.72rem;
+			border: 1px solid color-mix(in oklab, var(--primary) 12%, var(--line-divider));
+			border-radius: 999px;
+			background: color-mix(in oklab, var(--primary) 4%, var(--card-bg));
+			color: var(--btn-content);
+			font-size: 0.78rem;
+			line-height: 1.45;
+			text-decoration: none;
+			word-break: normal;
+		}
+
+		#waline .wl-comment > .wl-login-info > .wl-login-nick::after {
+			content: "欢迎回来！";
+			color: var(--content-meta);
+			font-weight: 500;
+		}
+
+		#waline .wl-comment > .wl-panel {
+			position: relative;
+			box-sizing: border-box;
+			display: grid;
+			min-width: 0;
+			width: 100%;
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-areas:
+				"header"
+				"identity"
+				"editor"
+				"preview"
+				"footer";
+			margin: 0;
+			padding: 0.12rem 0 0.28rem;
+			border: 1px solid color-mix(in oklab, var(--primary) 16%, var(--line-divider));
+			border-radius: 0.9rem;
+			background: color-mix(in oklab, var(--card-bg) 98%, var(--primary));
+			box-shadow: none;
+			overflow: visible;
+		}
+
+		#waline .wl-comment[data-waline-composer-role] > .wl-panel::before {
+			display: none;
+		}
+
+		#waline .wl-comment[data-waline-composer-role] > .wl-panel:focus-within {
+			border-color: color-mix(in oklab, var(--waline-role-accent) 55%, var(--line-divider));
+			box-shadow: 0 0 0 2px color-mix(in oklab, var(--waline-role-accent) 14%, transparent);
+		}
+
+		#waline .wl-panel > .wl-header {
+			grid-area: header;
+			display: grid;
+			min-width: 0;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 0.45rem 0.55rem;
+			margin: 0.65rem 0.65rem 0;
+			padding: 0;
+			border: 0;
+			border-radius: 0;
+			overflow: visible;
+		}
+
+		#waline .wl-panel > .wl-header .wl-header-item,
+		#waline .wl-panel > .wl-header .wl-header-2 .wl-header-item,
+		#waline .wl-panel > .wl-header .wl-header-3 .wl-header-item {
+			min-width: 0;
+			width: auto;
+			flex: initial;
+			flex-direction: column;
+			border: 0;
+		}
+
+		#waline .wl-panel > .wl-header .wl-header-item:last-child:nth-child(odd) {
+			grid-column: 1 / -1;
+		}
+
+		#waline .wl-panel > .wl-header label {
+			min-width: 0;
+			padding: 0 0 0.18rem;
+			font-size: 12px;
+			text-align: start;
+		}
+
+		#waline .wl-panel > .wl-header input {
+			box-sizing: border-box;
+			width: 100%;
+			min-width: 0;
+			min-height: 2.75rem;
+			padding: 0.45rem 0.62rem;
+			border: 1px solid var(--line-divider);
+			border-radius: 0.62rem;
+			background: var(--card-bg);
+			color: var(--btn-content);
+			font-size: 16px;
+		}
+
+		#waline .wl-composer-identity {
+			grid-area: identity;
+			width: max-content;
+			max-width: calc(100% - 1.3rem);
+			margin: 0.35rem 0.65rem 0;
+		}
+
+		#waline .wl-panel > .wl-editor {
+			grid-area: editor;
+			box-sizing: border-box;
+			width: calc(100% - 1.3rem);
+			min-height: 9rem;
+			max-height: 42dvh;
+			margin: 0.5rem 0.65rem 0.45rem;
+			padding: 0.62rem 0.7rem;
+			border: 1px solid color-mix(in oklab, var(--primary) 24%, var(--line-divider));
+			border-radius: 0.8rem;
+			background: color-mix(in oklab, var(--primary) 6%, var(--card-bg));
+			color: var(--btn-content);
+			font-size: 1rem;
+			line-height: 1.65;
+			resize: vertical;
+		}
+
+		#waline .wl-panel > .wl-editor::placeholder {
+			color: color-mix(in oklab, var(--btn-content) 78%, var(--deep-text));
+			opacity: 0.82;
+		}
+
+		#waline .wl-panel > .wl-editor:focus {
+			background: color-mix(in oklab, var(--primary) 5%, var(--card-bg));
+			outline: 2px solid color-mix(in oklab, var(--primary) 38%, transparent);
+			outline-offset: 1px;
+		}
+
+		#waline .wl-panel > .wl-preview {
+			grid-area: preview;
+			min-width: 0;
+			margin: 0 0.65rem 0.45rem;
+			padding: 0.55rem;
+			border-radius: 0.65rem;
+			background: color-mix(in oklab, var(--primary) 5%, var(--card-bg));
+		}
+
+		#waline .wl-panel > .wl-footer {
+			grid-area: footer;
+			display: grid;
+			min-width: 0;
+			min-height: 2.75rem;
+			grid-template-columns: minmax(0, 1fr) auto;
+			grid-template-areas:
+				"picker picker"
+				"actions info";
+			align-items: center;
+			gap: 0.35rem 0.4rem;
+			margin: 0.38rem 0.65rem 0.35rem;
+		}
+
+		#waline .wl-footer .wl-actions {
+			grid-area: actions;
+			min-width: 0;
+			align-items: center;
+			gap: 0.08rem;
+		}
+
+		#waline .wl-footer .wl-action {
+			box-sizing: border-box;
+			width: 2.75rem;
+			height: 2.75rem;
+			margin: 0;
+			border-radius: 0.65rem;
+			touch-action: manipulation;
+		}
+
+		#waline .wl-footer .wl-info {
+			grid-area: info;
+			min-width: 0;
+			align-items: center;
+			justify-content: flex-end;
+			gap: 0.35rem;
+		}
+
+		#waline .wl-footer .wl-text-number {
+			min-width: 0;
+			margin-inline-end: auto;
+			font-size: 0.66rem;
+			white-space: nowrap;
+		}
+
+		#waline .wl-footer .wl-info > .wl-btn {
+			box-sizing: border-box;
+			min-width: 3.4rem;
+			min-height: 2.75rem;
+			margin: 0;
+			padding: 0.42rem 0.72rem;
+			border: 0;
+			border-radius: 999px;
+			font-size: 0.78rem;
+			line-height: 1.3;
+			touch-action: manipulation;
+		}
+
+		#waline .wl-footer .wl-info > .wl-btn.primary {
+			border: 1px solid var(--glass-control-border);
+			background: transparent;
+			color: var(--primary);
+		}
+
+		#waline .wl-footer .wl-info > .wl-btn.primary:disabled {
+			background: transparent;
+			color: var(--primary);
+			cursor: not-allowed;
+		}
+
+		#waline .wl-comment > .wl-close {
+			position: absolute;
+			inset: auto 0.65rem 0.42rem auto;
+			z-index: 2;
+			box-sizing: border-box;
+			display: grid;
+			width: 3.4rem;
+			min-height: 2.75rem;
+			margin: 0;
+			padding: 0 0.72rem;
+			border: 1px solid var(--glass-control-border);
+			border-radius: 999px;
+			background: transparent;
+			color: var(--primary);
+			font-size: 0.78rem;
+			font-weight: 700;
+			line-height: 1.3;
+			place-items: center;
+			touch-action: manipulation;
+		}
+
+		#waline .wl-comment:has(> .wl-close) > .wl-panel {
+			padding-bottom: 3.3rem;
+		}
+
+		#waline .wl-comment > .wl-close svg {
+			display: none;
+		}
+
+		#waline .wl-comment > .wl-close::after {
+			content: "取消";
+		}
+
+		#waline .wl-comment > .wl-close:hover {
+			background: transparent;
+			border-color: var(--primary);
+		}
+
+		#waline .wl-comment > .wl-close:focus-visible,
+		#waline .wl-footer .wl-action:focus-visible,
+		#waline .wl-footer .wl-info > .wl-btn:focus-visible {
+			outline: 2px solid color-mix(in oklab, var(--primary) 55%, transparent);
+			outline-offset: 2px;
+		}
+
+		body[data-waline-mobile-bar] #post-comments {
+			padding-bottom: 5rem !important;
+		}
+
+		body[data-waline-mobile-bar] astro-dev-toolbar {
+			display: none;
+		}
+
+		html:has(body[data-waline-mobile-sheet]) {
+			overflow: hidden;
+		}
+
+		#waline[data-waline-mobile] .wl-comment:not([data-waline-mobile-composer-active]) {
+			display: none;
+		}
+
+		/* Native popovers retain Waline's DOM and events while escaping page
+		 * animation transforms and stacking contexts. */
+		#waline .wl-comment[data-waline-mobile-composer-active] {
+			position: fixed;
+			inset: auto 0 var(--waline-mobile-keyboard-bottom, 0px);
+			z-index: 9001;
+			display: block;
+			box-sizing: border-box;
+			width: 100%;
+			max-width: 580px;
+			max-height: calc(100dvh - var(--waline-mobile-keyboard-bottom, 0px) - 12px);
+			margin: 0 auto;
+			padding: 16px 16px calc(8px + env(safe-area-inset-bottom));
+			border: 0;
+			border-radius: 18px 18px 0 0;
+			background: #e8f3fb;
+			color: #161b1e;
+			box-shadow: 0 -2px 10px rgb(50 88 109 / 12%);
+			overflow-x: hidden;
+			overflow-y: auto;
+			overscroll-behavior: contain;
+			scrollbar-width: none;
+			animation: waline-mobile-sheet-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active]::-webkit-scrollbar {
+			display: none;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] > .wl-login-info,
+		#waline .wl-comment[data-waline-mobile-composer-active] > .wl-close,
+		#waline .wl-comment[data-waline-mobile-composer-active] > .wl-panel > .wl-header,
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-composer-identity,
+		#waline .wl-comment[data-waline-mobile-composer-active] .waline-comment-mode-note {
+			display: none;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active][data-waline-mobile-identity-open] > .wl-panel > .wl-header {
+			display: grid;
+			margin: 0 0 12px;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] > .wl-panel {
+			min-height: 0;
+			padding: 0;
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+			box-shadow: none;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active]:has(> .wl-close) > .wl-panel {
+			padding-bottom: 0;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] > .wl-panel > .wl-editor {
+			width: 100%;
+			height: 94px;
+			min-height: 94px;
+			max-height: 24dvh;
+			margin: 0 0 10px;
+			padding: 12px;
+			border: 1px solid #d9eaf6;
+			border-radius: 10px;
+			background: #f4f9fc;
+			color: #161b1e;
+			font-size: 16px;
+			line-height: 1.6;
+			resize: none;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] > .wl-panel > .wl-editor::placeholder {
+			color: #858b8e;
+			opacity: 1;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] > .wl-panel > .wl-editor:focus {
+			border-color: #06a9e8;
+			background: #f4f9fc;
+			outline: 2px solid rgb(0 169 232 / 20%);
+			outline-offset: 1px;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] > .wl-panel > .wl-footer {
+			grid-template-areas: "actions info" "picker picker";
+			gap: 0;
+			margin: 0;
+			padding: 0;
+			border: 0;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-actions {
+			gap: 2px;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-action {
+			display: grid;
+			width: 30px;
+			height: 40px;
+			padding: 4px;
+			color: #141b20;
+			place-items: center;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-action svg {
+			width: 21px;
+			height: 21px;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active]:has(.wl-emoji-popup.display) .wl-action[title="表情"] {
+			position: relative;
+			color: #06a9e8;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active]:has(.wl-emoji-popup.display) .wl-action[title="表情"] svg {
+			visibility: hidden;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active]:has(.wl-emoji-popup.display) .wl-action[title="表情"]::after {
+			position: absolute;
+			width: 21px;
+			height: 21px;
+			background: currentColor;
+			content: "";
+			mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Crect x='2' y='4' width='20' height='16' rx='2'/%3E%3Cpath d='M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10'/%3E%3C/svg%3E") center / contain no-repeat;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-actions > a,
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-actions > input {
+			display: none;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-info {
+			gap: 4px;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-info > .wl-btn {
+			min-width: 34px;
+			min-height: 36px;
+			padding: 4px;
+			border: 0;
+			border-radius: 5px;
+			color: #75818a;
+			font-size: 13px;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-info > .wl-btn.primary {
+			min-width: 58px;
+			margin-left: 4px;
+			background: #06a9e8;
+			color: white;
+			font-size: 14px;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-info > .waline-mobile-logout {
+			font-size: 12px;
+			white-space: nowrap;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-text-number {
+			color: #858b8e;
+			font-size: 13px;
+		}
+
+		html.dark #waline .wl-comment[data-waline-mobile-composer-active] {
+			background: #202d37;
+			color: #e5eef5;
+		}
+
+		html.dark .waline-mobile-comment-entry,
+		html.dark .waline-mobile-comment-emoji {
+			border-color: rgb(83 112 135 / 55%);
+			background: rgb(38 54 65 / 65%);
+			color: #e5eef5;
+		}
+
+		html.dark #waline .wl-comment[data-waline-mobile-composer-active] > .wl-panel > .wl-editor {
+			border-color: #344958;
+			background: #263641;
+			color: #e5eef5;
+		}
+
+		html.dark #waline .wl-comment[data-waline-mobile-composer-active] .wl-action {
+			color: #e5eef5;
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			.waline-mobile-composer-backdrop,
+			#waline .wl-comment[data-waline-mobile-composer-active] {
+				animation: none;
+			}
+		}
+		#waline .wl-footer > .wl-emoji-popup,
+		#waline .wl-footer > .wl-gif-popup {
+			position: relative;
+			inset: auto;
+			z-index: 1;
+			grid-area: picker;
+			display: none;
+			box-sizing: border-box;
+			width: 100%;
+			max-width: none;
+			margin: 0;
+			border: 0;
+			border-top: 1px solid var(--line-divider);
+			border-radius: 0;
+			background: transparent;
+			box-shadow: none;
+			transform: none;
+			transform-origin: center;
+		}
+
+		#waline .wl-footer > .wl-emoji-popup.display {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: auto minmax(0, 1fr) auto;
+			grid-template-areas:
+				"heading"
+				"picker"
+				"tabs";
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-emoji-popup {
+			width: calc(100% + 32px);
+			margin: 8px -16px calc(-8px - env(safe-area-inset-bottom));
+			background: #f4f4f4;
+			border-top: 0;
+		}
+
+		#waline .wl-comment[data-waline-mobile-composer-active] .wl-emoji-popup::before {
+			grid-area: heading;
+			padding: 14px 16px 8px;
+			content: "所有表情";
+			color: #141b20;
+			font-size: 16px;
+			font-weight: 700;
+		}
+
+		html.dark #waline .wl-comment[data-waline-mobile-composer-active] .wl-emoji-popup {
+			background: #26323b;
+		}
+
+		html.dark #waline .wl-comment[data-waline-mobile-composer-active] .wl-emoji-popup::before {
+			color: #e5eef5;
+		}
+
+		#waline .wl-footer > .wl-emoji-popup > .wl-tab-wrapper,
+		#waline .wl-footer > .wl-emoji-popup > .waline-lottie-picker,
+		#waline .wl-footer > .wl-emoji-popup > .waline-kaomoji-picker {
+			grid-area: picker;
+		}
+
+		#waline .wl-footer > .wl-gif-popup.display {
+			display: block;
+			visibility: visible;
+			opacity: 1;
+		}
+
+		#waline .wl-emoji-popup.waline-picker-open-upward,
+		#waline .wl-gif-popup.waline-picker-open-upward {
+			top: auto;
+			bottom: auto;
+			transform-origin: center;
+		}
+
+		#waline .wl-emoji-popup .wl-emoji-preview {
+			display: none;
+		}
+
+		#waline .wl-emoji-popup > .wl-tab-wrapper {
+			box-sizing: border-box;
+			display: grid;
+			min-height: 0;
+			max-height: min(18rem, 45dvh);
+			grid-template-columns: repeat(7, minmax(0, 1fr));
+			grid-auto-rows: 2.75rem;
+			gap: 0.08rem;
+			padding: 0.32rem 0.25rem;
+			overflow: auto;
+			scrollbar-width: thin;
+			scrollbar-color: color-mix(in oklab, var(--primary) 40%, var(--content-meta)) transparent;
+		}
+
+		#waline .wl-emoji-popup.waline-lottie-picker-active > .wl-tab-wrapper,
+		#waline .wl-emoji-popup.waline-kaomoji-picker-active > .wl-tab-wrapper {
+			display: none;
+		}
+
+		#waline .wl-emoji-popup > .wl-tab-wrapper button {
+			box-sizing: border-box;
+			display: grid;
+			width: 100%;
+			height: 2.75rem;
+			margin: 0;
+			border-radius: 0.55rem;
+			line-height: 1;
+			place-items: center;
+			touch-action: manipulation;
+		}
+
+		#waline .wl-emoji-popup > .wl-tab-wrapper button:focus-visible {
+			outline: 2px solid color-mix(in oklab, var(--primary) 55%, transparent);
+			outline-offset: -2px;
+		}
+
+		#waline .wl-emoji-popup > .wl-tab-wrapper .wl-emoji {
+			width: 2.2rem;
+			height: 2.2rem;
+			max-width: 100%;
+			max-height: 100%;
+			object-fit: contain;
+		}
+
+		#waline .wl-footer > .wl-emoji-popup > .wl-tabs {
+			grid-area: tabs;
+			grid-row: auto;
+			min-height: 2.75rem;
+			align-items: center;
+			padding: 0.15rem 0.35rem;
+		}
+
+		#waline .wl-footer > .wl-emoji-popup > .wl-tabs > .wl-tab {
+			flex-basis: 2.75rem;
+			width: 2.75rem;
+			height: 2.75rem;
+		}
+
+		#waline .wl-footer > .wl-emoji-popup > .wl-tabs > .waline-kaomoji-tab {
+			flex-basis: auto;
+			width: auto;
+		}
+
+		#waline .wl-footer > .wl-emoji-popup > .wl-tabs > .wl-tab > img,
+		#waline .wl-footer > .wl-emoji-popup .waline-lottie-tab__icon {
+			width: 1.8rem;
+			height: 1.8rem;
+		}
+
+		#waline .waline-lottie-picker {
+			box-sizing: border-box;
+			height: min(10.5rem, 36dvh);
+			padding: 0.45rem 0.5rem 0.35rem;
+		}
+
+		#waline .waline-kaomoji-picker {
+			height: min(10.5rem, 36dvh);
+		}
+
+		#waline .waline-lottie-picker__grid {
+			grid-template-columns: repeat(7, minmax(0, 1fr));
+			grid-auto-rows: 2.75rem;
+		}
+
+		#waline .waline-lottie-picker__item {
+			min-height: 2.75rem;
+		}
+
+		#waline .waline-lottie-picker__preview {
+			width: 2.35rem;
+			height: 2.35rem;
+		}
+
+		#waline [data-waline] > .wl-cards {
+			order: 1;
+		}
+
+		#waline [data-waline] > .wl-operation,
+		#waline [data-waline] > .wl-loading,
+		#waline [data-waline] > .wl-empty {
+			order: 2;
+		}
+
+		#waline [data-waline] > .wl-meta-foot {
+			order: 3;
+		}
+	}
+
+	@media (max-width: 360px) {
+		#waline .wl-emoji-popup > .wl-tab-wrapper,
+		#waline .waline-lottie-picker__grid {
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 581px) {
+		#waline .wl-footer > .wl-emoji-popup,
+		#waline .wl-footer > .wl-gif-popup {
+			position: relative;
+			top: auto;
+			right: auto;
+			bottom: auto;
+			left: auto;
+			inset-inline: auto;
+			z-index: 1;
+			display: none;
+			box-sizing: border-box;
+			width: 100%;
+			max-width: none;
+			flex: 0 0 100%;
+			order: -1;
+			margin: 0;
+			border: 0;
+			border-top: 1px solid var(--line-divider);
+			border-radius: 0;
+			background: transparent;
+			box-shadow: none;
+			transform: none;
+			transform-origin: center;
+		}
+
+		#waline .wl-footer > .wl-emoji-popup.display {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: minmax(0, 1fr) auto;
+			grid-template-areas:
+				"picker"
+				"tabs";
+		}
+
+		#waline .wl-footer > .wl-emoji-popup > .wl-tab-wrapper,
+		#waline .wl-footer > .wl-emoji-popup > .waline-lottie-picker,
+		#waline .wl-footer > .wl-emoji-popup > .waline-kaomoji-picker {
+			grid-area: picker;
+		}
+
+		#waline .wl-footer > .wl-emoji-popup > .wl-tabs {
+			grid-area: tabs;
+			grid-row: auto;
+			min-height: 3rem;
+			align-items: center;
+			padding: 0.15rem 0.35rem;
+		}
+
+		#waline .wl-footer > .wl-emoji-popup.waline-picker-open-upward,
+		#waline .wl-footer > .wl-gif-popup.waline-picker-open-upward {
+			top: auto;
+			right: auto;
+			bottom: auto;
+			left: auto;
+			inset-inline: auto;
+			transform-origin: center;
+		}
+
+		#waline .wl-footer > .wl-gif-popup.display {
+			display: block;
+			visibility: visible;
+			opacity: 1;
 		}
 	}
 

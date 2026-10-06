@@ -81,4 +81,15 @@ const { headings } = Astro.props;
         bottom: 4rem;
     }
   }
+
+  /* Keep one stable vertical rail above the mobile comment entry. */
+  @media (max-width: 768px) {
+    .floating-controls-container {
+      flex-direction: column;
+      align-items: flex-end;
+      right: max(1rem, env(safe-area-inset-right, 0px));
+      bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+      gap: 8px;
+    }
+  }
 </style>

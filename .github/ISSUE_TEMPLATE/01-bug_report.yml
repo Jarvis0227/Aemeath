@@ -3,7 +3,7 @@ description: Create a report to help us improve
 title: "[Bug]: "
 labels: ["bug"]
 assignees:
-  - CuteLeaf
+  - Jarvis0227
 body:
   - type: markdown
     attributes:

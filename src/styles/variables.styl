@@ -6,10 +6,12 @@
 /* ===== 主题相关变量 ===== */
 :root
   --primary: oklch(0.70 0.14 var(--hue))
-  --page-bg: oklch(0.95 0.01 var(--hue))
+  --page-bg: #fff
   --card-bg: white
   --card-bg-transparent: unquote("rgb(255 255 255 / var(--card-transparent-opacity, 0.6))")
   
+  --glass-control-border: unquote("rgb(120 120 120 / 17%)")
+
   --btn-content: oklch(0.55 0.12 var(--hue))
   --btn-regular-bg: oklch(0.95 0.025 var(--hue))
   --btn-regular-bg-hover: oklch(0.9 0.05 var(--hue))
@@ -33,6 +35,8 @@
   --line-color: rgba(0, 0, 0, 0.1)
   --meta-divider: rgba(0, 0, 0, 0.2)
   --content-meta: rgba(0, 0, 0, 0.7)
+  --content-regular: var(--text-color)
+  --text-color-secondary: var(--content-meta)
   
   --inline-code-bg: var(--btn-regular-bg)
   --inline-code-color: var(--btn-content)
@@ -95,6 +99,7 @@
   --card-bg: oklch(0.23 0.015 var(--hue))
   --card-bg-transparent: unquote("rgb(23 23 23 / var(--card-transparent-opacity, 0.6))")
   --text-color: oklch(0.92 0.015 var(--hue))
+  --glass-control-border: unquote("rgb(224 224 224 / 22%)")
   
   --btn-content: oklch(0.75 0.1 var(--hue))
   --btn-regular-bg: oklch(0.33 0.035 var(--hue))
@@ -150,6 +155,55 @@
 
   /* 主题色选择条渐变 - 暗色主题 */
   --color-selection-bar: linear-gradient(to right, oklch(0.70 0.10 0), oklch(0.70 0.10 30), oklch(0.70 0.10 60), oklch(0.70 0.10 90), oklch(0.70 0.10 120), oklch(0.70 0.10 150), oklch(0.70 0.10 180), oklch(0.70 0.10 210), oklch(0.70 0.10 240), oklch(0.70 0.10 270), oklch(0.70 0.10 300), oklch(0.70 0.10 330), oklch(0.70 0.10 360))
+
+/* ===== 中国红主题预设 ===== */
+:root[data-national-day-theme="true"]
+  --primary: #DE2910
+  --color-selection-bar: linear-gradient(to right, #DE2910 0%, #DE2910 1.3889%, oklch(0.80 0.10 30) 8.3333%, oklch(0.80 0.10 60) 16.6667%, oklch(0.80 0.10 90) 25%, oklch(0.80 0.10 120) 33.3333%, oklch(0.80 0.10 150) 41.6667%, oklch(0.80 0.10 180) 50%, oklch(0.80 0.10 210) 58.3333%, oklch(0.80 0.10 240) 66.6667%, oklch(0.80 0.10 270) 75%, oklch(0.80 0.10 300) 83.3333%, oklch(0.80 0.10 330) 91.6667%, #DE2910 100%)
+  --btn-content: #B42318
+  --btn-regular-bg: #FFF0ED
+  --btn-regular-bg-hover: #FFE0DA
+  --btn-regular-bg-active: #FFC9BF
+  --btn-plain-bg-hover: #FFF0ED
+  --btn-plain-bg-active: #FFF6F4
+  --btn-card-bg-hover: #FFF8F6
+  --btn-card-bg-active: #FFE9E4
+  --title-active: #B42318
+  --muted: #FAF2EF
+  --selection-bg: #F6D0C9
+  --link-underline: #F4C7BE
+  --link-hover: #FFF0ED
+  --link-active: #F6D0C9
+  --toc-badge-bg: #FFF0ED
+  --toc-btn-hover: #FFE8E3
+  --toc-btn-active: #FFD9D2
+  --toc-indicator-bg: #FFF0ED
+  --toc-item-active: #DE2910
+  --l2d-msg-bg: #DE2910
+
+:root.dark[data-national-day-theme="true"]
+  --primary: #FF6254
+  --color-selection-bar: linear-gradient(to right, #FF6254 0%, #FF6254 1.3889%, oklch(0.70 0.10 30) 8.3333%, oklch(0.70 0.10 60) 16.6667%, oklch(0.70 0.10 90) 25%, oklch(0.70 0.10 120) 33.3333%, oklch(0.70 0.10 150) 41.6667%, oklch(0.70 0.10 180) 50%, oklch(0.70 0.10 210) 58.3333%, oklch(0.70 0.10 240) 66.6667%, oklch(0.70 0.10 270) 75%, oklch(0.70 0.10 300) 83.3333%, oklch(0.70 0.10 330) 91.6667%, #FF6254 100%)
+  --btn-content: #FF9E93
+  --btn-regular-bg: #3A211F
+  --btn-regular-bg-hover: #4B2621
+  --btn-regular-bg-active: #5A2923
+  --btn-plain-bg-hover: #3A211F
+  --btn-plain-bg-active: #301D1B
+  --btn-card-bg-hover: #30201E
+  --btn-card-bg-active: #482521
+  --title-active: #FF756A
+  --muted: #2B201E
+  --selection-bg: #5B2824
+  --link-underline: #5B2824
+  --link-hover: #5B2824
+  --link-active: #6B302A
+  --toc-badge-bg: #3A211F
+  --toc-btn-hover: #482521
+  --toc-btn-active: #572923
+  --toc-indicator-bg: #3A211F
+  --toc-item-active: #FF756A
+  --l2d-msg-bg: #70251B
 
 /* ===== 响应式断点变量 ===== */
 :root

@@ -21,6 +21,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		name: "文章",
 		url: "#",
 		icon: "material-symbols:article",
+		activePaths: ["/posts/"],
 		children: [
 			// 归档
 			LinkPresets.Archive,
@@ -54,6 +55,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			// 相册
 			LinkPresets.Gallery,
 
+			// 账单
+			LinkPresets.Bills,
+
 			// 追番
 			LinkPresets.Anime,
 
@@ -85,11 +89,11 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 
 			// 博客更新日志
 			LinkPresets.BlogChangelog,
-
-			// 开往：独立博客友链接力
-			LinkPresets.Travellings,
 		],
 	});
+
+	// 开往：独立博客友链接力，放在“关于”右侧
+	links.push(LinkPresets.Travellings);
 
 	// 文档链接
 	// links.push({
@@ -189,7 +193,7 @@ export const LinkPresets: Record<string, NavBarLink> = {
 	BlogChangelog: {
 		name: "博客日志",
 		url: "/blog-changelog/",
-		icon: "material-symbols:auto-stories-rounded",
+		icon: "material-symbols:history-rounded",
 	},
 	Bangumi: {
 		name: "番组计划",
@@ -202,6 +206,11 @@ export const LinkPresets: Record<string, NavBarLink> = {
 		url: "/gallery/",
 		icon: "material-symbols:photo-library",
 		pageKey: "gallery",
+	},
+	Bills: {
+		name: "账单",
+		url: "/bills/",
+		icon: "material-symbols:receipt-long-rounded",
 	},
 	Anime: {
 		name: "追番",

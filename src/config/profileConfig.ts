@@ -12,7 +12,7 @@ export const profileConfig: ProfileConfig = {
 	name: "Rain",
 
 	// 个人签名
-	bio: "Hello, I'm Rain.",
+	bio: "物物而不物于物，念念而不念于念",
 
 	// 链接配置
 	// 已经预装的图标集：fa7-brands，fa7-regular，fa7-solid，material-symbols，simple-icons

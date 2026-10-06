@@ -1,119 +1,125 @@
 <script lang="ts">
-	import { afterUpdate, onMount } from "svelte";
-	import { initLottieEmojis, setLottiePlayback } from "../../scripts/lottie";
+import { afterUpdate, onDestroy, onMount } from "svelte";
+import {
+	curatedLottieQqEmojiIds,
+	featuredLottieEmojis,
+	type LottieEmojiItem,
+	qqLottieEmojiLabels,
+} from "../../constants/lottieEmojis";
+import { initLottieEmojis, setLottiePlayback } from "../../scripts/lottie";
 
-	type LottieItem = {
+type QqIndex = {
+	items: Array<{
 		name: string;
-		label: string;
-		group: "精选" | "QQ";
-		emojiId?: string;
-		description?: string;
-	};
+		emojiId: string;
+		describe: string;
+	}>;
+};
 
-	type QqIndex = {
-		items: Array<{
-			name: string;
-			emojiId: string;
-			describe: string;
-		}>;
-	};
+let items: LottieEmojiItem[] = featuredLottieEmojis;
+let query = "";
+let filter: "全部" | "精选" | "QQ" = "全部";
+let loading = true;
+let error = "";
+let copiedName = "";
+let copyStatus = "";
+let copyStatusIsError = false;
+let copyResetTimer: ReturnType<typeof setTimeout> | undefined;
 
-	const featured: LottieItem[] = [
-		{ name: "aini", label: "爱你", group: "精选" },
-		{ name: "bianpao", label: "鞭炮", group: "精选" },
-		{ name: "bixin", label: "比心", group: "精选" },
-		{ name: "caigou", label: "采购", group: "精选" },
-		{ name: "cool", label: "酷", group: "精选" },
-		{ name: "daku", label: "大哭", group: "精选" },
-		{ name: "exin", label: "恶心", group: "精选" },
-		{ name: "fan", label: "烦", group: "精选" },
-		{ name: "foxi", label: "佛系", group: "精选" },
-		{ name: "gandong", label: "感动", group: "精选" },
-		{ name: "gongzuo", label: "工作", group: "精选" },
-		{ name: "huang", label: "慌", group: "精选" },
-		{ name: "jingxia", label: "惊吓", group: "精选" },
-		{ name: "jiong", label: "囧", group: "精选" },
-		{ name: "kaixin", label: "开心", group: "精选" },
-		{ name: "meiku", label: "没哭", group: "精选" },
-		{ name: "meishi", label: "美食", group: "精选" },
-		{ name: "re", label: "热", group: "精选" },
-		{ name: "shengqi", label: "生气", group: "精选" },
-		{ name: "shengri", label: "生日", group: "精选" },
-		{ name: "shuijiao", label: "睡觉", group: "精选" },
-		{ name: "tietie", label: "贴贴", group: "精选" },
-		{ name: "wangpan", label: "网盘", group: "精选" },
-		{ name: "wenhao", label: "问号", group: "精选" },
-		{ name: "wuzui", label: "捂嘴", group: "精选" },
-		{ name: "xiaoku", label: "笑哭", group: "精选" },
-		{ name: "yanhua", label: "烟花", group: "精选" },
-	];
+$: normalizedQuery = query.trim().toLowerCase();
+$: filteredItems = items.filter((item) => {
+	const matchesFilter = filter === "全部" || item.group === filter;
+	const searchable = [item.name, item.label, item.emojiId, item.description]
+		.filter(Boolean)
+		.join(" ")
+		.toLowerCase();
+	return (
+		matchesFilter && (!normalizedQuery || searchable.includes(normalizedQuery))
+	);
+});
+$: visibleItems = filteredItems;
 
-	let items: LottieItem[] = featured;
-	let query = "";
-	let filter: "全部" | "精选" | "QQ" = "全部";
-	let loading = true;
-	let error = "";
-
-	$: normalizedQuery = query.trim().toLowerCase();
-	$: filteredItems = items.filter((item) => {
-		const matchesFilter = filter === "全部" || item.group === filter;
-		const searchable = [item.name, item.label, item.emojiId, item.description]
-			.filter(Boolean)
-			.join(" ")
-			.toLowerCase();
-		return matchesFilter && (!normalizedQuery || searchable.includes(normalizedQuery));
-	});
-	$: visibleItems = filteredItems;
-
-	onMount(async () => {
-		try {
-			const response = await fetch(`${import.meta.env.BASE_URL}lottie/qq-index.json`);
-			if (!response.ok) throw new Error(`HTTP ${response.status}`);
-			const data = (await response.json()) as QqIndex;
-			const qqItems = data.items.map((item) => ({
+onMount(async () => {
+	try {
+		const response = await fetch(
+			`${import.meta.env.BASE_URL}lottie/qq-index.json`,
+		);
+		if (!response.ok) throw new Error(`HTTP ${response.status}`);
+		const data = (await response.json()) as QqIndex;
+		const qqItems = data.items
+			.filter((item) => curatedLottieQqEmojiIds.has(item.emojiId))
+			.map((item) => ({
 				name: item.name,
-				label: item.describe.replace(/^\//, "").trim() || `QQ 表情 ${item.emojiId}`,
+				label:
+					item.describe.replace(/^\//, "").trim() ||
+					qqLottieEmojiLabels[item.emojiId] ||
+					`QQ 表情 ${item.emojiId}`,
 				group: "QQ" as const,
 				emojiId: item.emojiId,
 				description: item.describe,
 			}));
-			items = [...featured, ...qqItems];
-		} catch (loadError) {
-			console.error("Failed to load the Lottie index", loadError);
-			error = "QQ 表情索引暂时加载失败，但精选表情仍然可以预览。";
-		} finally {
-			loading = false;
-		}
-	});
+		items = [...featuredLottieEmojis, ...qqItems];
+	} catch (loadError) {
+		console.error("Failed to load the Lottie index", loadError);
+		error = "QQ 表情索引暂时加载失败，但精选表情仍然可以预览。";
+	} finally {
+		loading = false;
+	}
+});
 
-	afterUpdate(() => {
-		initLottieEmojis();
-	});
+onDestroy(() => {
+	if (copyResetTimer) clearTimeout(copyResetTimer);
+});
 
-	function changeFilter(nextFilter: "全部" | "精选" | "QQ") {
-		filter = nextFilter;
+afterUpdate(() => {
+	initLottieEmojis();
+});
+
+function changeFilter(nextFilter: "全部" | "精选" | "QQ") {
+	filter = nextFilter;
+}
+
+function playPreview(name: string) {
+	setLottiePlayback(name, true);
+}
+
+function pausePreview(name: string) {
+	setLottiePlayback(name, false);
+}
+
+async function copyCommentCode(item: LottieEmojiItem) {
+	const shortcode = `:lottie_${item.name}:`;
+	try {
+		await navigator.clipboard.writeText(shortcode);
+		copiedName = item.name;
+		copyStatusIsError = false;
+		copyStatus = `已复制 ${item.label} 的评论代码 ${shortcode}`;
+	} catch {
+		copiedName = "";
+		copyStatusIsError = true;
+		copyStatus = `复制失败，请手动复制 ${shortcode}`;
 	}
 
-	function playPreview(name: string) {
-		setLottiePlayback(name, true);
-	}
+	if (copyResetTimer) clearTimeout(copyResetTimer);
+	copyResetTimer = setTimeout(() => {
+		copiedName = "";
+		copyStatus = "";
+		copyStatusIsError = false;
+	}, 2400);
+}
 
-	function pausePreview(name: string) {
-		setLottiePlayback(name, false);
-	}
-
-	function handleCardKeydown(event: KeyboardEvent, name: string) {
-		if (event.key !== "Enter" && event.key !== " ") return;
-		event.preventDefault();
-		playPreview(name);
-	}
+function handleCardKeydown(event: KeyboardEvent, item: LottieEmojiItem) {
+	if (event.key !== "Enter" && event.key !== " ") return;
+	event.preventDefault();
+	void copyCommentCode(item);
+}
 </script>
 
 <section class="lottie-page" aria-labelledby="lottie-page-title">
 	<header class="lottie-intro">
 		<div class="lottie-intro__copy">
 			<h1 id="lottie-page-title">动态表情库</h1>
-			<p>每张卡片默认显示动画的静态首帧，鼠标移上去即可播放，方便先看清它到底长什么样。</p>
+			<p>悬停卡片预览动画，点击即可复制评论代码；粘贴到评论区发布后，会自动显示为动态表情。</p>
 		</div>
 		<div class="lottie-intro__meta">
 			<strong>{items.length}</strong>
@@ -121,6 +127,18 @@
 			<small>首帧预览 · 悬停播放</small>
 		</div>
 	</header>
+
+	<div class="lottie-comment-guide">
+		<span class="lottie-comment-guide__mark" aria-hidden="true">↳</span>
+		<div>
+			<strong>评论区已支持 Lottie</strong>
+			<p>直接粘贴短码即可使用，精选与 QQ 表情都支持。</p>
+		</div>
+		<code>:lottie_aini:</code>
+	</div>
+	{#if copyStatus}
+		<div class:error={copyStatusIsError} class="lottie-copy-toast" role="status">{copyStatus}</div>
+	{/if}
 
 	<div class="lottie-toolbar">
 		<div class="lottie-search">
@@ -143,7 +161,7 @@
 			<strong>{loading ? "正在读取" : filteredItems.length}</strong>
 			<span>个动态表情</span>
 		</div>
-		<span class="lottie-results-note">静态首帧 · 悬停播放</span>
+		<span class="lottie-results-note">悬停播放 · 点击复制</span>
 	</div>
 
 	{#if error}<p class="lottie-notice" role="status">{error}</p>{/if}
@@ -157,12 +175,13 @@
 					style={`--card-index:${index % 12}`}
 					tabindex="0"
 					role="button"
-					aria-label={`预览${item.label}`}
+					aria-label={`复制${item.label}的评论代码`}
 					on:mouseenter={() => playPreview(item.name)}
 					on:mouseleave={() => pausePreview(item.name)}
 					on:focus={() => playPreview(item.name)}
 					on:blur={() => pausePreview(item.name)}
-					on:keydown={(event) => handleCardKeydown(event, item.name)}
+					on:click={() => copyCommentCode(item)}
+					on:keydown={(event) => handleCardKeydown(event, item)}
 				>
 					<div class="lottie-card__topline">
 						<span class="lottie-card__group">{item.group}</span>
@@ -174,7 +193,7 @@
 					</div>
 					<div class="lottie-card__info">
 						<strong>{item.label}</strong>
-						<code>{item.name}.json</code>
+						<code class:copied={copiedName === item.name}>{copiedName === item.name ? "已复制" : `:lottie_${item.name}:`}</code>
 					</div>
 				</article>
 			{/each}
@@ -187,7 +206,7 @@
 
 	<footer class="lottie-footer-note">
 		<span class="lottie-footer-note__mark">JSON</span>
-		<p>这些文件本身是动画数据；页面只加载视口附近的首帧，悬停时才播放动画，避免 214 个表情同时运行。</p>
+		<p>这些文件本身是动画数据；页面与评论区都只加载视口附近的表情，离开可视区域后自动暂停，避免动画同时运行。</p>
 	</footer>
 </section>
 
@@ -210,18 +229,26 @@
 	.lottie-intro__meta strong { color: var(--primary); font: 700 2rem/1 var(--font-active-sans, system-ui, sans-serif); letter-spacing: -.06em; }
 	.lottie-intro__meta span { font-size: .74rem; }
 	.lottie-intro__meta small { grid-column: 1 / -1; margin-top: .38rem; color: var(--lottie-muted); font: 700 .58rem/1 ui-monospace, SFMono-Regular, Consolas, monospace; }
+	.lottie-comment-guide { display: flex; align-items: center; gap: .7rem; margin-top: .85rem; padding: .72rem .88rem; border: 1px solid color-mix(in oklab, var(--lottie-cyan) 28%, var(--lottie-line)); border-radius: .85rem; background: color-mix(in oklab, var(--lottie-cyan) 7%, var(--card-bg)); color: var(--lottie-muted); }
+	.lottie-comment-guide__mark { display: grid; flex: 0 0 auto; width: 1.8rem; height: 1.8rem; place-items: center; border-radius: 50%; background: color-mix(in oklab, var(--lottie-cyan) 16%, transparent); color: color-mix(in oklab, var(--lottie-cyan) 76%, var(--lottie-ink)); font: 800 1rem/1 ui-monospace, monospace; }
+	.lottie-comment-guide > div { min-width: 0; flex: 1; }
+	.lottie-comment-guide strong { display: block; color: var(--lottie-ink); font-size: .76rem; }
+	.lottie-comment-guide p { margin: .16rem 0 0; font-size: .68rem; line-height: 1.5; }
+	.lottie-comment-guide code { flex: 0 0 auto; padding: .42rem .55rem; border: 1px solid color-mix(in oklab, var(--primary) 18%, transparent); border-radius: .45rem; background: color-mix(in oklab, var(--primary) 8%, transparent); color: var(--primary); font: 700 .65rem/1 ui-monospace, SFMono-Regular, Consolas, monospace; }
+	.lottie-copy-toast { position: fixed; z-index: 70; right: 1rem; bottom: 1rem; max-width: min(24rem, calc(100vw - 2rem)); padding: .7rem .85rem; border: 1px solid color-mix(in oklab, var(--lottie-cyan) 38%, var(--lottie-line)); border-radius: .72rem; background: color-mix(in oklab, var(--card-bg) 94%, var(--lottie-cyan) 6%); color: var(--lottie-ink); box-shadow: 0 .8rem 2rem rgb(30 45 72 / .16); font-size: .72rem; line-height: 1.5; animation: lottie-toast-in .22s ease-out both; }
+	.lottie-copy-toast.error { border-color: color-mix(in oklab, var(--lottie-coral) 46%, var(--lottie-line)); }
 
 	.lottie-toolbar { display: flex; align-items: center; gap: .8rem; padding: 1.1rem 0 .75rem; }
 	.lottie-search { display: flex; min-width: 0; flex: 1; align-items: center; gap: .7rem; padding: .25rem .35rem .25rem .95rem; border: 1px solid var(--lottie-line); border-radius: .9rem; background: color-mix(in oklab, var(--card-bg) 88%, transparent); transition: .22s ease; }
 	.lottie-search:focus-within { border-color: color-mix(in oklab, var(--primary) 56%, transparent); box-shadow: 0 0 0 .24rem color-mix(in oklab, var(--primary) 10%, transparent); }
 	.lottie-search svg { flex: 0 0 auto; width: 1.18rem; height: 1.18rem; fill: none; stroke: var(--primary); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 	.lottie-search input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--lottie-ink); font-size: .88rem; line-height: 2rem; }
-	.lottie-clear { display: grid; width: 1.8rem; height: 1.8rem; place-items: center; border: 0; border-radius: 50%; background: color-mix(in oklab, var(--primary) 9%, transparent); color: var(--primary); cursor: pointer; font-size: 1.15rem; line-height: 1; }
+	.lottie-clear { display: grid; width: 1.8rem; height: 1.8rem; place-items: center; border: 1px solid var(--glass-control-border); border-radius: 50%; background: transparent; color: var(--primary); cursor: pointer; font-size: 1.15rem; line-height: 1; }
 	.lottie-filters { display: flex; flex: 0 0 auto; gap: .3rem; padding: .26rem; border: 1px solid var(--lottie-line); border-radius: .9rem; background: color-mix(in oklab, var(--card-bg) 88%, transparent); }
-	.lottie-filters button { display: flex; align-items: center; gap: .38rem; padding: .52rem .7rem; border: 0; border-radius: .62rem; background: transparent; color: var(--lottie-muted); cursor: pointer; font: 700 .7rem/1 var(--font-active-sans, system-ui, sans-serif); transition: .2s ease; }
+	.lottie-filters button { display: flex; align-items: center; gap: .38rem; padding: .52rem .7rem; border: 1px solid var(--glass-control-border); border-radius: .62rem; background: transparent; color: var(--primary); cursor: pointer; font: 700 .7rem/1 var(--font-active-sans, system-ui, sans-serif); transition: .2s ease; }
 	.lottie-filters button span { color: color-mix(in oklab, currentColor 65%, transparent); font: 700 .62rem/1 ui-monospace, monospace; }
-	.lottie-filters button:hover { color: var(--lottie-ink); }
-	.lottie-filters button.active { background: var(--primary); color: var(--btn-content, #fff); box-shadow: 0 .3rem .7rem color-mix(in oklab, var(--primary) 22%, transparent); }
+	.lottie-filters button:hover { color: var(--primary); border-color: var(--primary); background: transparent; }
+	.lottie-filters button.active { border-color: var(--primary); background: transparent; color: var(--primary); box-shadow: none; }
 
 	.lottie-results-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; min-height: 3.4rem; padding: .55rem .15rem .8rem; color: var(--lottie-muted); }
 	.lottie-results-head > div { display: flex; align-items: baseline; gap: .42rem; }
@@ -248,7 +275,8 @@
 	.lottie-card__stage :global(.lottie-emoji[data-lottie-error="true"]) { width: auto !important; height: auto !important; color: var(--lottie-muted); font: 700 .66rem/1 ui-monospace, monospace; }
 	.lottie-card__info { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; padding: .75rem .82rem .85rem; }
 	.lottie-card__info strong { overflow: hidden; color: var(--lottie-ink); font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
-	.lottie-card__info code { overflow: hidden; max-width: 52%; color: var(--lottie-muted); font: .57rem/1 ui-monospace, SFMono-Regular, Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; }
+	.lottie-card__info code { overflow: hidden; max-width: 62%; color: var(--lottie-muted); font: .57rem/1 ui-monospace, SFMono-Regular, Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; transition: color .18s ease, transform .18s ease; }
+	.lottie-card__info code.copied { color: color-mix(in oklab, var(--lottie-cyan) 78%, var(--lottie-ink)); transform: translateY(-.04rem); }
 
 	.lottie-empty { display: flex; min-height: 15rem; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed color-mix(in oklab, var(--primary) 25%, var(--line-divider)); border-radius: 1rem; background: color-mix(in oklab, var(--card-bg) 60%, transparent); color: var(--lottie-muted); text-align: center; }
 	.lottie-empty strong { color: var(--lottie-ink); font-size: 1rem; }
@@ -260,8 +288,9 @@
 
 	@keyframes orbit { to { transform: rotate(360deg); } }
 	@keyframes lottie-in { from { opacity: 0; transform: translateY(.5rem); } to { opacity: 1; transform: translateY(0); } }
+	@keyframes lottie-toast-in { from { opacity: 0; transform: translateY(.4rem); } to { opacity: 1; transform: translateY(0); } }
 	@media (max-width: 900px) { .lottie-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-	@media (max-width: 680px) { .lottie-intro { align-items: flex-start; flex-direction: column; padding: 1.15rem 1rem; } .lottie-intro__meta { align-self: stretch; grid-template-columns: auto auto 1fr; } .lottie-intro__meta small { grid-column: 3; align-self: center; margin: 0; } .lottie-toolbar { align-items: stretch; flex-direction: column; } .lottie-filters { justify-content: space-between; } .lottie-filters button { flex: 1; justify-content: center; } .lottie-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; } .lottie-card__stage { min-height: 7.4rem; } .lottie-card__info { display: block; } .lottie-card__info code { display: block; max-width: 100%; margin-top: .3rem; } .lottie-results-note { display: none; } }
+	@media (max-width: 680px) { .lottie-intro { align-items: flex-start; flex-direction: column; padding: 1.15rem 1rem; } .lottie-intro__meta { align-self: stretch; grid-template-columns: auto auto 1fr; } .lottie-intro__meta small { grid-column: 3; align-self: center; margin: 0; } .lottie-comment-guide { align-items: flex-start; } .lottie-comment-guide code { display: none; } .lottie-toolbar { align-items: stretch; flex-direction: column; } .lottie-filters { justify-content: space-between; } .lottie-filters button { flex: 1; justify-content: center; } .lottie-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; } .lottie-card__stage { min-height: 7.4rem; } .lottie-card__info { display: block; } .lottie-card__info code { display: block; max-width: 100%; margin-top: .3rem; } .lottie-results-note { display: none; } }
 	@media (max-width: 390px) { .lottie-grid { grid-template-columns: 1fr; } .lottie-card__stage { min-height: 10rem; } }
 	@media (prefers-reduced-motion: reduce) { .lottie-page *, .lottie-page *::before, .lottie-page *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
 </style>

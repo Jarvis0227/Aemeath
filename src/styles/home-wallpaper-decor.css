@@ -140,6 +140,7 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 .home-wallpaper-decor.is-ready .home-wallpaper-card__avatar-wrap,
 .home-wallpaper-decor.is-ready .home-wallpaper-card__identity,
 .home-wallpaper-decor.is-ready .home-wallpaper-card h1,
+.home-wallpaper-decor.is-ready .home-wallpaper-card__celebration,
 .home-wallpaper-decor.is-ready .home-wallpaper-card__subtitle,
 .home-wallpaper-decor.is-ready .home-wallpaper-card__nav {
 	animation: home-wallpaper-content-enter 520ms var(--home-wallpaper-motion-ease)
@@ -159,11 +160,15 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 }
 
 .home-wallpaper-decor.is-ready .home-wallpaper-card__subtitle {
-	animation-delay: 430ms;
+	animation-delay: 490ms;
 }
 
 .home-wallpaper-decor.is-ready .home-wallpaper-card__nav {
-	animation-delay: 500ms;
+	animation-delay: 550ms;
+}
+
+.home-wallpaper-decor.is-ready .home-wallpaper-card__celebration {
+	animation-delay: 430ms;
 }
 
 .home-wallpaper-decor.is-ready .home-wallpaper-card__social-link {
@@ -206,13 +211,69 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 	top: 50%;
 	left: 50%;
 	z-index: 2;
-	width: min(calc(100vw - 2rem), 520px);
-	padding: 2.2rem 2.15rem 0;
+	width: min(calc(100vw - 2rem), 580px);
+	padding: 2.3rem 2.35rem 0;
 	color: rgba(255, 250, 243, 0.96);
 	text-align: center;
 	transform: translate(-50%, -50%);
 	isolation: isolate;
 	pointer-events: auto;
+}
+
+.home-wallpaper-card__ornaments {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+}
+
+.home-wallpaper-card__ornament {
+	--home-wallpaper-card-ornament-width: clamp(118px, 8.5vw, 164px);
+	position: absolute;
+	display: block;
+	width: var(--home-wallpaper-card-ornament-width);
+	max-width: none;
+	height: auto;
+	object-fit: contain;
+	filter: none;
+	cursor: grab;
+	pointer-events: auto;
+	touch-action: none;
+	user-select: none;
+}
+
+.home-wallpaper-card__ornament.is-dragging {
+	cursor: grabbing;
+}
+
+#wallpaper-wrapper.wallpaper-fullscreen
+	.home-wallpaper-card__ornaments
+	img.home-wallpaper-card__ornament {
+	width: var(--home-wallpaper-card-ornament-width) !important;
+	max-width: none !important;
+	height: auto !important;
+	max-height: none !important;
+	object-fit: contain !important;
+	object-position: center !important;
+	filter: none !important;
+	opacity: 1 !important;
+}
+
+.home-wallpaper-card__ornament--dove {
+	top: -2rem;
+	left: clamp(-14rem, -12vw, -5.5rem);
+}
+
+.home-wallpaper-card__ornament--cloud {
+	--home-wallpaper-card-ornament-width: clamp(104px, 7.8vw, 150px);
+	top: 53%;
+	right: clamp(-6.5rem, -6vw, -3.5rem);
+}
+
+.home-wallpaper-card__ornament--cloud-stream {
+	--home-wallpaper-card-ornament-width: clamp(128px, 9vw, 164px);
+	bottom: -1.1rem;
+	left: clamp(-6rem, -7vw, -4.25rem);
 }
 
 .home-wallpaper-card::before {
@@ -251,6 +312,7 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 
 .home-wallpaper-card__content {
 	position: relative;
+	z-index: 1;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -345,26 +407,57 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 .home-wallpaper-card h1 {
 	display: inline-block;
 	margin: 0;
-	font-size: clamp(2.1rem, 4.2vw, 3.35rem);
-	font-weight: 750;
+	font-family: var(--font-lxgw-wenkai, inherit);
+	font-size: clamp(2.1rem, 4vw, 2.9rem);
+	font-weight: 800;
 	line-height: 1;
-	letter-spacing: -0.035em;
-	text-shadow: 0 3px 12px rgba(18, 17, 22, 0.42);
+	letter-spacing: 0.02em;
+	color: #fff1d0;
+	text-shadow:
+		-0.025em -0.025em 0 rgba(119, 38, 13, 0.78),
+		0.025em -0.025em 0 rgba(119, 38, 13, 0.78),
+		-0.025em 0.025em 0 rgba(119, 38, 13, 0.78),
+		0.025em 0.025em 0 rgba(119, 38, 13, 0.78),
+		0 2px 0 rgba(119, 38, 13, 0.68),
+		0 4px 10px rgba(33, 12, 12, 0.44),
+		0 0 16px rgba(255, 197, 91, 0.3);
+}
+
+.home-wallpaper-card h1 .home-wallpaper-card__motion-text {
+	color: #fff1d0;
 }
 
 .home-wallpaper-card__subtitle {
 	display: inline-block;
 	position: relative;
 	max-width: 34rem;
-	margin: 0.75rem 0 0;
+	margin: 0.55rem 0 0;
+	font-family: var(--font-lxgw-wenkai, inherit);
 	font-size: 0.92rem;
 	line-height: 1.6;
 	color: rgba(255, 247, 236, 0.92);
 	text-shadow: 0 2px 8px rgba(18, 17, 22, 0.36);
 }
 
+.home-wallpaper-card__celebration {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0.28rem auto 0;
+	font-family: inherit;
+	font-size: clamp(1.35rem, 2vw, 2.2rem);
+	font-weight: 700;
+	line-height: 1.25;
+	letter-spacing: 0.12em;
+	color: #ffe3a5;
+	text-shadow:
+		0 1px 0 rgba(104, 42, 16, 0.76),
+		0 3px 8px rgba(33, 12, 12, 0.42);
+}
+
 .home-wallpaper-card__identity,
 .home-wallpaper-card h1,
+.home-wallpaper-card__celebration,
 .home-wallpaper-card__subtitle {
 	transition:
 		color 180ms ease,
@@ -483,6 +576,8 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 .home-wallpaper-card__identity:active,
 .home-wallpaper-card h1:hover,
 .home-wallpaper-card h1:active,
+.home-wallpaper-card__celebration:hover,
+.home-wallpaper-card__celebration:active,
 .home-wallpaper-card__subtitle:hover,
 .home-wallpaper-card__subtitle:active,
 .home-wallpaper-card__subtitle:focus-visible {
@@ -495,6 +590,9 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 .home-wallpaper-card h1:hover .home-wallpaper-card__motion-text,
 .home-wallpaper-card h1:focus-visible .home-wallpaper-card__motion-text,
 .home-wallpaper-card h1:active .home-wallpaper-card__motion-text,
+.home-wallpaper-card__celebration:hover .home-wallpaper-card__motion-text,
+.home-wallpaper-card__celebration:focus-visible .home-wallpaper-card__motion-text,
+.home-wallpaper-card__celebration:active .home-wallpaper-card__motion-text,
 .home-wallpaper-card__subtitle:hover .home-wallpaper-card__motion-text,
 .home-wallpaper-card__subtitle:focus-visible .home-wallpaper-card__motion-text,
 .home-wallpaper-card__subtitle:active .home-wallpaper-card__motion-text,
@@ -830,6 +928,19 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 	transform: rotate(var(--home-wallpaper-sticker-rotation));
 }
 
+.home-wallpaper-sticker--anniversary-77 {
+	--home-wallpaper-sticker-delay: 1175ms;
+	--home-wallpaper-sticker-rotation: -1deg;
+	top: 24.5%;
+	left: 33%;
+	width: min(280px, 15.4vw, 30vh);
+	transform: rotate(var(--home-wallpaper-sticker-rotation));
+}
+
+.home-wallpaper-sticker--anniversary-77 img {
+	max-height: none;
+}
+
 .home-wallpaper-sticker--note {
 	top: 79%;
 	left: 53%;
@@ -876,12 +987,12 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 
 @media (min-width: 768px) and (max-width: 1199px) {
 	.home-wallpaper-card {
-		width: min(calc(100vw - 1.5rem), 440px);
-		padding: 1.65rem 1.45rem 0;
+		width: min(calc(100vw - 1.5rem), 500px);
+		padding: 1.65rem 1.75rem 0;
 	}
 
 	.home-wallpaper-card h1 {
-		font-size: clamp(1.85rem, 5.5vw, 2.8rem);
+		font-size: clamp(1.85rem, 4vw, 2.9rem);
 	}
 
 	.home-wallpaper-card__subtitle {
@@ -917,8 +1028,34 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 
 @media (max-width: 767px) {
 	.home-wallpaper-card {
-		width: min(calc(100vw - 2rem), 360px);
+		width: min(calc(100vw - 1.5rem), 380px);
 		padding: 1.7rem 1rem 0;
+	}
+
+	.home-wallpaper-card__ornament--cloud,
+	.home-wallpaper-card__ornament--cloud-stream,
+	.home-wallpaper-card__ornament--dove {
+		display: none;
+	}
+
+	.home-wallpaper-card__ornament {
+		--home-wallpaper-card-ornament-width: clamp(78px, 23vw, 102px);
+	}
+
+	.home-wallpaper-card__ornament--dove {
+		top: -2.8rem;
+		left: -0.25rem;
+	}
+
+	.home-wallpaper-card__ornament--cloud {
+		top: auto;
+		right: -0.5rem;
+		bottom: -1.9rem;
+	}
+
+	.home-wallpaper-card__ornament--cloud-stream {
+		bottom: -2.9rem;
+		left: -0.4rem;
 	}
 
 	.home-wallpaper-card::after {
@@ -956,12 +1093,17 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 		font-size: 0.7rem;
 	}
 
+	.home-wallpaper-card__celebration {
+		margin-top: 0.38rem;
+		font-size: clamp(1.15rem, 6.2vw, 1.55rem);
+	}
+
 	.home-wallpaper-card h1 {
-		font-size: clamp(1.95rem, 10vw, 2.6rem);
+		font-size: clamp(1.9rem, 8.8vw, 2.45rem);
 	}
 
 	.home-wallpaper-card__subtitle {
-		margin-top: 0.6rem;
+		margin-top: 0.48rem;
 		font-size: 0.78rem;
 	}
 
@@ -985,6 +1127,17 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 	.home-wallpaper-sticker[data-home-wallpaper-mobile="true"] {
 		display: grid;
 		width: clamp(44px, 14vw, 64px);
+	}
+
+	.home-wallpaper-sticker--blue-witch,
+	.home-wallpaper-sticker--coder,
+	.home-wallpaper-sticker--blonde,
+	.home-wallpaper-sticker--brown-lightning {
+		--home-wallpaper-sticker-rotation: 0deg;
+	}
+
+	.home-wallpaper-sticker--anniversary-77[data-home-wallpaper-mobile="true"] {
+		width: clamp(88px, 28vw, 112px);
 	}
 
 	.home-wallpaper-sticker--note.home-wallpaper-sticker--fixed {
@@ -1028,6 +1181,7 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 
 	.home-wallpaper-card__identity,
 	.home-wallpaper-card h1,
+	.home-wallpaper-card__celebration,
 	.home-wallpaper-card__subtitle,
 	.home-wallpaper-card__nav a,
 	.home-wallpaper-card__motion-text,
@@ -1051,6 +1205,7 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 	.home-wallpaper-card__identity:hover .home-wallpaper-card__motion-text,
 	.home-wallpaper-card__identity:active .home-wallpaper-card__motion-text,
 	.home-wallpaper-card h1:is(:hover, :focus-visible, :active) .home-wallpaper-card__motion-text,
+	.home-wallpaper-card__celebration:is(:hover, :focus-visible, :active) .home-wallpaper-card__motion-text,
 	.home-wallpaper-card__subtitle:is(:hover, :focus-visible, :active) .home-wallpaper-card__motion-text,
 	.home-wallpaper-card__nav a:is(:hover, :focus-visible, :active) .home-wallpaper-card__motion-text {
 		animation: none;
@@ -1070,5 +1225,97 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 	.home-wallpaper-copy-toast {
 		transition: none;
 		transform: none;
+	}
+}
+
+/* The seasonal layout is a complete overlay; turning it off restores the pre-holiday card. */
+.home-wallpaper-card__ornaments,
+.home-wallpaper-card__celebration,
+.home-wallpaper-sticker--anniversary-77 {
+	display: none;
+}
+
+html[data-national-day-theme="true"] .home-wallpaper-card__ornaments {
+	display: block;
+}
+
+html[data-national-day-theme="true"] .home-wallpaper-card__celebration {
+	display: inline-flex;
+}
+
+html[data-national-day-theme="true"] .home-wallpaper-sticker--anniversary-77 {
+	display: block;
+}
+
+html[data-national-day-theme="true"] .home-wallpaper-card__subtitle--default {
+	display: none;
+}
+
+html[data-national-day-theme="false"] .home-wallpaper-card__subtitle--national-day {
+	display: none;
+}
+
+html[data-national-day-theme="false"] .home-wallpaper-card {
+	width: min(calc(100vw - 2rem), 520px);
+	padding: 2.2rem 2.15rem 0;
+}
+
+html[data-national-day-theme="false"] .home-wallpaper-card__content {
+	z-index: auto;
+}
+
+html[data-national-day-theme="false"] .home-wallpaper-card h1 {
+	font-family: inherit;
+	font-size: clamp(2.1rem, 4.2vw, 3.35rem);
+	font-weight: 750;
+	line-height: 1;
+	letter-spacing: -0.035em;
+	color: #fff1d0;
+	text-shadow:
+		-0.025em -0.025em 0 rgba(119, 38, 13, 0.78),
+		0.025em -0.025em 0 rgba(119, 38, 13, 0.78),
+		-0.025em 0.025em 0 rgba(119, 38, 13, 0.78),
+		0.025em 0.025em 0 rgba(119, 38, 13, 0.78),
+		0 2px 0 rgba(119, 38, 13, 0.68),
+		0 4px 10px rgba(33, 12, 12, 0.44),
+		0 0 16px rgba(255, 197, 91, 0.3);
+}
+
+html[data-national-day-theme="false"] .home-wallpaper-card h1 .home-wallpaper-card__motion-text {
+	color: #fff1d0;
+}
+
+html[data-national-day-theme="false"] .home-wallpaper-card__subtitle {
+	margin-top: 0.75rem;
+	font-family: inherit;
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+	html[data-national-day-theme="false"] .home-wallpaper-card {
+		width: min(calc(100vw - 1.5rem), 440px);
+		padding: 1.65rem 1.45rem 0;
+	}
+
+	html[data-national-day-theme="false"] .home-wallpaper-card h1 {
+		font-size: clamp(1.85rem, 5.5vw, 2.8rem);
+	}
+
+	html[data-national-day-theme="false"] .home-wallpaper-card__subtitle {
+		margin-top: 0.62rem;
+	}
+}
+
+@media (max-width: 767px) {
+	html[data-national-day-theme="false"] .home-wallpaper-card {
+		width: min(calc(100vw - 2rem), 360px);
+		padding: 1.7rem 1rem 0;
+	}
+
+	html[data-national-day-theme="false"] .home-wallpaper-card h1 {
+		font-size: clamp(1.95rem, 10vw, 2.6rem);
+	}
+
+	html[data-national-day-theme="false"] .home-wallpaper-card__subtitle {
+		margin-top: 0.6rem;
 	}
 }

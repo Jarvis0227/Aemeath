@@ -391,10 +391,11 @@ const {
 			});
 		}
 
-		function getLocalDayStart(timestamp = Date.now()) {
-			const date = new Date(timestamp);
-			date.setHours(0, 0, 0, 0);
-			return date.getTime();
+		function getBeijingDayStart(timestamp = Date.now()) {
+			const beijingOffset = 8 * 60 * 60 * 1000;
+			const date = new Date(timestamp + beijingOffset);
+			date.setUTCHours(0, 0, 0, 0);
+			return date.getTime() - beijingOffset;
 		}
 
 		function renderPageViews(metrics) {
@@ -515,7 +516,7 @@ const {
 			try {
 				const share = await getShare();
 				const now = Date.now();
-				const dayStart = getLocalDayStart(now);
+				const dayStart = getBeijingDayStart(now);
 				const tasks = await Promise.allSettled([
 					needsViews ? getMetrics(share, forceRefresh) : Promise.resolve(null),
 					needsStats ? getStats(share, 0, now, "all", forceRefresh) : Promise.resolve(null),

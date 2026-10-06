@@ -9,7 +9,7 @@ export const announcementConfig: AnnouncementConfig = {
 		"👋🏻 Hi，我是Rain，也是朝朝听雨，欢迎来到我的博客！这里是分享知识、交流想法的地方。希望你能在这里找到有价值的内容！\n本站已开源",
 
 	// 是否允许用户关闭公告
-	closable: true,
+	closable: false,
 
 	links: [
 		{

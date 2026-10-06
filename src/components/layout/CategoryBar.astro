@@ -132,57 +132,44 @@ const archiveUrl = url("/archive/");
     display: none;
   }
   .category-pill {
-    border: none;
-    color: var(--btn-content);
-    background: color-mix(in srgb, var(--btn-content) 6%, transparent);
+    border: 1px solid var(--glass-control-border);
+    color: var(--primary);
+    background: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     font-weight: 500;
     gap: 0.375rem;
   }
   .category-pill .pill-count {
     font-size: 0.7rem;
     font-weight: 600;
-    opacity: 0.5;
-    padding: 0.05rem 0.35rem;
-    border-radius: 9999px;
-    background: color-mix(in srgb, var(--btn-content) 8%, transparent);
+    opacity: 0.65;
+    background: transparent;
   }
   .category-pill[data-category-name=""] {
     color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 8%, transparent);
   }
   .category-pill:hover {
     color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 10%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 36%, var(--glass-control-border));
   }
   .category-pill[data-active] {
-    background: var(--primary);
-    color: white;
-  }
-  .category-pill[data-active] .pill-count {
-    background: rgba(255, 255, 255, 0.2);
-    opacity: 0.9;
-  }
-  .category-pill[data-soft-active] {
-    background: color-mix(in srgb, var(--primary) 18%, transparent);
-    color: color-mix(in srgb, var(--primary) 90%, var(--btn-content));
+    border-color: color-mix(in srgb, var(--primary) 55%, var(--glass-control-border));
+    color: var(--primary);
     font-weight: 600;
   }
-  .category-pill[data-soft-active]:hover {
-    background: color-mix(in srgb, var(--primary) 25%, transparent);
-    color: color-mix(in srgb, var(--primary) 100%, var(--btn-content));
+  .category-pill[data-active] .pill-count {
+    opacity: 0.8;
   }
-  .category-pill[data-soft-active][data-active],
-  .category-pill[data-soft-active][data-active]:hover {
-    background: color-mix(in srgb, var(--primary) 25%, transparent);
-    color: color-mix(in srgb, var(--primary) 100%, var(--btn-content));
+  .category-pill[data-soft-active] {
+    border-color: color-mix(in srgb, var(--primary) 35%, var(--glass-control-border));
+    color: var(--primary);
+    font-weight: 600;
   }
-  .category-pill[data-active]:hover {
-    background: var(--primary);
-    opacity: 0.9;
-  }
-  .category-pill[data-category-name=""][data-active],
-  .category-pill[data-category-name=""][data-active]:hover {
-    color: white;
+  .category-pill:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
   }
 </style>
 
@@ -410,10 +397,13 @@ const archiveUrl = url("/archive/");
   initScrollFeatures();
   document.addEventListener("astro:page-load", () => {
     updateCategoryBar();
+    initCategoryBarInteractions();
     initScrollFeatures();
   });
   document.addEventListener("swup:contentReplaced", () => {
     updateCategoryBar();
+    initCategoryBarInteractions();
+    initScrollFeatures();
     // 某些 swup 生命周期下 URL/DOM 状态同步稍晚，下一帧再校正一次避免状态残留
     requestAnimationFrame(() => {
       updateCategoryBar();

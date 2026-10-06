@@ -51,17 +51,23 @@ const path = customPath || (id ? `/posts/${id}` : "");
 const visibleTags =
 	typeof maxTags === "number" ? tags?.slice(0, maxTags) : tags;
 const umamiAnalytics = analyticsConfig.umamiAnalytics;
-const localPreviewHostnames = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+const localPreviewHostnames = new Set([
+	"localhost",
+	"127.0.0.1",
+	"::1",
+	"0.0.0.0",
+]);
 const isLocalPreview =
-	import.meta.env.DEV || localPreviewHostnames.has(Astro.url.hostname.toLowerCase());
+	import.meta.env.DEV ||
+	localPreviewHostnames.has(Astro.url.hostname.toLowerCase());
 const useUmamiPageViews = Boolean(
 	!isLocalPreview &&
-	!isHome &&
-	id &&
-	umamiAnalytics?.websiteId &&
-	umamiAnalytics.shareId &&
-	umamiAnalytics.shareApiBase &&
-	umamiAnalytics.showPageViews !== false,
+		!isHome &&
+		id &&
+		umamiAnalytics?.websiteId &&
+		umamiAnalytics.shareId &&
+		umamiAnalytics.shareApiBase &&
+		umamiAnalytics.showPageViews !== false,
 );
 ---
 

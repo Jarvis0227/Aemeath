@@ -199,26 +199,34 @@ const preserveCoverRatio = new Set([
 	"ai-infinite-canvas-workflow",
 	"auto-listing-system",
 	"agent-ecommerce-automation",
+	"ai-ecommerce-agents",
 	"after-the-tools-i-returned-to-my-blog",
 	"why-i-still-write-in-the-age-of-ai",
 	"chao-chao-listening-rain-years-wind",
 	"others/youth-most-expensive/youth-most-expensive",
 	"in-grandmas-white-hair-i-saw-time",
 	"from-matriarchal-society-to-patriarchy",
+	"codex-292-state-analysis",
 	"monthly-2026-08",
+	"monthly-2026-09",
+	"national-day-2026",
 ]).has(entry.id);
 const fullPreviewCover = new Set([
 	"portfolio-showcase-animation-principles",
 	"ai-infinite-canvas-workflow",
 	"auto-listing-system",
 	"agent-ecommerce-automation",
+	"ai-ecommerce-agents",
 	"after-the-tools-i-returned-to-my-blog",
 	"why-i-still-write-in-the-age-of-ai",
 	"chao-chao-listening-rain-years-wind",
 	"others/youth-most-expensive/youth-most-expensive",
 	"in-grandmas-white-hair-i-saw-time",
 	"from-matriarchal-society-to-patriarchy",
+	"codex-292-state-analysis",
 	"monthly-2026-08",
+	"monthly-2026-09",
+	"national-day-2026",
 ]).has(entry.id);
 const updateBadgeDate =
 	entry.id === "auto-listing-system" && updated
@@ -233,6 +241,8 @@ const updateBadgeLabel = updateBadgeDate
 	? `已于${updateBadgeDate}更新`
 	: undefined;
 const isNewSystemPost = entry.id === "in-grandmas-white-hair-i-saw-time";
+const isMonthlyPost = entry.id.startsWith("monthly-");
+const monthlyBadgeLabel = `${Number(entry.id.slice(-2))}月月刊`;
 
 const showTags = siteConfig.postListLayout.showTags;
 const tagCount = Math.max(
@@ -259,12 +269,21 @@ const minutes = remarkPluginFrontmatter.minutes;
     fullPreviewCover ? "post-card-full-preview" : "",
     pinned ? "pinned" : "",
     isNewSystemPost ? "has-new-system-badge" : "",
+    isMonthlyPost ? "has-monthly-badge" : "",
     "card-base flex flex-col-reverse w-full rounded-(--radius-large) overflow-hidden relative",
     className,
   ]}
   data-card-decor={cardDecor}
   style={style}
 >
+  {
+    isMonthlyPost && (
+      <span class="post-card-system-badge post-card-monthly-badge" role="note">
+        <Icon is:inline name="material-symbols:calendar-month-rounded" aria-hidden="true" />
+        <span>{monthlyBadgeLabel}</span>
+      </span>
+    )
+  }
   {
     isNewSystemPost && (
       <span class="post-card-system-badge" role="note">
@@ -421,6 +440,10 @@ const minutes = remarkPluginFrontmatter.minutes;
     overflow: visible;
   }
 
+  .post-card-wrapper.has-monthly-badge {
+    overflow: visible;
+  }
+
   .post-card-system-badge {
     position: absolute !important;
     top: -0.74rem;
@@ -472,23 +495,51 @@ const minutes = remarkPluginFrontmatter.minutes;
     filter: drop-shadow(0 0 0.12rem rgba(224, 157, 19, 0.25));
   }
 
+  .post-card-monthly-badge {
+    color: #5f579d;
+  }
+
+  .post-card-monthly-badge::before {
+    border-color: color-mix(in srgb, #8f82d8 58%, rgba(240, 238, 255, 0.5));
+    background: color-mix(in srgb, #e8e4ff 54%, var(--card-bg));
+  }
+
+  .post-card-monthly-badge :global(svg) {
+    color: #7568c8;
+    filter: drop-shadow(0 0 0.12rem rgba(117, 104, 200, 0.26));
+  }
+
+  :global(html.dark) .post-card-monthly-badge {
+    color: #dcd7ff;
+  }
+
+  :global(html.dark) .post-card-monthly-badge::before {
+    border-color: color-mix(in srgb, #a99be8 58%, rgba(39, 34, 76, 0.34));
+    background: color-mix(in srgb, #4b4385 48%, var(--card-bg));
+  }
+
+  :global(html.dark) .post-card-monthly-badge :global(svg) {
+    color: #b6aaf2;
+    filter: drop-shadow(0 0 0.12rem rgba(182, 170, 242, 0.28));
+  }
+
   .post-card-wrapper.has-new-system-badge :global(.post-meta-new-system .meta-icon) {
-    background: color-mix(in srgb, #f4c84e 44%, var(--card-bg));
-    color: #9b650b;
+    background: transparent;
+    color: var(--primary);
   }
 
   .post-card-wrapper.has-new-system-badge > .post-card-content {
-    background-color: color-mix(in srgb, #fff0b3 36%, var(--card-bg));
+    background-color: color-mix(in srgb, #fff0b3 36%, transparent);
     border-radius: 0 0 var(--radius-large) var(--radius-large);
   }
 
   :global(html.dark) .post-card-wrapper.has-new-system-badge :global(.post-meta-new-system .meta-icon) {
-    background: color-mix(in srgb, #8b641b 56%, var(--card-bg));
-    color: #ffe39a;
+    background: transparent;
+    color: var(--primary);
   }
 
   :global(html.dark) .post-card-wrapper.has-new-system-badge > .post-card-content {
-    background-color: color-mix(in srgb, #8b641b 34%, var(--card-bg));
+    background-color: color-mix(in srgb, #8b641b 34%, transparent);
   }
 
   :global(html.dark) .post-card-system-badge {

@@ -331,3 +331,28 @@ html.dark
 		transition: none;
 	}
 }
+
+/* The flat card mode keeps the sidebar and post cards quiet too. */
+html[data-card-decoration="flat"]
+	:is(body:is(.is-home, .post-list-page), .sidebar-card-decor)
+	:is(
+		.post-card-wrapper.card-base,
+		.profile-card.card-base,
+		widget-layout.card-base,
+		time-greeting-widget.card-base
+	) {
+	border-color: color-mix(in oklch, var(--line-divider) 76%, var(--text-color) 4%);
+	box-shadow: none !important;
+}
+
+html[data-card-decoration="flat"]
+	:is(body:is(.is-home, .post-list-page), .sidebar-card-decor)
+	:is(
+		.post-card-wrapper.card-base,
+		.profile-card.card-base,
+		widget-layout.card-base,
+		time-greeting-widget.card-base
+	):hover {
+	border-color: color-mix(in oklch, var(--line-divider) 76%, var(--text-color) 4%);
+	box-shadow: none !important;
+}

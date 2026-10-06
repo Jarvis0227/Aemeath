@@ -1,9 +1,9 @@
 ---
 import { Icon } from "astro-icon/components";
 import { getEnabledFriends, siteConfig } from "@/config";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { formatDateToYYYYMMDD } from "@/utils/date-utils";
 import { loadFriendsFeed } from "@/utils/friends-feed";
-import MainGridLayout from "@/layouts/MainGridLayout.astro";
 
 const friends = getEnabledFriends();
 const feed = await loadFriendsFeed(friends);
@@ -32,7 +32,10 @@ const unsubscribedFriends = friends.filter(
 const randomArticleItems = JSON.stringify(
 	feed.items.map((item) => {
 		const isOwnSite = normalizeFriendUrl(item.friendUrl) === ownSiteUrl;
-		const isRecommended = !isOwnSite && friendsByUrl.get(normalizeFriendUrl(item.friendUrl))?.recommended === true;
+		const isRecommended =
+			!isOwnSite &&
+			friendsByUrl.get(normalizeFriendUrl(item.friendUrl))?.recommended ===
+				true;
 
 		return {
 			friendTitle: item.friendTitle,
@@ -1274,10 +1277,10 @@ const randomArticleItems = JSON.stringify(
 		gap: 0.25rem;
 		min-height: 1.65rem;
 		padding: 0.25rem 0.52rem;
-		border: 1px solid color-mix(in srgb, var(--content-meta) 22%, var(--line-divider));
+		border: 1px solid var(--glass-control-border);
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--card-bg) 78%, transparent);
-		color: var(--content-meta);
+		background: transparent;
+		color: var(--primary);
 		font-size: 0.62rem;
 		font-weight: 720;
 		transform: translate(-50%, -50%) translateZ(22px);
@@ -1290,9 +1293,9 @@ const randomArticleItems = JSON.stringify(
 
 	.moments-random-article__auto.is-active {
 		border-color: color-mix(in srgb, var(--primary) 44%, var(--line-divider));
-		background: color-mix(in srgb, var(--primary) 15%, var(--card-bg));
+		background: transparent;
 		color: var(--primary);
-		box-shadow: 0 0 0.7rem color-mix(in srgb, var(--primary) 16%, transparent);
+		box-shadow: none;
 	}
 
 	.moments-random-article__auto:hover,
@@ -1309,9 +1312,9 @@ const randomArticleItems = JSON.stringify(
 		gap: 0.28rem;
 		min-height: 2rem;
 		padding: 0.45rem 0.62rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--line-divider));
+		border: 1px solid var(--glass-control-border);
 		border-radius: 0.62rem;
-		background: color-mix(in srgb, var(--card-bg) 88%, var(--primary) 12%);
+		background: transparent;
 		color: var(--primary);
 		font-size: 0.68rem;
 		font-weight: 720;
@@ -1322,7 +1325,7 @@ const randomArticleItems = JSON.stringify(
 
 	.moments-random-article__refresh:hover:not(:disabled) {
 		border-color: color-mix(in srgb, var(--primary) 38%, var(--line-divider));
-		background: color-mix(in srgb, var(--card-bg) 78%, var(--primary) 22%);
+		background: transparent;
 		transform: translateY(-1px);
 	}
 

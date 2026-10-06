@@ -1,9 +1,10 @@
 ---
 import { getEntry, render } from "astro:content";
-import { Icon } from "astro-icon/components";
 import Markdown from "@components/common/Markdown.astro";
+import { Icon } from "astro-icon/components";
 import ImageWrapper from "@/components/common/ImageWrapper.astro";
 import { getEnabledFriends, profileConfig } from "@/config";
+import { blogChangelogEntries } from "@/data/blog-changelog";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
@@ -15,101 +16,117 @@ if (!aboutPost) {
 }
 
 const { Content } = await render(aboutPost);
+const openSourcePost = await getEntry("spec", "about-open-source");
+if (!openSourcePost) {
+	throw new Error("About page open-source repositories not found");
+}
+const { Content: OpenSourceContent } = await render(openSourcePost);
 const friendCount = getEnabledFriends().length;
+const changelogDateCounts = new Map<string, number>();
+for (const entry of blogChangelogEntries) {
+	changelogDateCounts.set(
+		entry.date,
+		(changelogDateCounts.get(entry.date) ?? 0) + 1,
+	);
+}
 
-const changelogEntries = [
+const aboutChangelogMilestones = [
 	{
-		title: "博客视觉与友链体验",
-		description: "把友链、朋友圈、开屏动画和评论区的视觉连接重新梳理成一套更完整的体验。",
-		href: "/blog-changelog/",
-		tags: ["Aemeath V3.4.0", "UI"],
-		tone: "blue",
-		icon: "material-symbols:auto-awesome-rounded",
+		version: "V1.0.0",
+		title: "博客从零上线",
+		summary: "记录建站流程，确定博客内容方向与维护方式。",
 	},
 	{
-		title: "站点版本整理",
-		description: "统一关于我、导航和站点信息中的博客版本展示，让每个入口都说同一种语言。",
-		href: "/blog-changelog/",
-		tags: ["Aemeath V3.4.0", "维护"],
-		tone: "mint",
-		icon: "material-symbols:history-rounded",
+		version: "V2.0.0",
+		title: "朋友圈接入友链 RSS",
+		summary: "聚合友链 RSS，开始在朋友圈查看其他博客更新。",
 	},
 	{
-		title: "朋友圈 RSS 聚合",
-		description: "把友链博客最近写下的文章收进一条持续发生的时间线。",
-		href: "/moments/",
-		tags: ["Aemeath V3.4.0", "RSS"],
-		tone: "gold",
-		icon: "material-symbols:rss-feed-rounded",
+		version: "V4.0.0",
+		title: "重做首页与侧栏",
+		summary: "重构页面切换、个人资料卡和侧栏，补充账单页与外观设置。",
 	},
 	{
-		title: "正在持续记录",
-		description: "项目复盘、踩坑经验与商业化思考，会继续在这里慢慢留下。",
-		href: "/blog-changelog/",
-		tags: ["Aemeath V3.4.0", "持续更新"],
-		tone: "violet",
-		icon: "material-symbols:edit-note-rounded",
+		version: "V4.1.0",
+		title: "重做个人主页与博客历程",
+		summary: "整理个人介绍、开源项目和站点里程碑，并重做更新日志的浏览方式。",
 	},
-];
+] as const;
+
+const aboutChangelogEntries = aboutChangelogMilestones.flatMap((milestone) => {
+	const entry = blogChangelogEntries.find(
+		(item) => item.version === milestone.version,
+	);
+	if (!entry) return [];
+
+	const anchor =
+		changelogDateCounts.get(entry.date) === 1
+			? `blog-changelog-${entry.date}`
+			: `blog-changelog-${entry.date}-${entry.version.toLowerCase().replaceAll(".", "-")}`;
+
+	return [
+		{
+			...entry,
+			title: milestone.title,
+			summary: milestone.summary,
+			month: entry.date.slice(0, 7).replace("-", "."),
+			href: `/blog-changelog/#${anchor}`,
+		},
+	];
+});
 
 const personalProjects = [
 	{
 		title: "Ai 全自动上架",
-		description: "面向跨境电商的批量发布中枢，把表格、图库、视频与店铺流程串成可复盘的自动化链路。",
+		description:
+			"面向跨境电商的批量发布中枢，把表格、图库、视频与店铺流程串成可复盘的自动化链路。",
 		tags: ["AI", "自动化", "跨境电商"],
 		tone: "blue",
 		icon: "material-symbols:auto-awesome-rounded",
 	},
 	{
 		title: "Rain（记账）",
-		description: "一款轻量的个人记账工具，把日常收支、分类和复盘整理成自己的节奏。",
+		description:
+			"一款轻量的个人记账工具，把日常收支、分类和复盘整理成自己的节奏。",
 		tags: ["效率工具", "生活记录"],
 		tone: "mint",
 		icon: "material-symbols:history-rounded",
 	},
 	{
 		title: "Ai 画布智能体",
-		description: "把产品图、提示词、参考风格与生成结果组织进可编排、可追溯的无限画布。",
+		description:
+			"把产品图、提示词、参考风格与生成结果组织进可编排、可追溯的无限画布。",
 		tags: ["AI", "工作流", "图片生成"],
 		tone: "gold",
 		icon: "material-symbols:auto-awesome-rounded",
 	},
 	{
 		title: "个人博客",
-		description: "记录技术实践、工具复盘与生活思考，把做过的事情慢慢整理成可以回看的文字。",
+		description:
+			"记录技术实践、工具复盘与生活思考，把做过的事情慢慢整理成可以回看的文字。",
 		tags: ["Astro", "写作", "持续更新"],
 		tone: "violet",
 		icon: "material-symbols:edit-note-rounded",
 	},
-	{
-		title: "未完待续",
-		description: "小项目比较多，几十个了；还会继续把新的想法做出来，再把它们慢慢收进这里。",
-		tags: ["个人项目", "进行中"],
-		tone: "gold",
-		icon: "material-symbols:history-rounded",
-	},
 ];
 
-const recentActivity = [
-	{
-		kind: "文章",
-		title: "从母系社会到父权制度：亲缘、私有制与现代性别关系的演变",
-		href: "/posts/from-matriarchal-society-to-patriarchy/",
-	},
-	{
-		kind: "文章",
-		title: "朝朝听雨，岁岁有风",
-		href: "/posts/chao-chao-listening-rain-years-wind/",
-	},
-	{
-		kind: "系统",
-		title: "朋友圈 RSS 聚合与快照更新",
-		href: "/moments/",
-	},
+const interests = [
+	"效率工具",
+	"AI 工程化",
+	"跨境电商",
+	"开源",
+	"网络安全",
+	"逆向工程",
 ];
-
-const interests = ["效率工具", "AI 工程化", "跨境电商", "开源", "网络安全", "逆向工程"];
-const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok", "BigSeller"];
+const stack = [
+	"React",
+	"TypeScript",
+	"Astro",
+	"ExtendScript",
+	"Shopee",
+	"TikTok",
+	"BigSeller",
+];
 ---
 
 <MainGridLayout title={i18n(I18nKey.about)} description={i18n(I18nKey.about)}>
@@ -223,52 +240,20 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 							</article>
 						))}
 					</div>
+					<p class="project-continuation"><strong>未完待续</strong>，还有一些想法正在慢慢打磨，准备好后再补进来。</p>
 				</section>
 
-				<section class="profile-panel card-base" aria-labelledby="pinned-title">
+				<section class="profile-panel card-base profile-foundation-panel" aria-labelledby="profile-foundation-title">
 					<header class="profile-section-heading">
-						<div>
-							<p class="profile-section-kicker">LATEST CHANGES</p>
-							<h2 id="pinned-title">更新摘要</h2>
-						</div>
-						<a href="/blog-changelog/" class="profile-section-link">按日查看 <Icon is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" /></a>
+						<h2 id="profile-foundation-title">站在巨人的肩膀上</h2>
+						<span class="profile-section-note">页面加载 · GitHub API</span>
 					</header>
-					<div class="project-grid">
-						{changelogEntries.map((project) => (
-							<a class:list={["project-card", `project-card--${project.tone}`]} href={project.href}>
-								<span class="project-card__icon" aria-hidden="true"><Icon is:inline name={project.icon} /></span>
-								<span class="project-card__body">
-									<strong>{project.title}</strong>
-									<span>{project.description}</span>
-									<span class="project-card__tags">
-										{project.tags.map((tag) => <em>{tag}</em>)}
-									</span>
-								</span>
-								<Icon class="project-card__arrow" is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" />
-							</a>
-						))}
-					</div>
+					<p class="profile-foundation-copy">我的博客源码开源在 Aemeath。本站基于 CuteLeaf 的 Firefly 主题继续二次创作，也在这里向原作者致谢。</p>
+					<Markdown class="profile-foundation-list">
+						<OpenSourceContent />
+					</Markdown>
 				</section>
 
-				<section class="profile-panel card-base" aria-labelledby="activity-title">
-					<header class="profile-section-heading">
-						<div>
-							<p class="profile-section-kicker">RECENT ACTIVITY</p>
-							<h2 id="activity-title">最近的提交</h2>
-						</div>
-						<span class="profile-section-note">写下来的，才会留下</span>
-					</header>
-					<ul class="activity-list">
-						{recentActivity.map((item) => (
-							<li>
-								<span class="activity-marker" aria-hidden="true"></span>
-								<span class="activity-kind">{item.kind}</span>
-								<a href={item.href}>{item.title}</a>
-								<Icon class="activity-arrow" is:inline name="material-symbols:arrow-outward-rounded" aria-hidden="true" />
-							</li>
-						))}
-					</ul>
-				</section>
 			</main>
 
 			<aside class="profile-sidebar" aria-label="个人资料补充信息">
@@ -306,6 +291,38 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 					</div>
 				</section>
 
+				<section class="profile-panel profile-side-panel profile-server-panel card-base" aria-labelledby="server-title">
+					<header class="profile-side-heading profile-server-heading">
+						<Icon is:inline name="material-symbols:cloud-outline" aria-hidden="true" />
+						<h2 id="server-title">服务器状态</h2>
+					</header>
+					<p class="profile-side-note">公开源码不包含服务器状态接口；如需展示，请在自己的部署环境中接入。</p>
+				</section>
+
+				<section class="profile-panel profile-side-panel card-base profile-mini-history" aria-labelledby="profile-history-title">
+					<header class="profile-side-heading">
+						<Icon is:inline name="material-symbols:history-rounded" aria-hidden="true" />
+						<h2 id="profile-history-title">魔改日记</h2>
+						<a class="profile-history-more" href="/blog-changelog/">完整记录 <span aria-hidden="true">→</span></a>
+					</header>
+					<p class="profile-history-intro">从博客上线开始，记下几次重要变化。</p>
+					<ol class="profile-history-list">
+						{aboutChangelogEntries.map((entry) => (
+							<li class="profile-history-item">
+								<span class="profile-history-track" aria-hidden="true">
+									<span class:list={["profile-history-dot", `profile-history-dot--${entry.tone}`]}></span>
+								</span>
+								<a class="profile-history-card" href={entry.href}>
+									<span class="profile-history-card__heading">
+										<time class="profile-history-date" datetime={entry.date}>{entry.month}</time>
+										<strong>{entry.title}</strong>
+									</span>
+									<span class="profile-history-card__summary">{entry.summary}</span>
+								</a>
+							</li>
+						))}
+					</ol>
+				</section>
 			</aside>
 		</div>
 
@@ -321,6 +338,7 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 		</footer>
 	</section>
 </MainGridLayout>
+
 
 
 <style>
@@ -463,10 +481,10 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 		gap: 0.48rem;
 		min-height: 2.35rem;
 		padding: 0.55rem 0.8rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--line-divider));
+		border: 1px solid var(--glass-control-border);
 		border-radius: 0.65rem;
-		background: color-mix(in srgb, var(--card-bg) 90%, var(--primary) 10%);
-		color: var(--btn-content);
+		background: transparent;
+		color: var(--primary);
 		font-size: 0.78rem;
 		font-weight: 720;
 		text-decoration: none;
@@ -485,22 +503,22 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 
 	.profile-action--primary {
 		border-color: color-mix(in srgb, var(--primary) 65%, var(--line-divider));
-		background: var(--primary);
-		color: #fff;
+		background: transparent;
+		color: var(--primary);
 	}
 
 	.profile-action:hover,
 	.profile-action:focus-visible {
 		border-color: var(--primary);
-		background: color-mix(in srgb, var(--primary) 15%, var(--card-bg));
+		background: transparent;
 		transform: translateY(-1px);
 		outline: none;
 	}
 
 	.profile-action--primary:hover,
 	.profile-action--primary:focus-visible {
-		background: color-mix(in srgb, var(--primary) 86%, #0b5a8b);
-		color: #fff;
+		background: transparent;
+		color: var(--primary);
 	}
 
 	.profile-tabs {
@@ -625,11 +643,17 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 		border-top: 1px solid var(--line-divider);
 	}
 
+	.profile-readme.card-base {
+		position: relative;
+		z-index: 1;
+		overflow: visible;
+	}
+
 	.profile-readme__quote {
 		margin: 0 0 1.15rem;
 		padding: 0.8rem 1rem;
 		border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line-divider));
-		border-radius: 0 0.7rem 0.7rem 0;
+		border-radius: 0.7rem;
 		background: color-mix(in srgb, var(--primary) 7%, var(--card-bg));
 		color: var(--text-color);
 		font-size: clamp(1rem, 1.8vw, 1.18rem);
@@ -637,28 +661,248 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 		line-height: 1.7;
 	}
 
-	.profile-markdown {
+	:global(.profile-markdown) {
 		margin: 0;
 		color: var(--content-meta);
 	}
 
-	.profile-markdown :global(h1) {
+	:global(.profile-markdown h1) {
 		display: none;
 	}
 
-	.profile-markdown :global(p) {
-		max-width: 72ch;
+	:global(.profile-markdown p) {
+		max-width: none;
 		margin: 0.85rem 0 0;
 		font-size: 0.92rem;
 		line-height: 1.9;
 	}
 
-	.profile-markdown :global(p:first-of-type) {
+	:global(.profile-markdown p:first-of-type) {
 		margin-top: 0;
 	}
 
-	.profile-markdown :global(strong) {
+	:global(.profile-markdown strong) {
 		color: color-mix(in srgb, var(--primary) 80%, var(--text-color));
+	}
+
+	:global(.profile-markdown h2) {
+		margin: 1.45rem 0 0.55rem;
+		color: var(--text-color);
+		font-family: "KaiTi", "STKaiti", var(--font-lxgw-wenkai), serif;
+		font-size: 1.16rem;
+		font-weight: 780;
+		letter-spacing: 0.01em;
+		line-height: 1.55;
+		text-wrap: balance;
+	}
+
+	:global(.profile-markdown h3) {
+		margin: 0.9rem 0 0.35rem;
+		color: var(--text-color);
+		font-family: "KaiTi", "STKaiti", var(--font-lxgw-wenkai), serif;
+		font-size: 1rem;
+		font-weight: 760;
+		letter-spacing: 0.01em;
+		line-height: 1.55;
+	}
+
+	:global(.profile-markdown .profile-about-wordmark) {
+		--profile-popover-accent: #e4a2b5;
+		--profile-popover-soft: #ffe7ed;
+		--profile-popover-ink: #984b65;
+		position: relative;
+		display: inline-block;
+		border-radius: 0.18em;
+		padding-inline: 0.08em;
+		color: var(--profile-popover-ink);
+		background: color-mix(in srgb, var(--profile-popover-soft) 58%, transparent);
+		font-family: var(--font-active-sans, var(--font-sans, sans-serif));
+		font-size: 1.08em;
+		font-weight: 760;
+		letter-spacing: 0.035em;
+		text-decoration: underline wavy color-mix(in srgb, var(--profile-popover-accent) 90%, transparent);
+		text-decoration-thickness: 1.5px;
+		text-underline-offset: 0.2em;
+		cursor: help;
+	}
+
+	:global(.profile-markdown .profile-about-wordmark:focus-visible) {
+		outline: 2px solid color-mix(in srgb, var(--profile-popover-accent) 65%, transparent);
+		outline-offset: 3px;
+	}
+
+	:global(.profile-markdown .profile-author-trigger) {
+		--profile-popover-accent: #e4cb73;
+		--profile-popover-soft: #fff2c2;
+		--profile-popover-ink: #816714;
+		position: relative;
+		display: inline-block;
+		border-radius: 0.18em;
+		padding-inline: 0.08em;
+		color: var(--profile-popover-ink);
+		background: color-mix(in srgb, var(--profile-popover-soft) 58%, transparent);
+		font-weight: 780;
+		text-decoration: underline wavy color-mix(in srgb, var(--profile-popover-accent) 90%, transparent);
+		text-decoration-thickness: 1.5px;
+		text-underline-offset: 0.22em;
+		cursor: help;
+	}
+
+	:global(.profile-markdown .profile-author-trigger:focus-visible) {
+		border-radius: 0.15rem;
+		outline: 2px solid color-mix(in srgb, #7654c2 55%, transparent);
+		outline-offset: 3px;
+	}
+
+	:global(.profile-markdown .profile-author-tooltip) {
+		position: absolute;
+		z-index: 40;
+		top: calc(100% + 0.38rem);
+		left: 0;
+		display: flex;
+		align-items: center;
+		gap: 0.52rem;
+		width: min(16rem, calc(100vw - 2rem));
+		padding: 0.26rem 0.68rem;
+		border: 1px solid color-mix(in srgb, var(--profile-popover-accent, #8872e8) 30%, var(--line-divider));
+		border-radius: 0.78rem;
+		background: color-mix(in srgb, var(--card-bg) 96%, var(--profile-popover-soft, #8872e8) 4%);
+		box-shadow: 0 0.45rem 1.2rem color-mix(in srgb, var(--profile-popover-accent, #8872e8) 10%, transparent);
+		color: var(--text-color);
+		font-size: 0.8rem;
+		font-weight: 400;
+		font-family: var(--font-active-sans, var(--font-sans, sans-serif));
+		line-height: 1.45;
+		text-decoration: none;
+		white-space: normal;
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(-0.25rem);
+		transition: opacity 150ms ease, transform 150ms ease, visibility 150ms ease;
+		pointer-events: auto;
+	}
+
+	:global(.profile-markdown .profile-author-tooltip::before) {
+		position: absolute;
+		top: -0.3rem;
+		left: 1.1rem;
+		width: 0.52rem;
+		height: 0.52rem;
+		border-top: 1px solid color-mix(in srgb, var(--profile-popover-accent, #8872e8) 42%, var(--line-divider));
+		border-left: 1px solid color-mix(in srgb, var(--profile-popover-accent, #8872e8) 42%, var(--line-divider));
+		background: color-mix(in srgb, var(--card-bg) 92%, var(--profile-popover-soft, #8872e8) 8%);
+		content: "";
+		transform: rotate(45deg);
+	}
+
+	:global(.profile-markdown .profile-author-trigger:hover .profile-author-tooltip),
+	:global(.profile-markdown .profile-author-trigger:focus .profile-author-tooltip),
+	:global(.profile-markdown .profile-about-wordmark:hover .profile-author-tooltip),
+	:global(.profile-markdown .profile-about-wordmark:focus .profile-author-tooltip) {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
+	}
+
+	:global(.profile-markdown .profile-author-tooltip--site) {
+		left: 0;
+		right: auto;
+	}
+
+	:global(.profile-markdown .profile-author-tooltip--site::before) {
+		left: 1.75rem;
+		right: auto;
+	}
+
+	:global(.profile-markdown .profile-author-tooltip img) {
+		flex: 0 0 2.45rem;
+		width: 2.45rem;
+		height: 2.45rem;
+		border: 2px solid color-mix(in srgb, var(--profile-popover-accent, #8872e8) 45%, var(--card-bg));
+		border-radius: 50%;
+		object-fit: cover;
+	}
+
+	:global(.profile-markdown .profile-author-tooltip__copy) {
+		display: grid;
+		gap: 0.08rem;
+		min-width: 0;
+	}
+
+	:global(.profile-markdown .profile-author-tooltip__copy strong) {
+		color: var(--profile-popover-ink, var(--text-color));
+		font-size: 0.9rem;
+		font-weight: 780;
+	}
+
+	:global(.profile-markdown .profile-author-tooltip__role) {
+		color: color-mix(in srgb, var(--profile-popover-ink, var(--primary)) 90%, var(--text-color));
+		font-size: 0.72rem;
+		font-weight: 650;
+	}
+
+	:global(.profile-markdown .profile-author-tooltip__bio) {
+		color: color-mix(in srgb, var(--text-color) 72%, var(--content-meta));
+		font-size: 0.76rem;
+		line-height: 1.42;
+	}
+
+	:global(.profile-markdown .profile-about-accent) {
+		font-weight: 700;
+	}
+
+	:global(.profile-markdown .profile-about-accent--blue) {
+		color: color-mix(in srgb, #287fc3 86%, var(--text-color));
+	}
+
+	:global(.profile-markdown .profile-about-accent--violet) {
+		color: color-mix(in srgb, #875bd1 84%, var(--text-color));
+	}
+
+	:global(.profile-markdown .profile-about-accent--mint) {
+		color: color-mix(in srgb, #128b7d 86%, var(--text-color));
+	}
+
+	:global(.profile-markdown .profile-tech-pill) {
+		display: inline-block;
+		margin: 0 0.04em;
+		padding: 0.03em 0.4em;
+		border: 1px solid color-mix(in srgb, currentColor 17%, transparent);
+		border-radius: 0.45em;
+		font-size: 0.88em;
+		font-weight: 680;
+		line-height: 1.55;
+		white-space: nowrap;
+	}
+
+	:global(.profile-markdown .profile-tech-pill--astro) {
+		color: color-mix(in srgb, #7654c2 86%, var(--text-color));
+		background: color-mix(in srgb, #7654c2 9%, var(--card-bg));
+	}
+
+	:global(.profile-markdown .profile-tech-pill--svelte) {
+		color: color-mix(in srgb, #db542f 88%, var(--text-color));
+		background: color-mix(in srgb, #db542f 8%, var(--card-bg));
+	}
+
+	:global(.profile-markdown .profile-tech-pill--typescript) {
+		color: color-mix(in srgb, #287fc3 88%, var(--text-color));
+		background: color-mix(in srgb, #287fc3 8%, var(--card-bg));
+	}
+
+	:global(.profile-markdown .profile-tech-pill--tailwind) {
+		color: color-mix(in srgb, #128b9f 88%, var(--text-color));
+		background: color-mix(in srgb, #128b9f 8%, var(--card-bg));
+	}
+
+	:global(.profile-markdown .profile-tech-pill--waline) {
+		color: color-mix(in srgb, #168768 88%, var(--text-color));
+		background: color-mix(in srgb, #168768 8%, var(--card-bg));
+	}
+
+	:global(.profile-markdown .profile-tech-pill--umami) {
+		color: color-mix(in srgb, #bd6a20 88%, var(--text-color));
+		background: color-mix(in srgb, #bd6a20 8%, var(--card-bg));
 	}
 
 	.profile-section-heading {
@@ -676,49 +920,50 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 		font-size: 0.6rem;
 	}
 
-	.profile-section-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		color: var(--content-meta);
-		font-size: 0.72rem;
-		text-decoration: none;
-	}
-
-	.profile-section-link:hover,
-	.profile-section-link:focus-visible {
-		color: var(--primary);
-		outline: none;
-	}
-
 	.project-grid {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 0.7rem;
 	}
 
+	.project-continuation {
+		margin: 0.7rem 0 0;
+		color: var(--content-meta);
+		font-size: 0.7rem;
+		line-height: 1.65;
+		text-align: center;
+	}
+
+	.project-continuation strong {
+		margin-right: 0.2rem;
+		color: var(--text-color);
+		font-weight: 700;
+	}
+
 	.project-card {
 		display: grid;
-		grid-template-columns: 2rem minmax(0, 1fr) auto;
+		grid-template-columns: 2rem minmax(0, 1fr);
 		align-items: start;
 		gap: 0.7rem;
 		min-width: 0;
 		padding: 0.82rem;
-		border: 1px solid var(--line-divider);
+		border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--line-divider));
 		border-radius: 0.78rem;
-		background: color-mix(in srgb, var(--card-bg) 95%, var(--primary) 5%);
+		background: transparent;
 		color: inherit;
 		text-decoration: none;
-		transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+		transition: transform 180ms ease, border-color 180ms ease;
 	}
 
-	.project-card:hover,
-	.project-card:focus-visible {
+	.project-card:hover {
 		border-color: color-mix(in srgb, var(--primary) 48%, var(--line-divider));
-		background: color-mix(in srgb, var(--primary) 7%, var(--card-bg));
-		box-shadow: 0 0.55rem 1.25rem color-mix(in srgb, var(--primary) 10%, transparent);
 		transform: translateY(-2px);
-		outline: none;
+	}
+
+	.project-card:focus-visible {
+		border-color: var(--primary);
+		outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+		outline-offset: 2px;
 	}
 
 	.project-card__icon {
@@ -788,64 +1033,19 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 		line-height: 1.2;
 	}
 
-	.project-card__arrow,
-	.activity-arrow {
+	/* Let the open-source introduction use the full content width. */
+	.profile-foundation-copy {
+		max-width: 100%;
+		margin: 0.8rem 0 1rem;
 		color: var(--content-meta);
-		font-size: 0.95rem;
-		transition: color 180ms ease, transform 180ms ease;
+		font-size: 0.82rem;
+		line-height: 1.75;
 	}
 
-	.project-card:hover .project-card__arrow,
-	.project-card:focus-visible .project-card__arrow,
-	.activity-list li:hover .activity-arrow {
-		color: var(--primary);
-		transform: translate(0.1rem, -0.1rem);
-	}
-
-	.activity-list {
+	.profile-foundation-list {
 		display: grid;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.activity-list li {
-		display: grid;
-		grid-template-columns: 0.5rem 2.3rem minmax(0, 1fr) auto;
-		align-items: center;
-		gap: 0.6rem;
+		gap: 0.5rem;
 		min-width: 0;
-		padding: 0.72rem 0;
-		border-top: 1px solid var(--line-divider);
-	}
-
-	.activity-marker {
-		width: 0.42rem;
-		height: 0.42rem;
-		border-radius: 50%;
-		background: var(--primary);
-		box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--primary) 13%, transparent);
-	}
-
-	.activity-kind {
-		color: var(--content-meta);
-		font-size: 0.68rem;
-		font-weight: 720;
-	}
-
-	.activity-list a {
-		overflow: hidden;
-		color: var(--text-color);
-		font-size: 0.8rem;
-		text-decoration: none;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.activity-list a:hover,
-	.activity-list a:focus-visible {
-		color: var(--primary);
-		outline: none;
 	}
 
 	.profile-side-panel {
@@ -863,6 +1063,143 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 		color: var(--content-meta);
 		font-size: 0.76rem;
 		line-height: 1.75;
+	}
+
+	.profile-history-intro {
+		margin-top: 0.65rem !important;
+		font-size: 0.7rem !important;
+	}
+
+	.profile-history-more {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.15rem;
+		margin-left: auto;
+		color: var(--primary);
+		font-size: 0.64rem;
+		font-weight: 650;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+
+	.profile-history-more:hover,
+	.profile-history-more:focus-visible {
+		text-decoration: underline;
+		text-underline-offset: 0.18em;
+	}
+
+	.profile-history-list {
+		display: grid;
+		gap: 0.45rem;
+		margin: 0.75rem 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.profile-history-item {
+		display: grid;
+		grid-template-columns: 0.7rem minmax(0, 1fr);
+		align-items: stretch;
+		gap: 0.45rem;
+		min-width: 0;
+	}
+
+	.profile-history-date {
+		color: var(--primary);
+		font-size: 0.62rem;
+		font-weight: 730;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.profile-history-track {
+		position: relative;
+		display: flex;
+		justify-content: center;
+	}
+
+	.profile-history-track::before {
+		position: absolute;
+		top: -0.45rem;
+		bottom: -0.45rem;
+		width: 1px;
+		background: color-mix(in srgb, var(--primary) 35%, var(--line-divider));
+		content: "";
+	}
+
+	.profile-history-item:first-child .profile-history-track::before {
+		top: 0.62rem;
+	}
+
+	.profile-history-item:last-child .profile-history-track::before {
+		bottom: calc(100% - 0.62rem);
+	}
+
+	.profile-history-dot {
+		position: relative;
+		z-index: 1;
+		width: 0.52rem;
+		height: 0.52rem;
+		margin-top: 0.62rem;
+		border: 2px solid var(--card-bg);
+		border-radius: 50%;
+		background: var(--primary);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 32%, transparent);
+	}
+
+	.profile-history-dot--mint {
+		background: #159b8b;
+		box-shadow: 0 0 0 1px color-mix(in srgb, #159b8b 32%, transparent);
+	}
+
+	.profile-history-dot--gold {
+		background: #c48a08;
+		box-shadow: 0 0 0 1px color-mix(in srgb, #c48a08 32%, transparent);
+	}
+
+	.profile-history-card {
+		display: grid;
+		gap: 0.32rem;
+		min-width: 0;
+		padding: 0.52rem 0.25rem 0.58rem 0.05rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--primary) 14%, var(--line-divider));
+		color: inherit;
+		text-decoration: none;
+		transition: color 160ms ease;
+	}
+
+	.profile-history-card:hover,
+	.profile-history-card:focus-visible {
+		color: var(--primary);
+		outline: none;
+	}
+
+	.profile-history-item:last-child .profile-history-card {
+		border-bottom: 0;
+	}
+
+	.profile-history-card__heading {
+		display: grid;
+		grid-template-columns: 3.2rem minmax(0, 1fr);
+		align-items: baseline;
+		gap: 0.3rem;
+		min-width: 0;
+	}
+
+	.profile-history-card__heading strong {
+		min-width: 0;
+		color: var(--text-color);
+		font-size: 0.72rem;
+		font-weight: 720;
+		line-height: 1.45;
+		text-wrap: pretty;
+	}
+
+	.profile-history-card__summary {
+		display: block;
+		color: var(--content-meta);
+		font-size: 0.66rem;
+		line-height: 1.55;
 	}
 
 	.chip-list,
@@ -891,6 +1228,138 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 
 	.profile-side-note {
 		font-size: 0.7rem !important;
+	}
+
+	.profile-server-heading {
+		justify-content: flex-start;
+	}
+
+	.server-status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		flex: 0 0 auto;
+		margin-left: auto;
+		color: #159b62;
+		font-size: 0.66rem;
+		font-weight: 720;
+		white-space: nowrap;
+	}
+
+	.server-status > span:first-child {
+		width: 0.42rem;
+		height: 0.42rem;
+		border-radius: 999px;
+		background: #34c759;
+		box-shadow: 0 0 0 0.2rem rgb(52 199 89 / 14%);
+	}
+
+	.server-status[data-state="loading"] {
+		color: var(--content-meta);
+	}
+
+	.server-status[data-state="loading"] > span:first-child {
+		background: #f2b94b;
+		box-shadow: 0 0 0 0.2rem rgb(242 185 75 / 14%);
+	}
+
+	.server-status[data-state="offline"] {
+		color: #c5782e;
+	}
+
+	.server-status[data-state="offline"] > span:first-child {
+		background: #e19a45;
+		box-shadow: 0 0 0 0.2rem rgb(225 154 69 / 14%);
+	}
+
+	.server-stat-list {
+		display: grid;
+		gap: 0.35rem;
+		margin-top: 0.8rem;
+	}
+
+	.server-stat {
+		display: grid;
+		grid-template-columns: 1.45rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+		padding: 0.5rem 0.45rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--line-divider));
+		border-radius: 0.55rem;
+		background: transparent;
+	}
+
+	.server-stat__icon {
+		display: grid;
+		place-items: center;
+		width: 1.35rem;
+		height: 1.35rem;
+		border-radius: 0.42rem;
+		background: color-mix(in srgb, var(--primary) 11%, transparent);
+		color: var(--primary);
+		font-size: 0.9rem;
+	}
+
+	.server-stat__copy {
+		display: grid;
+		gap: 0.08rem;
+		min-width: 0;
+	}
+
+	.server-stat__copy strong {
+		overflow: hidden;
+		color: var(--text-color);
+		font-size: 0.72rem;
+		font-weight: 720;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.server-stat__copy small {
+		overflow: hidden;
+		color: var(--content-meta);
+		font-size: 0.62rem;
+		line-height: 1.35;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.server-stat__value {
+		color: var(--text-color);
+		font-size: 0.72rem;
+		font-weight: 780;
+		white-space: nowrap;
+	}
+
+	.server-stat__meter {
+		display: block;
+		grid-column: 2 / -1;
+		height: 0.24rem;
+		overflow: hidden;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, var(--line-divider));
+	}
+
+	.server-stat__meter > span {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border-radius: inherit;
+		background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 68%, #fff), var(--primary));
+		transform: scaleX(var(--meter-scale, 0));
+		transform-origin: left center;
+		transition: transform 420ms ease;
+	}
+
+	.server-stat[data-server-stat="system"] .server-stat__meter {
+		display: none;
+	}
+
+	.server-note {
+		margin-top: 0.7rem !important;
+		font-size: 0.62rem !important;
+		line-height: 1.5 !important;
 	}
 
 	.profile-connect-list {
@@ -936,7 +1405,7 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 		justify-content: space-between;
 		gap: 1rem;
 		padding: 1rem 1.2rem;
-		background: color-mix(in srgb, var(--primary) 5%, var(--card-bg));
+		background: transparent;
 	}
 
 	.profile-footer > div:first-child {
@@ -1085,8 +1554,7 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 		}
 
 		.profile-panel__meta,
-		.profile-section-note,
-		.profile-section-link {
+		.profile-section-note {
 			font-size: 0.62rem;
 		}
 
@@ -1095,7 +1563,7 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 			font-size: 0.92rem;
 		}
 
-		.profile-markdown :global(p) {
+		:global(.profile-markdown p) {
 			font-size: 0.86rem;
 			line-height: 1.8;
 		}
@@ -1110,7 +1578,7 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 		}
 
 		.project-card {
-			grid-template-columns: 1.85rem minmax(0, 1fr) auto;
+			grid-template-columns: 1.85rem minmax(0, 1fr);
 			gap: 0.58rem;
 			padding: 0.72rem;
 		}
@@ -1127,15 +1595,6 @@ const stack = ["React", "TypeScript", "Astro", "ExtendScript", "Shopee", "TikTok
 
 		.project-card__body > span:not(.project-card__tags) {
 			font-size: 0.7rem;
-		}
-
-		.activity-list li {
-			grid-template-columns: 0.45rem 2rem minmax(0, 1fr) auto;
-			gap: 0.45rem;
-		}
-
-		.activity-list a {
-			font-size: 0.74rem;
 		}
 
 		.profile-footer {

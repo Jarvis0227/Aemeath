@@ -1,10 +1,12 @@
 ---
 import { sakuraConfig } from "@/config";
+import { url } from "@/utils/url-utils";
 
 const config = sakuraConfig;
+const homeUrl = url("/");
 ---
 
-<script is:inline define:vars={{ sakuraConfig: config }}>
+<script is:inline define:vars={{ sakuraConfig: config, sakuraHomeUrl: homeUrl }}>
 		let windowWidth = window.innerWidth;
 		let windowHeight = window.innerHeight;
 
@@ -363,12 +365,13 @@ const config = sakuraConfig;
 		}
 
 		// 创建全局樱花管理器实例
-		let globalSakuraManager = null;
-		window.sakuraManager = null;
+		let globalSakuraManager = window.sakuraManager || null;
+		window.sakuraManager = globalSakuraManager;
 
 		// 初始化樱花特效
 		function initSakura(config) {
 			if (globalSakuraManager) {
+				window.sakuraManager = globalSakuraManager;
 				globalSakuraManager.updateConfig(config);
 			} else {
 				globalSakuraManager = new SakuraManager(config);
@@ -376,6 +379,52 @@ const config = sakuraConfig;
 				if (config.enable) {
 					globalSakuraManager.init();
 				}
+			}
+		}
+
+		function isSakuraHomePath(pathname) {
+			const normalizePath = (path) => path.replace(/\/+$/, '') || '/';
+			const homePath = new URL(sakuraHomeUrl, window.location.origin).pathname;
+			return normalizePath(pathname) === normalizePath(homePath);
+		}
+
+		function isSakuraHomePage() {
+			return isSakuraHomePath(window.location.pathname);
+		}
+
+		function isSakuraPreferenceEnabled() {
+			var storedEnabled = localStorage.getItem("sakuraEnabled");
+			return storedEnabled !== null ? storedEnabled === "true" : sakuraConfig.enable;
+		}
+
+		function syncSakuraForCurrentPage() {
+			const shouldEnable = isSakuraHomePage() && isSakuraPreferenceEnabled();
+			const manager = window.sakuraManager;
+
+			if (!window.sakuraInitialized || !manager) {
+				initSakura(Object.assign({}, sakuraConfig, { enable: shouldEnable }));
+				window.sakuraInitialized = true;
+				return;
+			}
+
+			manager.config.enable = shouldEnable;
+			if (shouldEnable) {
+				if (!manager.getIsRunning()) manager.init();
+			} else {
+				manager.stop();
+			}
+		}
+
+		function stopSakuraWhenLeavingHome(visit) {
+			try {
+				const targetPath = new URL(visit.to.url, window.location.href).pathname;
+				if (isSakuraHomePath(targetPath)) return;
+				const manager = window.sakuraManager;
+				if (!manager) return;
+				manager.config.enable = false;
+				manager.stop();
+			} catch {
+				syncSakuraForCurrentPage();
 			}
 		}
 
@@ -389,13 +438,8 @@ const config = sakuraConfig;
 			// 初始化樱花特效的函数
 			const setupSakura = () => {
 				if (window.sakuraInitialized) return;
-				// 检查用户是否在设置中关闭了樱花特效
-				var storedEnabled = localStorage.getItem("sakuraEnabled");
-				var isEnabled = storedEnabled !== null ? storedEnabled === "true" : sakuraConfig.enable;
-				// 创建管理器并根据用户偏好决定是否启动
-				var cfg = Object.assign({}, sakuraConfig, { enable: isEnabled });
-				initSakura(cfg);
-				window.sakuraInitialized = true;
+				// 只有主页会根据用户偏好启动樱花效果。
+				syncSakuraForCurrentPage();
 			};
 			
 			// 页面加载完成后初始化樱花特效
@@ -406,19 +450,33 @@ const config = sakuraConfig;
 			}
 		})();
 
+		// Swup/Astro 页面切换时同步路由状态，保证樱花只在主页运行。
+		if (!window.sakuraRouteSyncBound) {
+			window.sakuraRouteSyncBound = true;
+			[
+				"astro:page-load",
+				"astro:after-swap",
+				"swup:contentReplaced",
+				"swup:content:replace",
+				"swup:page:view",
+			].forEach((eventName) => document.addEventListener(eventName, syncSakuraForCurrentPage));
+			window.addEventListener("pageshow", syncSakuraForCurrentPage);
+
+			const bindSakuraSwupHooks = () => {
+				if (!window.swup?.hooks || window.sakuraSwupHooksBound) return;
+				window.sakuraSwupHooksBound = true;
+				window.swup.hooks.on("visit:start", stopSakuraWhenLeavingHome);
+				window.swup.hooks.on("content:replace", syncSakuraForCurrentPage);
+				window.swup.hooks.on("page:view", syncSakuraForCurrentPage);
+			};
+			document.addEventListener("swup:enable", bindSakuraSwupHooks);
+			bindSakuraSwupHooks();
+		}
+
 		// 监听设置面板的樱花特效切换事件
-		window.addEventListener('sakuraToggle', function(e) {
-			var enabled = e.detail.enabled;
-			var mgr = window.sakuraManager;
-			if (!mgr) return;
-			// 同步配置后再切换，确保关闭操作也能取消尚未完成的图片加载。
-			mgr.config.enable = enabled;
-			if (enabled && !mgr.getIsRunning()) {
-				mgr.config.enable = true;
-				mgr.init();
-			} else if (!enabled) {
-				mgr.stop();
-			}
+		window.addEventListener('sakuraToggle', function() {
+			// 设置只保存偏好；实际运行状态还要受当前页面限制。
+			syncSakuraForCurrentPage();
 		});
 
 		// 全屏友链漫游打开时暂停樱花 Canvas，避免与 WebGL 隧道争抢帧；关闭后恢复。

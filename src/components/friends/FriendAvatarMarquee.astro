@@ -1,0 +1,452 @@
+---
+import type { FriendLink } from "@/types/friendsConfig";
+
+interface Props {
+	friends: FriendLink[];
+	ownSiteUrl: string;
+}
+
+const { friends, ownSiteUrl } = Astro.props;
+const duration = Math.max(28, friends.length * 1.05);
+const normalizeFriendUrl = (url: string) =>
+	url.trim().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/+$/, "").toLowerCase();
+---
+
+<friend-avatar-marquee
+	class="friend-avatar-marquee"
+	role="navigation"
+	aria-label="友链头像快捷访问"
+	data-duration={duration}
+	style={`--friend-avatar-duration: ${duration}s`}
+>
+	<div class="friend-avatar-marquee-track">
+		{[0, 1].map((copy) => (
+			<div class="friend-avatar-marquee-group" aria-hidden={copy === 0 ? "true" : undefined}>
+				{friends.map((friend) => {
+					const isOwnSite = normalizeFriendUrl(friend.siteurl) === ownSiteUrl;
+					return (
+						<a
+							href={friend.siteurl}
+							target="_blank"
+							rel="noopener noreferrer"
+							aria-label={`${friend.title}，在新标签页打开友链`}
+							title={friend.title}
+							tabindex={copy === 0 ? -1 : undefined}
+							draggable="false"
+							data-umami-event={isOwnSite ? undefined : "friend-link-click"}
+							data-umami-event-site={isOwnSite ? undefined : friend.siteurl}
+						>
+							<img
+								src={friend.imgurl}
+								alt=""
+								width="40"
+								height="40"
+								data-friend-avatar
+								draggable="false"
+								loading="lazy"
+								decoding="async"
+							/>
+						</a>
+					);
+				})}
+			</div>
+		))}
+	</div>
+</friend-avatar-marquee>
+
+<script>
+	class FriendAvatarMarqueeElement extends HTMLElement {
+		private track: HTMLElement | null = null;
+		private group: HTMLElement | null = null;
+		private motionQuery: MediaQueryList | null = null;
+		private resizeObserver: ResizeObserver | null = null;
+		private intersectionObserver: IntersectionObserver | null = null;
+		private inViewport = true;
+		private frameId = 0;
+		private lastFrame = 0;
+		private groupWidth = 0;
+		private position = 0;
+		private velocity = 0;
+		private baseSpeed = 0;
+		private pointerId: number | null = null;
+		private startX = 0;
+		private lastX = 0;
+		private lastMoveTime = 0;
+		private flickVelocity = 0;
+		private dragging = false;
+		private hovered = false;
+		private keyboardFocus = false;
+		private settling = false;
+		private ignoreHoverUntilLeave = false;
+		private suppressClickUntil = 0;
+		private suppressTimer = 0;
+
+		connectedCallback() {
+			this.track = this.querySelector<HTMLElement>(".friend-avatar-marquee-track");
+			this.group = this.querySelector<HTMLElement>(".friend-avatar-marquee-group");
+			if (!this.track || !this.group) return;
+
+			this.motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+			this.hovered = this.matches(":hover");
+			this.addEventListener("pointerenter", this.handlePointerEnter);
+			this.addEventListener("pointerleave", this.handlePointerLeave);
+			this.addEventListener("pointerdown", this.handlePointerDown);
+			this.addEventListener("pointermove", this.handlePointerMove);
+			this.addEventListener("pointerup", this.handlePointerUp);
+			this.addEventListener("pointercancel", this.handlePointerCancel);
+			this.addEventListener("lostpointercapture", this.handleLostPointerCapture);
+			this.addEventListener("focusin", this.handleFocusIn);
+			this.addEventListener("focusout", this.handleFocusOut);
+			this.addEventListener("click", this.handleClick, true);
+			this.addEventListener("dragstart", this.handleDragStart);
+			this.motionQuery.addEventListener("change", this.syncMotionMode);
+			document.addEventListener("visibilitychange", this.updatePlayback);
+			this.resizeObserver = new ResizeObserver(this.measure);
+			this.resizeObserver.observe(this.group);
+			this.intersectionObserver = new IntersectionObserver(([entry]) => {
+				this.inViewport = entry.isIntersecting;
+				this.updatePlayback();
+			});
+			this.intersectionObserver.observe(this);
+			this.syncMotionMode();
+		}
+
+		disconnectedCallback() {
+			this.stopFrame();
+			window.clearTimeout(this.suppressTimer);
+			this.resizeObserver?.disconnect();
+			this.intersectionObserver?.disconnect();
+			this.pointerId = null;
+			this.dragging = false;
+			this.motionQuery?.removeEventListener("change", this.syncMotionMode);
+			document.removeEventListener("visibilitychange", this.updatePlayback);
+			this.removeEventListener("pointerenter", this.handlePointerEnter);
+			this.removeEventListener("pointerleave", this.handlePointerLeave);
+			this.removeEventListener("pointerdown", this.handlePointerDown);
+			this.removeEventListener("pointermove", this.handlePointerMove);
+			this.removeEventListener("pointerup", this.handlePointerUp);
+			this.removeEventListener("pointercancel", this.handlePointerCancel);
+			this.removeEventListener("lostpointercapture", this.handleLostPointerCapture);
+			this.removeEventListener("focusin", this.handleFocusIn);
+			this.removeEventListener("focusout", this.handleFocusOut);
+			this.removeEventListener("click", this.handleClick, true);
+			this.removeEventListener("dragstart", this.handleDragStart);
+		}
+
+		private measure = () => {
+			if (!this.group || this.motionQuery?.matches) return;
+			const width = this.group.getBoundingClientRect().width;
+			if (width <= 0) return;
+			this.position = this.groupWidth > 0 ? (this.position / this.groupWidth) * width : 0;
+			this.groupWidth = width;
+			this.baseSpeed = width / (Number(this.dataset.duration) || 60);
+			if (!this.settling) this.velocity = this.baseSpeed;
+			this.render();
+			this.updatePlayback();
+		};
+
+		private render() {
+			if (!this.track || this.groupWidth <= 0) return;
+			const x = this.position - this.groupWidth;
+			this.track.style.transform = `translate3d(${x}px, 0, 0)`;
+		}
+
+		private moveBy(delta: number) {
+			if (this.groupWidth <= 0) return;
+			this.position = ((this.position + delta) % this.groupWidth + this.groupWidth) % this.groupWidth;
+			this.render();
+		}
+
+		private shouldMove() {
+			return !this.motionQuery?.matches && !document.hidden && this.inViewport && this.groupWidth > 0 &&
+				this.pointerId === null && !this.keyboardFocus &&
+				(this.settling || this.ignoreHoverUntilLeave || !this.hovered);
+		}
+
+		private stopFrame() {
+			cancelAnimationFrame(this.frameId);
+			this.frameId = 0;
+			this.lastFrame = 0;
+		}
+
+		private updatePlayback = () => {
+			if (!this.shouldMove()) {
+				this.stopFrame();
+				return;
+			}
+			if (!this.frameId) this.frameId = requestAnimationFrame(this.tick);
+		};
+
+		private tick = (now: number) => {
+			this.frameId = 0;
+			if (!this.shouldMove()) return;
+			const dt = this.lastFrame ? Math.min((now - this.lastFrame) / 1000, 0.05) : 0;
+			this.lastFrame = now;
+
+			if (this.settling) {
+				if (this.velocity < 0) {
+					this.velocity = Math.min(0, this.velocity + 900 * dt);
+				} else {
+					this.velocity = this.baseSpeed + (this.velocity - this.baseSpeed) * Math.exp(-dt / 0.85);
+					if (Math.abs(this.velocity - this.baseSpeed) < 1) {
+						this.velocity = this.baseSpeed;
+						this.settling = false;
+					}
+				}
+			} else {
+				this.velocity = this.baseSpeed;
+			}
+
+			this.moveBy(this.velocity * dt);
+			this.updatePlayback();
+		};
+
+		private syncMotionMode = () => {
+			if (!this.track) return;
+			this.stopFrame();
+			if (this.motionQuery?.matches) {
+				const pointerId = this.pointerId;
+				this.pointerId = null;
+				if (pointerId !== null && this.hasPointerCapture(pointerId)) {
+					this.releasePointerCapture(pointerId);
+				}
+				this.dragging = false;
+				this.settling = false;
+				this.ignoreHoverUntilLeave = false;
+				this.track.style.removeProperty("animation");
+				this.track.style.removeProperty("transform");
+				this.classList.remove("is-dragging", "is-suppressing-click");
+				return;
+			}
+			this.track.style.animation = "none";
+			this.measure();
+		};
+
+		private handlePointerEnter = (event: PointerEvent) => {
+			if (event.pointerType === "mouse" || event.pointerType === "pen") {
+				this.hovered = true;
+				this.updatePlayback();
+			}
+		};
+
+		private handlePointerLeave = () => {
+			if (this.pointerId !== null && !this.dragging) this.pointerId = null;
+			this.hovered = false;
+			this.ignoreHoverUntilLeave = false;
+			this.updatePlayback();
+		};
+
+		private handlePointerDown = (event: PointerEvent) => {
+			if (this.motionQuery?.matches || this.pointerId !== null) return;
+			if (event.pointerType === "mouse" && event.button !== 0) return;
+			this.pointerId = event.pointerId;
+			this.startX = event.clientX;
+			this.lastX = event.clientX;
+			this.lastMoveTime = event.timeStamp;
+			this.flickVelocity = 0;
+			this.dragging = false;
+			this.keyboardFocus = false;
+			this.stopFrame();
+		};
+
+		private handlePointerMove = (event: PointerEvent) => {
+			if (event.pointerId !== this.pointerId) return;
+			if (!this.dragging && Math.abs(event.clientX - this.startX) < 5) return;
+			if (!this.dragging) {
+				this.dragging = true;
+				this.classList.add("is-dragging");
+				this.setPointerCapture(event.pointerId);
+			}
+			event.preventDefault();
+			const delta = event.clientX - this.lastX;
+			const elapsed = Math.max(1, event.timeStamp - this.lastMoveTime);
+			const instantVelocity = (delta / elapsed) * 1000;
+			this.flickVelocity = this.flickVelocity === 0
+				? instantVelocity
+				: this.flickVelocity * 0.55 + instantVelocity * 0.45;
+			this.lastX = event.clientX;
+			this.lastMoveTime = event.timeStamp;
+			this.moveBy(delta);
+		};
+
+		private endPointer(event: PointerEvent, cancelled: boolean) {
+			if (event.pointerId !== this.pointerId) return;
+			const wasDragging = this.dragging;
+			this.pointerId = null;
+			this.dragging = false;
+			if (this.hasPointerCapture(event.pointerId)) this.releasePointerCapture(event.pointerId);
+			this.classList.remove("is-dragging");
+
+			if (wasDragging) {
+				this.suppressClickUntil = performance.now() + 350;
+				this.classList.add("is-suppressing-click");
+				window.clearTimeout(this.suppressTimer);
+				this.suppressTimer = window.setTimeout(() => this.classList.remove("is-suppressing-click"), 350);
+			}
+			if (wasDragging && !cancelled) {
+				const recent = event.timeStamp - this.lastMoveTime < 90;
+				this.velocity = recent ? Math.max(-1400, Math.min(1400, this.flickVelocity)) : 0;
+				this.settling = true;
+				this.ignoreHoverUntilLeave = this.matches(":hover");
+			} else {
+				this.velocity = this.baseSpeed;
+				this.settling = false;
+				this.ignoreHoverUntilLeave = false;
+			}
+			this.updatePlayback();
+		}
+
+		private handlePointerUp = (event: PointerEvent) => this.endPointer(event, false);
+		private handlePointerCancel = (event: PointerEvent) => this.endPointer(event, true);
+		private handleLostPointerCapture = (event: PointerEvent) => this.endPointer(event, true);
+
+		private handleFocusIn = (event: FocusEvent) => {
+			if (!(event.target instanceof HTMLElement) || !event.target.matches(":focus-visible")) return;
+			this.keyboardFocus = true;
+			this.position = 0;
+			this.render();
+			this.updatePlayback();
+		};
+
+		private handleFocusOut = (event: FocusEvent) => {
+			if (this.contains(event.relatedTarget as Node | null)) return;
+			this.keyboardFocus = false;
+			this.updatePlayback();
+		};
+
+		private handleClick = (event: MouseEvent) => {
+			if (performance.now() >= this.suppressClickUntil) return;
+			event.preventDefault();
+			event.stopImmediatePropagation();
+		};
+
+		private handleDragStart = (event: DragEvent) => event.preventDefault();
+	}
+
+	if (!customElements.get("friend-avatar-marquee")) {
+		customElements.define("friend-avatar-marquee", FriendAvatarMarqueeElement);
+	}
+</script>
+
+<style>
+	.friend-avatar-marquee {
+		display: flex;
+		align-items: center;
+		height: 3rem;
+		margin: 0 0 0.8rem;
+		overflow: hidden;
+		mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
+		touch-action: pan-y;
+		user-select: none;
+		cursor: grab;
+	}
+
+	.friend-avatar-marquee.is-dragging,
+	.friend-avatar-marquee.is-dragging a {
+		cursor: grabbing;
+	}
+
+	.friend-avatar-marquee.is-dragging a,
+	.friend-avatar-marquee.is-suppressing-click a {
+		pointer-events: none;
+	}
+
+	.friend-avatar-marquee-track,
+	.friend-avatar-marquee-group {
+		display: flex;
+		align-items: center;
+		width: max-content;
+	}
+
+	.friend-avatar-marquee-track {
+		flex: none;
+		animation: friend-avatars-flow var(--friend-avatar-duration) linear infinite;
+		will-change: transform;
+	}
+
+	.friend-avatar-marquee-group {
+		flex: none;
+		gap: 0.75rem;
+		padding-right: 0.75rem;
+	}
+
+	.friend-avatar-marquee-group a {
+		display: block;
+		width: 2.5rem;
+		height: 2.5rem;
+		flex: none;
+		border-radius: 50%;
+		cursor: grab;
+		box-shadow: 0 2px 5px rgb(27 40 58 / 24%);
+		transition: box-shadow 180ms ease, transform 180ms ease;
+	}
+
+	@media (hover: hover) {
+		.friend-avatar-marquee-group a:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 4px 8px rgb(27 40 58 / 30%);
+		}
+	}
+
+	.friend-avatar-marquee-group a:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 3px;
+	}
+
+	.friend-avatar-marquee-group img {
+		width: 2.5rem;
+		height: 2.5rem;
+		display: block;
+		border-radius: 50%;
+		object-fit: cover;
+		-webkit-user-drag: none;
+	}
+
+	.friend-avatar-marquee:hover .friend-avatar-marquee-track,
+	.friend-avatar-marquee:has(a:focus-visible) .friend-avatar-marquee-track {
+		animation-play-state: paused;
+	}
+
+	.friend-avatar-marquee:has(a:focus-visible) .friend-avatar-marquee-track {
+		animation: none;
+		transform: translateX(-50%);
+	}
+
+	@keyframes friend-avatars-flow {
+		from { transform: translateX(-50%); }
+		to { transform: translateX(0); }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.friend-avatar-marquee {
+			overflow-x: auto;
+			mask-image: none;
+			touch-action: auto;
+			cursor: auto;
+		}
+
+		.friend-avatar-marquee-group a {
+			transition: none;
+		}
+
+		@media (hover: hover) {
+			.friend-avatar-marquee-group a:hover {
+				transform: none;
+			}
+		}
+
+		.friend-avatar-marquee-track {
+			animation: none;
+			transform: none;
+			will-change: auto;
+		}
+
+		.friend-avatar-marquee:has(a:focus-visible) .friend-avatar-marquee-track {
+			transform: none;
+		}
+
+		.friend-avatar-marquee-group:first-child {
+			display: none;
+		}
+	}
+</style>
