@@ -69,7 +69,7 @@ Defined in `src/content.config.ts`:
 
 ## Build Pipeline
 
-Multi-step: `scripts/generate-icons.js` → `scripts/generate-lqips.ts` → `astro build` → `pagefind --site dist`
+Multi-step: icon generation → LQIP generation → Astro build → existing font subsetting → page-specific WenKai subsets → Pagefind indexing. The exact command is in `package.json`; see `docs/font-performance.md` for font behavior and validation.
 
 Icons/LQIP data are generated into `src/constants/` and committed. Regenerate with `pnpm icons` or `pnpm lqips`.
 

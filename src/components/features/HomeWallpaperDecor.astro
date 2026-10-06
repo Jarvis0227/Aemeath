@@ -1,5 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
+import { getImage } from "astro:assets";
+import type { ImageMetadata } from "astro";
 import ImageWrapper from "@/components/common/ImageWrapper.astro";
 import { profileConfig, siteConfig } from "@/config";
 import { url } from "@/utils/url-utils";
@@ -118,8 +120,36 @@ const stickerImages = [
 	},
 ];
 
-const quoteSticker = stickerImages.find((sticker) => sticker.key === "quote");
-const floatingStickerImages = stickerImages.filter(
+// Keep the original assets, but ship a 360px rendition for these small stickers.
+// This remains sharp at 3x pixel density without downloading the full artwork.
+const stickerModules = import.meta.glob<ImageMetadata>(
+	[
+		"../../../public/images/home-stickers/*.webp",
+		"../../../public/monthly-2026-08/loading-girl.webp",
+	],
+	{ import: "default" },
+);
+const optimizedStickers = await Promise.all(stickerImages.map(async (sticker) => {
+	const sourcePath = `../../../public${sticker.src.replace(import.meta.env.BASE_URL, "/")}`;
+	const loadSource = stickerModules[sourcePath];
+	if (!loadSource) return { ...sticker, width: undefined, height: undefined };
+	const source = await loadSource();
+	const image = await getImage({
+		src: source,
+		width: Math.min(360, source.width),
+		format: "webp",
+		quality: 85,
+	});
+	return {
+		...sticker,
+		src: image.src,
+		width: image.attributes.width,
+		height: image.attributes.height,
+	};
+}));
+
+const quoteSticker = optimizedStickers.find((sticker) => sticker.key === "quote");
+const floatingStickerImages = optimizedStickers.filter(
 	(sticker) => sticker.key !== "quote",
 );
 const mobileStickerKeys = [
@@ -148,17 +178,25 @@ const mobileStickerKeys = [
 				data-home-wallpaper-mobile={mobileStickerKeys.includes(sticker.key) ? "true" : "false"}
 				data-home-wallpaper-sticker
 			>
+				<picture>
+					{!mobileStickerKeys.includes(sticker.key) && (
+						<source media="(max-width: 767px)" srcset="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" />
+					)}
 				<img
 					src={sticker.key === "anniversary-77" ? undefined : sticker.src}
 					data-national-day-src={
 						sticker.key === "anniversary-77" ? sticker.src : undefined
 					}
 					alt=""
+					width={sticker.width}
+					height={sticker.height}
 					style="width: 100% !important; height: auto !important; max-height: none !important; object-fit: contain !important;"
 					loading="eager"
+					fetchpriority="low"
 					decoding="async"
 					referrerpolicy="no-referrer"
 				/>
+				</picture>
 			</div>
 		))}
 

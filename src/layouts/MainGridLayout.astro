@@ -566,6 +566,12 @@ const hasMultipleImages =
                 return mode === WALLPAPER_BANNER || mode === 'fullscreen' || mode === 'overlay';
             }
 
+            function isWallpaperVisible() {
+                return !document.hidden &&
+                    !wallpaperWrapper?.classList.contains('non-home-wallpaper-hidden') &&
+                    isBannerWallpaperMode();
+            }
+
             function isFixedWallpaperSelected() {
                 var wrapper = document.getElementById('wallpaper-wrapper');
                 return !!(wrapper && wrapper.hasAttribute('data-selected-wallpaper'));
@@ -685,13 +691,18 @@ const hasMultipleImages =
 
             if (wallpaperWrapper) {
                 new MutationObserver(function() {
-                    if (wallpaperWrapper.classList.contains('non-home-wallpaper-hidden')) return;
+                    if (!isWallpaperVisible()) {
+                        stopAutoPlay();
+                        return;
+                    }
                     var slides = getVisibleSlides();
                     loadSlideImage(slides[getCurrentIndex(slides)]);
+                    if (!appState.isPlaying) startAutoPlay();
                 }).observe(wallpaperWrapper, { attributes: true, attributeFilter: ['class'] });
             }
 
             function prepareNextSlide() {
+                if (!isWallpaperVisible()) return;
                 var slides = getVisibleSlides();
                 if (slides.length <= 1) return;
                 var nextIndex = getCurrentIndex(slides) + 1;
@@ -782,7 +793,7 @@ const hasMultipleImages =
                 stopAutoPlay();
                 if (isFixedWallpaperSelected()) return;
                 if (!isCarouselEnabled()) return;
-                if (!isBannerWallpaperMode()) return;
+                if (!isWallpaperVisible()) return;
                 if (getVisibleSlides().length <= 1) return;
 
                 appState.isPlaying = true;
@@ -814,7 +825,7 @@ const hasMultipleImages =
                     (target instanceof HTMLElement && target.isContentEditable)
                 ) return;
                 if (isFixedWallpaperSelected()) return;
-                if (!isBannerWallpaperMode() || !isCarouselEnabled()) return;
+                if (!isWallpaperVisible() || !isCarouselEnabled()) return;
                 if (e.key === 'ArrowRight') {
                     var slides = getVisibleSlides();
                     changeToSlide(getCurrentIndex(slides) + 1);
@@ -834,6 +845,7 @@ const hasMultipleImages =
             }, { passive: true });
             document.addEventListener('touchend', function(e) {
                 if (isFixedWallpaperSelected()) return;
+                if (!isWallpaperVisible() || !isCarouselEnabled()) return;
                 appState.touchEndX = e.changedTouches[0].screenX;
                 var diff = appState.touchEndX - appState.touchStartX;
                 if (Math.abs(diff) > 50) {
@@ -844,6 +856,10 @@ const hasMultipleImages =
             }, { passive: true });
 
             // 事件监听
+            document.addEventListener('visibilitychange', function() {
+                if (isWallpaperVisible()) startAutoPlay();
+                else stopAutoPlay();
+            });
             window.addEventListener('bannerCarouselChange', function(e) {
                 if (isFixedWallpaperSelected()) {
                     stopAutoPlay();

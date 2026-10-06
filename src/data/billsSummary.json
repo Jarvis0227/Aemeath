@@ -220,7 +220,7 @@
       "balance": 0,
       "months": [
         {
-          "month": 1,
+          "month": "01",
           "income": 0,
           "expense": 0,
           "balance": 0

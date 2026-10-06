@@ -1,4 +1,5 @@
 ---
+import "@waline/client/style";
 import {
 	analyticsConfig,
 	commentConfig,
@@ -2822,8 +2823,8 @@ const aiWalineUserIds: number[] = [];
 			display: grid;
 			min-height: 0;
 			max-height: min(18rem, 45dvh);
-			grid-template-columns: repeat(7, minmax(0, 1fr));
-			grid-auto-rows: 2.75rem;
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+			grid-auto-rows: 3.5rem;
 			gap: 0.08rem;
 			padding: 0.32rem 0.25rem;
 			overflow: auto;
@@ -2840,8 +2841,9 @@ const aiWalineUserIds: number[] = [];
 			box-sizing: border-box;
 			display: grid;
 			width: 100%;
-			height: 2.75rem;
+			height: 3.5rem;
 			margin: 0;
+			padding: 0.25rem;
 			border-radius: 0.55rem;
 			line-height: 1;
 			place-items: center;
@@ -2854,8 +2856,8 @@ const aiWalineUserIds: number[] = [];
 		}
 
 		#waline .wl-emoji-popup > .wl-tab-wrapper .wl-emoji {
-			width: 2.2rem;
-			height: 2.2rem;
+			width: 3rem;
+			height: 3rem;
 			max-width: 100%;
 			max-height: 100%;
 			object-fit: contain;
@@ -2897,17 +2899,17 @@ const aiWalineUserIds: number[] = [];
 		}
 
 		#waline .waline-lottie-picker__grid {
-			grid-template-columns: repeat(7, minmax(0, 1fr));
-			grid-auto-rows: 2.75rem;
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+			grid-auto-rows: 3.5rem;
 		}
 
 		#waline .waline-lottie-picker__item {
-			min-height: 2.75rem;
+			min-height: 3.5rem;
 		}
 
 		#waline .waline-lottie-picker__preview {
-			width: 2.35rem;
-			height: 2.35rem;
+			width: 3rem;
+			height: 3rem;
 		}
 
 		#waline [data-waline] > .wl-cards {
@@ -2928,7 +2930,7 @@ const aiWalineUserIds: number[] = [];
 	@media (max-width: 360px) {
 		#waline .wl-emoji-popup > .wl-tab-wrapper,
 		#waline .waline-lottie-picker__grid {
-			grid-template-columns: repeat(6, minmax(0, 1fr));
+			grid-template-columns: repeat(5, minmax(0, 1fr));
 		}
 	}
 

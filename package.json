@@ -1,12 +1,12 @@
 {
   "name": "aemeath",
   "type": "module",
-  "version": "4.1.6",
+  "version": "4.1.7",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
     "check": "astro check",
-		"build": "node scripts/generate-icons.js && npx tsx scripts/generate-lqips.ts && astro build && npx tsx scripts/subset-fonts.ts && pagefind --site dist",
+		"build": "node scripts/generate-icons.js && npx tsx scripts/generate-lqips.ts && astro build && npx tsx scripts/subset-fonts.ts && npx tsx scripts/optimize-wenkai-fonts.ts && pagefind --site dist",
     "preview": "astro preview",
     "astro": "astro",
     "type-check": "tsc --noEmit --isolatedDeclarations",

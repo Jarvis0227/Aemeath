@@ -58,10 +58,10 @@ const initialStyle = initialHome
 	<div class="home-portfolio-intro__backdrop"></div>
 	<div class="home-portfolio-intro__scenes">
 		<picture>
-			<source media="(max-width: 779px)" srcset={initialHome ? defaultMobileTopBanner.src : undefined} />
+			<source media="(max-width: 779px)" data-banner-src={defaultMobileTopBanner.src} />
 			<img
 				class="home-portfolio-intro__scene home-portfolio-intro__scene--top"
-				src={initialHome ? defaultTopBanner.src : undefined}
+				data-banner-src={defaultTopBanner.src}
 				data-banner-id={defaultTopBanner.id}
 				alt=""
 				aria-hidden="true"
@@ -70,10 +70,10 @@ const initialStyle = initialHome
 			/>
 		</picture>
 		<picture>
-			<source media="(max-width: 779px)" srcset={initialHome ? defaultMobileBottomBanner.src : undefined} />
+			<source media="(max-width: 779px)" data-banner-src={defaultMobileBottomBanner.src} />
 			<img
 				class="home-portfolio-intro__scene home-portfolio-intro__scene--bottom"
-				src={initialHome ? defaultBottomBanner.src : undefined}
+				data-banner-src={defaultBottomBanner.src}
 				data-banner-id={defaultBottomBanner.id}
 				alt=""
 				aria-hidden="true"
@@ -90,7 +90,7 @@ const initialStyle = initialHome
 	</div>
 	<img
 		class="home-portfolio-intro__character"
-		src={initialHome ? defaultCharacter.src : undefined}
+		data-character-src={defaultCharacter.src}
 		data-character-id={defaultCharacter.id}
 		alt=""
 		aria-hidden="true"
@@ -198,6 +198,8 @@ const initialStyle = initialHome
 			const banner = getSelectedBanner(position, storageKey, defaultId, mobileDefaultId);
 			const image = introElement?.querySelector(`.home-portfolio-intro__scene--${position}`);
 			if (!banner || !(image instanceof HTMLImageElement)) return;
+			const source = image.closest("picture")?.querySelector("source");
+			if (source && source.getAttribute("srcset") !== banner.src) source.setAttribute("srcset", banner.src);
 			if (image.getAttribute("src") !== banner.src) image.setAttribute("src", banner.src);
 			image.setAttribute("data-banner-id", banner.id);
 		};
@@ -376,6 +378,9 @@ const initialStyle = initialHome
 				return;
 			}
 
+			syncCharacter(intro);
+			syncBanners(intro);
+
 			// Count a normal visit as soon as playback starts, so returning from another page never replays it.
 			// Settings previews intentionally leave the visit marker untouched.
 			if (markSeen) markIntroSeen();
@@ -408,7 +413,7 @@ const initialStyle = initialHome
 			const intro = document.getElementById("home-portfolio-intro");
 			if (!intro) return;
 			const onHome = isHomePath();
-			if (onHome) {
+			if (onHome && (intro.classList.contains("is-preparing") || intro.classList.contains("is-playing"))) {
 				syncCharacter(intro);
 				syncBanners(intro);
 			}
@@ -442,7 +447,7 @@ const initialStyle = initialHome
 		window.addEventListener("home-portfolio-intro-settings-change", (event) => {
 			const intro = document.getElementById("home-portfolio-intro");
 			if (!intro) return;
-			if (isHomePath()) {
+			if (isHomePath() && (intro.classList.contains("is-preparing") || intro.classList.contains("is-playing"))) {
 				syncCharacter(intro);
 				syncBanners(intro);
 			}
