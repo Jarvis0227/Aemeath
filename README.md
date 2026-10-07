@@ -8,7 +8,7 @@
   </p>
   <p>
     <img src="https://img.shields.io/badge/Astro-7-BC52EE?logo=astro&logoColor=white" alt="Astro 7">
-    <img src="https://img.shields.io/badge/Aemeath-V4.1.8-4A67D6" alt="Aemeath V4.1.8">
+    <img src="https://img.shields.io/badge/Aemeath-V4.1.9-4A67D6" alt="Aemeath V4.1.9">
     <img src="https://img.shields.io/badge/Svelte-UI-FF3E00?logo=svelte&logoColor=white" alt="Svelte">
     <img src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=node.js&logoColor=white" alt="Node.js 22+">
     <img src="https://img.shields.io/badge/pnpm-%3E%3D9-F69220?logo=pnpm&logoColor=white" alt="pnpm 9+">
