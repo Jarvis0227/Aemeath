@@ -1,8 +1,9 @@
 /**
  * Keep WenKai's appearance and full character coverage, but serve small subsets.
  * Runs after Astro so inline UI/config strings and rendered content are included.
- * Shared homepage/UI characters reuse the same files across all routes; each
- * page adds only its remaining characters. Original faces cover dynamic text.
+ * One stable stylesheet keeps font definitions available during Swup visits.
+ * Homepage/UI characters stay separate; other site text uses small shared chunks.
+ * Original faces cover dynamic text outside the generated subsets.
  */
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
@@ -154,6 +155,23 @@ async function main() {
 		home + (await clientStrings(home)) + translation + ascii,
 	);
 	const commonSet = new Set(commonCodes);
+	const htmlFiles = await glob(`${DIST}/**/*.html`);
+	const htmlPages = await Promise.all(
+		htmlFiles.map(async (file) => ({
+			file,
+			html: await fs.readFile(file, "utf8"),
+		})),
+	);
+	const siteCodes = new Set(commonCodes);
+	for (const { html } of htmlPages) {
+		if (!sources.some((source) => html.includes(path.basename(source.file))))
+			continue;
+		for (const code of characterCodes(html + (await clientStrings(html))))
+			siteCodes.add(code);
+	}
+	const extraCodes = [...siteCodes]
+		.filter((code) => !commonSet.has(code))
+		.sort((a, b) => a - b);
 	const buffers = new Map<string, Buffer>();
 	const subsets = new Map<string, { src: string; ranges: string }>();
 	let subsetBytes = 0;
@@ -189,60 +207,62 @@ async function main() {
 		return result;
 	}
 
-	let pages = 0;
-	for (const htmlFile of await glob(`${DIST}/**/*.html`)) {
-		let html = await fs.readFile(htmlFile, "utf8");
-		let changed = false;
-		for (const source of sources) {
-			const name = path.basename(source.file);
-			if (!html.includes(name)) continue;
-			const pageCodes = characterCodes(
-				html + (await clientStrings(html)),
-			).filter((code) => !commonSet.has(code));
-			let css = source.css;
-			for (const face of source.faces) {
-				const common = commonCodes.filter((code) =>
-					inRanges(code, face.ranges),
-				);
-				const extra = pageCodes.filter((code) => inRanges(code, face.ranges));
-				const covered = [...common, ...extra].sort((a, b) => a - b);
-				const fallback = subtractCodes(face.ranges, covered);
-				const parts: string[] = [];
-				for (const codes of [common, extra]) {
-					if (!codes.length) continue;
-					const generated = await subset(face, codes);
-					parts.push(
-						face.block
-							.replace(face.src, generated.src)
-							.replace(
-								/unicode-range:\s*[^;}]+/,
-								`unicode-range:${generated.ranges}`,
-							),
-					);
-				}
-				if (fallback.length) {
-					parts.push(
-						face.block.replace(
+	const replacements = new Map<string, string>();
+	for (const source of sources) {
+		const name = path.basename(source.file);
+		if (!htmlPages.some(({ html }) => html.includes(name))) continue;
+		let css = source.css;
+		for (const face of source.faces) {
+			const common = commonCodes.filter((code) => inRanges(code, face.ranges));
+			const extra = extraCodes.filter((code) => inRanges(code, face.ranges));
+			const covered = [...common, ...extra].sort((a, b) => a - b);
+			const fallback = subtractCodes(face.ranges, covered);
+			const parts: string[] = [];
+			const chunks = [common];
+			// Unicode ranges keep non-home chunks unloaded until their text is used.
+			// Bounded chunks avoid turning a rare character into a large download.
+			for (let offset = 0; offset < extra.length; offset += 128)
+				chunks.push(extra.slice(offset, offset + 128));
+			for (const codes of chunks) {
+				if (!codes.length) continue;
+				const generated = await subset(face, codes);
+				parts.push(
+					face.block
+						.replace(face.src, generated.src)
+						.replace(
 							/unicode-range:\s*[^;}]+/,
-							`unicode-range:${formatRanges(fallback)}`,
+							`unicode-range:${generated.ranges}`,
 						),
-					);
-				}
-				css = css.replace(face.block, parts.join(""));
+				);
 			}
-			const newName = `wenkai.${hash(css)}.css`;
-			await fs.writeFile(path.join(ASSETS, newName), css);
-			// Preserve the configured base path in the original stylesheet URL.
-			html = html.replaceAll(name, newName);
-			changed = true;
+			if (fallback.length) {
+				parts.push(
+					face.block.replace(
+						/unicode-range:\s*[^;}]+/,
+						`unicode-range:${formatRanges(fallback)}`,
+					),
+				);
+			}
+			css = css.replace(face.block, parts.join(""));
 		}
+		const newName = `wenkai.${hash(css)}.css`;
+		await fs.writeFile(path.join(ASSETS, newName), css);
+		replacements.set(name, newName);
+	}
+	let pages = 0;
+	for (const { file, html: originalHtml } of htmlPages) {
+		let html = originalHtml;
+		// Preserve the configured base path in the original stylesheet URL.
+		for (const [name, newName] of replacements)
+			html = html.replaceAll(name, newName);
+		const changed = html !== originalHtml;
 		if (changed) {
-			await fs.writeFile(htmlFile, html);
+			await fs.writeFile(file, html);
 			pages += 1;
 		}
 	}
 	console.log(
-		`WenKai subsetting: ${pages} pages, ${commonCodes.length} shared characters, ${subsets.size} reusable subsets (${(subsetBytes / 1024).toFixed(1)} KiB across the entire site). Original files retained for dynamic characters.`,
+		`WenKai subsetting: ${pages} pages, ${replacements.size} stable stylesheets, ${commonCodes.length} homepage characters, ${subsets.size} reusable subsets (${(subsetBytes / 1024).toFixed(1)} KiB across the entire site). Original files retained for dynamic characters.`,
 	);
 }
 

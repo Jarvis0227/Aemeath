@@ -12,7 +12,7 @@ export const siteConfig: SiteConfig = {
 	subtitle: "物物而不物于物，念念而不念于念",
 
 	// Aemeath 主题版本
-	themeVersion: "V4.1.7",
+	themeVersion: "V4.1.8",
 
 	// 站点 URL
 	site_url: "https://rainzt.cn",

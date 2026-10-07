@@ -88,13 +88,6 @@ const navbarTitleFontVar = fontConfig.enable
 )}
 
 <script>
-	if (document.fonts && typeof document.fonts.ready !== "undefined") {
-		document.fonts.ready
-			.then(() => {
-				document.dispatchEvent(new CustomEvent("fontsLoaded"));
-			})
-			.catch((error) => {
-				console.warn("Font loading failed:", error);
-			});
-	}
+	import { setupFontNavigation } from "@/scripts/font-navigation";
+	setupFontNavigation();
 </script>
