@@ -3831,12 +3831,13 @@ import {
 	};
 
 	const friendApplicationTemplate = [
-		"站点名称：",
-		"站点描述：",
-		"站点链接：",
-		"头像链接：",
-		"主页截图：",
-		"RSS地址：",
+		"备注：",
+		"站点名称：您的站点名称",
+		"站点描述：您的站点描述",
+		"站点链接：您的站点链接",
+		"头像链接：您的站点头像",
+		"主页截图：您的主页截图",
+		"RSS地址：您的 RSS 地址",
 	].join("\n");
 	let applicationCleanup: (() => void) | undefined;
 	const startFriendApplication = (root: HTMLElement) => {
