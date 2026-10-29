@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import { Icon } from "astro-icon/components";
 import { commentConfig } from "@/config/commentConfig";
 import Key from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
@@ -55,12 +56,17 @@ let commentService: string = commentConfig?.type || "none";
         <p class="text-sm text-(--content-meta) ml-4">{i18n(Key.commentSubtitle)}</p>
       </div>
       {path.replace(/\/+$/, "") === "/friends" && commentService === "waline" && (
-        <button type="button" class="friend-comment-quick-apply" data-friends-application>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 3 5 13h6l-.5 8L19 11h-6l.5-8Z" />
-          </svg>
-          快速申请
-        </button>
+        <div class="friend-comment-quick-apply">
+          <a
+            href="#post-comments"
+            class="friends-apply-button"
+            data-friends-application
+            aria-label="申请友链，前往评论区提交申请"
+          >
+            <Icon is:inline name="material-symbols:link-rounded" aria-hidden="true" />
+            <span>申请友链</span>
+          </a>
+        </div>
       )}
       <!-- 评论内容区域 -->
       <div class="comment-section-content relative z-10 pl-2 pr-2">
@@ -90,26 +96,8 @@ let commentService: string = commentConfig?.type || "none";
     z-index: 10;
     top: 2rem;
     left: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    min-height: 2.35rem;
-    padding: 0.4rem 0.85rem;
-    border: 1px solid color-mix(in oklab, var(--primary) 28%, transparent);
-    border-radius: 0.75rem;
-    background: color-mix(in oklab, var(--primary) 7%, var(--card-bg));
-    color: var(--primary);
-    font-size: 0.875rem;
-    font-weight: 700;
-    line-height: 1;
-    cursor: pointer;
     transform: translateX(-50%);
-    transition: background-color 180ms ease, border-color 180ms ease;
   }
-  .friend-comment-quick-apply svg { width: 1rem; height: 1rem; }
-  .friend-comment-quick-apply:hover { background: color-mix(in oklab, var(--primary) 14%, var(--card-bg)); border-color: var(--primary); }
-  .friend-comment-quick-apply:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   @media (max-width: 580px) {
     .friend-comment-quick-apply { position: relative; top: auto; left: auto; margin: 0 0 0.75rem; transform: none; }
   }
