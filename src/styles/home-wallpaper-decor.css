@@ -1124,7 +1124,9 @@ html.is-page-transitioning #wallpaper-wrapper.homepage-fullscreen-decor {
 		display: none;
 	}
 
-	.home-wallpaper-sticker[data-home-wallpaper-mobile="true"] {
+	.home-wallpaper-sticker[data-home-wallpaper-mobile="true"]:not(
+		.home-wallpaper-sticker--anniversary-77
+	) {
 		display: grid;
 		width: clamp(44px, 14vw, 64px);
 	}

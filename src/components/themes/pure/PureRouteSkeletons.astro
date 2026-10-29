@@ -1,0 +1,103 @@
+---
+const layouts = [
+	"archive",
+	"categories",
+	"tags",
+	"moments",
+	"tools",
+	"guestbook",
+	"about",
+	"gallery",
+	"album",
+	"media",
+	"bills",
+	"sponsor",
+	"lottie",
+	"search",
+	"changelog",
+	"rss",
+	"portal",
+	"error",
+];
+---
+
+{layouts.map((layout) => (
+	<template data-skeleton-template={layout}>
+		<div class={`pure-loading__shape pure-loading__route pure-loading__route--${layout}`} data-shape={layout}>
+			<div class="pure-skeleton pure-skeleton--back"></div>
+			<div class="pure-skeleton pure-skeleton--heading"></div>
+			{layout === "archive" && <>
+				<div class="pure-loading__filter-row">{["5rem", "7rem", "6rem"].map(width => <span class="pure-skeleton" style={`width: ${width}`}></span>)}</div>
+				{[0, 1].map(() => <div class="pure-loading__timeline"><div class="pure-skeleton pure-loading__year"></div>{[0, 1, 2, 3, 4].map(() => <div class="pure-loading__archive-row"><span class="pure-skeleton"></span><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div>)}</div>)}
+			</>}
+			{layout === "categories" && <>
+				<div class="pure-skeleton pure-loading__intro"></div>
+				<div class="pure-loading__category-grid">{Array.from({ length: 9 }, () => <div class="pure-loading__category"><span class="pure-skeleton pure-skeleton--avatar"></span><div class="pure-loading__text"><div class="pure-skeleton" style="width: 60%"></div><div class="pure-skeleton" style="width: 40%"></div></div></div>)}</div>
+			</>}
+			{layout === "tags" && <>
+				<div class="pure-skeleton pure-loading__intro"></div>
+				<div class="pure-loading__tag-cloud">{Array.from({ length: 32 }, (_, index) => <span class="pure-skeleton" style={`width: ${4 + index % 5}rem`}></span>)}</div>
+				<div class="pure-skeleton pure-loading__section-title"></div>
+				<div class="pure-loading__tag-rankings">{Array.from({ length: 6 }, () => <div class="pure-loading__archive-row"><span class="pure-skeleton"></span><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div>)}</div>
+			</>}
+			{layout === "moments" && <>
+				<div class="pure-skeleton pure-loading__intro"></div>
+				<div class="pure-loading__random-card"><div class="pure-skeleton" style="width: 6rem"></div><div class="pure-skeleton pure-skeleton--title" style="width: 70%"></div><div class="pure-skeleton" style="width: 45%"></div></div>
+				<div class="pure-skeleton pure-skeleton--search"></div>
+				<div class="pure-loading__filter-row">{[0, 1, 2, 3].map(() => <span class="pure-skeleton"></span>)}</div>
+				<div class="pure-loading__moments-grid">{[0, 1, 2, 3].map(() => <div class="pure-loading__moment-card"><div class="pure-loading__author"><span class="pure-skeleton"></span><div class="pure-loading__text"><div class="pure-skeleton"></div><div class="pure-skeleton" style="width: 60%"></div></div></div><div class="pure-skeleton pure-loading__moment-cover"></div><div class="pure-loading__text"><div class="pure-skeleton" style="width: 80%"></div><div class="pure-skeleton"></div><div class="pure-skeleton" style="width: 65%"></div></div></div>)}</div>
+			</>}
+			{layout === "tools" && <>
+				<div class="pure-loading__tools-intro"><div class="pure-skeleton pure-loading__intro"></div><div class="pure-loading__tool-totals">{[0, 1, 2].map(() => <span class="pure-skeleton"></span>)}</div></div>
+				<div class="pure-skeleton pure-loading__section-title"></div>
+				<div class="pure-skeleton pure-loading__intro"></div>
+				<div class="pure-loading__tool-grid">{Array.from({ length: 6 }, () => <div class="pure-loading__tool"><div class="pure-skeleton pure-loading__tool-icon"></div><div class="pure-loading__text"><div class="pure-skeleton" style="width: 78%"></div><div class="pure-skeleton"></div><div class="pure-skeleton" style="width: 62%"></div></div><div class="pure-loading__tool-platforms">{[0, 1, 2].map(() => <span class="pure-skeleton"></span>)}</div></div>)}</div>
+			</>}
+			{layout === "guestbook" && <>
+				<div class="pure-skeleton pure-loading__intro"></div>
+				<div class="pure-loading__comment-form"><div class="pure-loading__comment-fields">{[0, 1, 2].map(() => <span class="pure-skeleton"></span>)}</div><div class="pure-loading__comment-editor"><div class="pure-skeleton" style="width: 10rem"></div></div><div class="pure-loading__comment-actions"><span class="pure-skeleton"></span><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div></div>
+				<div class="pure-skeleton pure-loading__section-title"></div>
+				{[0, 1, 2].map(() => <div class="pure-loading__comment-row"><span class="pure-skeleton pure-skeleton--avatar"></span><div class="pure-loading__text"><div class="pure-skeleton" style="width: 8rem"></div><div class="pure-skeleton"></div><div class="pure-skeleton" style="width: 65%"></div></div></div>)}
+			</>}
+			{layout === "about" && <>
+				<div class="pure-loading__profile"><span class="pure-skeleton"></span><div class="pure-loading__text"><div class="pure-skeleton pure-skeleton--title" style="width: 12rem"></div><div class="pure-skeleton" style="width: 60%"></div><div class="pure-skeleton"></div><div class="pure-skeleton" style="width: 50%"></div></div></div>
+				<div class="pure-loading__profile-grid"><div class="pure-loading__panel"><div class="pure-skeleton pure-loading__section-title"></div>{[0, 1, 2].map(() => <div class="pure-loading__text pure-loading__paragraph"><div class="pure-skeleton"></div><div class="pure-skeleton" style="width: 94%"></div><div class="pure-skeleton" style="width: 65%"></div></div>)}</div><div class="pure-loading__profile-side">{[0, 1, 2].map(() => <div class="pure-loading__panel"><div class="pure-skeleton" style="width: 7rem"></div><div class="pure-loading__tag-cloud">{[0, 1, 2, 3].map(() => <span class="pure-skeleton" style="width: 4rem"></span>)}</div></div>)}</div></div>
+			</>}
+			{["gallery", "album", "media", "lottie"].includes(layout) && <>
+				{layout === "album" && <div class="pure-skeleton pure-loading__album-cover"></div>}
+				<div class="pure-skeleton pure-loading__intro"></div>
+				<div class="pure-skeleton pure-skeleton--search"></div>
+				<div class="pure-loading__filter-row">{[0, 1, 2, 3].map(() => <span class="pure-skeleton"></span>)}</div>
+				{layout === "media" && <div class="pure-loading__summary">{[0, 1, 2, 3].map(() => <div class="pure-loading__metric"><div class="pure-skeleton"></div><div class="pure-skeleton pure-loading__metric-value"></div></div>)}</div>}
+				<div class={`pure-loading__visual-grid pure-loading__visual-grid--${layout}`}>{Array.from({ length: layout === "media" ? 8 : 6 }, () => <div class="pure-loading__visual-card"><div class="pure-skeleton pure-loading__visual-cover"></div><div class="pure-skeleton" style="width: 70%"></div><div class="pure-skeleton" style="width: 45%"></div></div>)}</div>
+			</>}
+			{layout === "bills" && <>
+				<div class="pure-loading__bill-grid">{[0, 1].map(() => <div class="pure-loading__panel"><div class="pure-skeleton" style="width: 8rem"></div><div class="pure-skeleton pure-loading__bill-value"></div><div class="pure-loading__filter-row"><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div></div>)}</div>
+				<div class="pure-loading__bill-grid">{[0, 1].map(() => <div class="pure-loading__panel"><div class="pure-skeleton" style="width: 8rem"></div><div class="pure-skeleton pure-loading__chart"></div></div>)}</div>
+			</>}
+			{layout === "sponsor" && <>
+				<div class="pure-skeleton pure-loading__intro"></div>
+				<div class="pure-loading__sponsor-grid">{[0, 1].map(() => <div class="pure-loading__panel"><div class="pure-skeleton pure-loading__sponsor-title"></div><div class="pure-skeleton pure-loading__qr"></div><div class="pure-skeleton pure-loading__sponsor-title"></div></div>)}</div>
+				<div class="pure-skeleton pure-loading__section-title"></div>
+				{[0, 1, 2].map(() => <div class="pure-loading__archive-row"><span class="pure-skeleton"></span><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div>)}
+			</>}
+			{layout === "search" && <>
+				<div class="pure-skeleton pure-loading__intro"></div>
+				<div class="pure-skeleton pure-loading__search-field"></div>
+				<div class="pure-loading__filter-row">{[0, 1, 2, 3, 4].map(() => <span class="pure-skeleton"></span>)}</div>
+				<div class="pure-skeleton pure-loading__search-hint"></div>
+			</>}
+			{layout === "changelog" && <>
+				<div class="pure-skeleton pure-loading__intro"></div>
+				{[0, 1, 2].map(() => <div class="pure-loading__release"><div class="pure-loading__release-date"><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div><div class="pure-loading__text"><div class="pure-skeleton pure-skeleton--title" style="width: 65%"></div><div class="pure-skeleton"></div><div class="pure-skeleton" style="width: 85%"></div><div class="pure-skeleton" style="width: 70%"></div></div></div>)}
+			</>}
+			{layout === "rss" && <>
+				<div class="pure-loading__rss-intro"><span class="pure-skeleton"></span><div class="pure-skeleton" style="width: min(100%, 30rem)"></div></div>
+				<div class="pure-skeleton pure-loading__search-field"></div>
+				<div class="pure-skeleton pure-loading__section-title"></div>
+				{[0, 1, 2].map(() => <div class="pure-loading__text pure-loading__paragraph"><div class="pure-skeleton" style="width: 70%"></div><div class="pure-skeleton"></div><div class="pure-skeleton" style="width: 40%"></div></div>)}
+			</>}
+			{["portal", "error"].includes(layout) && <div class="pure-loading__portal"><div class="pure-loading__donut"></div><div class="pure-skeleton" style="width: 14rem"></div><div class="pure-skeleton" style="width: 10rem"></div></div>}
+		</div>
+	</template>
+))}

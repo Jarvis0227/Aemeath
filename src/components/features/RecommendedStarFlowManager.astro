@@ -1,6 +1,8 @@
 <script is:inline data-swup-ignore-script>
 	if (!customElements.get("tool-recommended-star-flow")) {
 		class ToolRecommendedStarFlow extends HTMLElement {
+			static spriteCache = new Map();
+
 			constructor() {
 				super();
 				this.canvas = null;
@@ -19,6 +21,10 @@
 				this.initialized = false;
 				this.resizeObserver = null;
 				this.initializeFrame = 0;
+				this.intersectionObserver = null;
+				this.inViewport = false;
+				this.starSprites = [];
+				this.spritePixelRatio = 0;
 				this.reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 				this.handleFrame = this.handleFrame.bind(this);
@@ -56,6 +62,15 @@
 
 				this.initialized = true;
 				this.particles = this.createParticles();
+				this.inViewport = typeof IntersectionObserver === "undefined";
+				if (!this.inViewport) {
+					this.intersectionObserver = new IntersectionObserver((entries) => {
+						if (!this.isConnected || !this.initialized) return;
+						this.inViewport = entries.some((entry) => entry.isIntersecting);
+						this.updatePlayback();
+					});
+					this.intersectionObserver.observe(this);
+				}
 				this.card?.addEventListener("pointerenter", this.handlePointerEnter);
 				this.card?.addEventListener("pointerleave", this.handlePointerLeave);
 				this.card?.addEventListener("focusin", this.handleFocusIn);
@@ -81,6 +96,10 @@
 				this.stopAnimation();
 				cancelAnimationFrame(this.resizeFrame);
 				this.resizeObserver?.disconnect();
+				this.intersectionObserver?.disconnect();
+				this.intersectionObserver = null;
+				this.inViewport = false;
+				this.starSprites = [];
 				window.removeEventListener("resize", this.handleResize);
 				document.removeEventListener("visibilitychange", this.handleVisibilityChange);
 				this.card?.removeEventListener("pointerenter", this.handlePointerEnter);
@@ -158,6 +177,7 @@
 
 			handleResize() {
 				cancelAnimationFrame(this.resizeFrame);
+				this.resizeFrame = 0;
 				if (!this.isConnected || !this.canvas || !this.context) return;
 				const bounds = this.getBoundingClientRect();
 				const width = Math.max(1, Math.round(bounds.width));
@@ -191,14 +211,19 @@
 			}
 
 			renderFrame() {
-				if (!this.context || !this.width || !this.height) return;
+				if (!this.initialized || !this.isConnected || !this.inViewport || document.hidden || !this.context || !this.width || !this.height) return;
+				const spritePixelRatio = Math.ceil(this.pixelRatio);
+				if (!this.starSprites.length || this.spritePixelRatio !== spritePixelRatio) {
+					this.starSprites = this.particles.map((particle) => this.createStarSprite(particle, spritePixelRatio));
+					this.spritePixelRatio = spritePixelRatio;
+				}
 				const context = this.context;
 				context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
 				context.clearRect(0, 0, this.width, this.height);
 
 				const time = this.elapsed / 1000;
 				const cycleDuration = 3900;
-				for (const particle of this.particles) {
+				for (const [index, particle] of this.particles.entries()) {
 					const progress = (particle.phase + this.elapsed / cycleDuration) % 1;
 					const radius = particle.radius;
 					const startX = particle.entryEdge === "right" ? this.width + radius * 2.4 : particle.entryPosition * this.width;
@@ -223,7 +248,7 @@
 					const rotation = particle.rotation + time * particle.rotationSpeed;
 
 					this.drawTrail(context, x, y, radius, particle.tailScale, directionX, directionY, alpha);
-					this.drawStar(context, x, y, radius, rotation, alpha, particle.layer, particle.glow);
+					this.drawStar(context, this.starSprites[index], x, y, rotation, alpha);
 				}
 			}
 
@@ -253,19 +278,39 @@
 				context.restore();
 			}
 
-			drawStar(context, x, y, radius, rotation, alpha, layer, glow) {
+			createStarSprite(particle, pixelRatio) {
+				const key = `${pixelRatio}:${particle.radius}:${particle.layer}:${particle.glow}`;
+				const cached = ToolRecommendedStarFlow.spriteCache.get(key);
+				if (cached) return cached;
 				const fillColors = ["255, 220, 125", "250, 200, 76", "246, 185, 50"];
-				const fill = fillColors[layer] || fillColors[0];
-				context.save();
-				context.translate(x, y);
-				context.shadowColor = `rgba(224, 145, 14, ${Math.min(0.84, alpha * 1.1)})`;
-				context.shadowBlur = glow + 2;
-				this.traceStar(context, radius, rotation);
-				context.fillStyle = `rgba(${fill}, ${alpha})`;
+				const blur = particle.glow + 2;
+				const size = Math.ceil((particle.radius + blur * 2 + 2) * 2);
+				const canvas = document.createElement("canvas");
+				canvas.width = canvas.height = size * pixelRatio;
+				const context = canvas.getContext("2d");
+				if (!context) return null;
+				context.setTransform(pixelRatio, 0, 0, pixelRatio, canvas.width / 2, canvas.height / 2);
+				context.shadowColor = "rgba(224, 145, 14, 0.64)";
+				context.shadowBlur = blur * pixelRatio;
+				this.traceStar(context, particle.radius, 0);
+				context.fillStyle = `rgb(${fillColors[particle.layer] || fillColors[0]})`;
 				context.fill();
-				context.strokeStyle = `rgba(255, 247, 193, ${Math.min(1, alpha + 0.16)})`;
+				context.strokeStyle = "rgb(255, 247, 193)";
 				context.lineWidth = 0.72;
 				context.stroke();
+				const sprite = { canvas, size };
+				ToolRecommendedStarFlow.spriteCache.set(key, sprite);
+				return sprite;
+			}
+
+			drawStar(context, sprite, x, y, rotation, alpha) {
+				if (!sprite || alpha <= 0) return;
+				const { canvas, size } = sprite;
+				context.save();
+				context.translate(x, y);
+				context.rotate(rotation);
+				context.globalAlpha = alpha;
+				context.drawImage(canvas, -size / 2, -size / 2, size, size);
 				context.restore();
 			}
 
@@ -284,7 +329,7 @@
 			}
 
 			shouldAnimate() {
-				return !document.hidden && !this.reducedMotion;
+				return this.initialized && this.isConnected && this.inViewport && !document.hidden && !this.reducedMotion;
 			}
 
 			updatePlayback() {

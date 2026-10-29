@@ -1,0 +1,236 @@
+---
+import { commentConfig } from "@/config";
+import { url } from "@/utils/url-utils";
+
+const walineServerUrl =
+	commentConfig.type === "waline"
+		? (commentConfig.waline?.serverURL ?? "")
+		: "";
+---
+
+<section
+	class="pure-recent-comments"
+	aria-labelledby="pure-recent-comments-title"
+	data-pure-recent-comments
+	data-comment-server={walineServerUrl}
+>
+	<header class="pure-recent-comments__header">
+		<div class="pure-recent-comments__heading">
+			<h2 id="pure-recent-comments-title">最近评论</h2>
+			<p class="pure-recent-comments__description">有人来过，也留下了几句值得被看见的话。</p>
+		</div>
+		<div class="pure-recent-comments__meta">
+			<a href={url("/guestbook/")}>去留言板 <span aria-hidden="true">↗</span></a>
+		</div>
+	</header>
+	<ul class="pure-recent-comments__list" data-pure-comments-list aria-live="polite">
+		{Array.from({ length: 4 }, () => (
+			<li class="pure-recent-comments__skeleton" aria-hidden="true">
+				<span class="pure-recent-comments__skeleton-avatar"></span>
+				<span class="pure-recent-comments__skeleton-copy">
+					<span class="pure-recent-comments__skeleton-line pure-recent-comments__skeleton-line--name"></span>
+					<span class="pure-recent-comments__skeleton-line pure-recent-comments__skeleton-line--text"></span>
+				</span>
+			</li>
+		))}
+	</ul>
+	<p class="pure-recent-comments__status" data-pure-comments-status role="status" aria-live="polite">正在读取最近评论…</p>
+</section>
+
+<script>
+	const activePureCommentRequests = new Map<HTMLElement, AbortController>();
+	const commentDateFormatter = new Intl.DateTimeFormat("zh-CN", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	});
+
+	const cleanCommentText = (value: unknown, fallback = "留下了一条评论") => {
+		const text = String(value || "")
+			.replace(/<[^>]*>/gu, " ")
+			.replace(/\s+/gu, " ")
+			.trim();
+		return text || fallback;
+	};
+
+	const formatCommentTime = (value: unknown) => {
+		const date = new Date(value as string | number | Date);
+		if (Number.isNaN(date.getTime())) return "时间未知";
+		const elapsed = Date.now() - date.getTime();
+		if (elapsed < 60 * 1000) return "刚刚";
+		if (elapsed < 60 * 60 * 1000) return `${Math.floor(elapsed / (60 * 1000))} 分钟前`;
+		if (elapsed < 24 * 60 * 60 * 1000) return `${Math.floor(elapsed / (60 * 60 * 1000))} 小时前`;
+		if (elapsed < 7 * 24 * 60 * 60 * 1000) return `${Math.floor(elapsed / (24 * 60 * 60 * 1000))} 天前`;
+		return commentDateFormatter.format(date);
+	};
+
+	const getCommentPage = (value: unknown) => {
+		const rawPath = String(value || "").trim();
+		if (!rawPath) return { label: "留言板", href: "/guestbook/" };
+		try {
+			const pageUrl = new URL(rawPath, window.location.origin);
+			if (pageUrl.origin !== window.location.origin) return { label: "站点页面", href: "/" };
+			const path = pageUrl.pathname || "/";
+			return {
+				label: path === "/" ? "首页" : path.length > 34 ? `${path.slice(0, 33)}…` : path,
+				href: `${path}${pageUrl.search}${pageUrl.hash}`,
+			};
+		} catch {
+			return { label: "站点页面", href: "/" };
+		}
+	};
+
+	const getCommentRows = (payload: unknown) => {
+		if (Array.isArray(payload)) return payload;
+		if (payload && typeof payload === "object") {
+			const data = (payload as { data?: unknown }).data;
+			if (Array.isArray(data)) return data;
+			if (data && typeof data === "object" && Array.isArray((data as { data?: unknown }).data)) {
+				return (data as { data: unknown[] }).data;
+			}
+		}
+		return [];
+	};
+
+	const isSafeHttpUrl = (value: unknown) => {
+		if (typeof value !== "string" || !value.trim()) return false;
+		try {
+			return ["http:", "https:"].includes(new URL(value, window.location.origin).protocol);
+		} catch {
+			return false;
+		}
+	};
+
+	const showCommentsMessage = (panel: HTMLElement, title: string, description: string) => {
+		const list = panel.querySelector<HTMLUListElement>("[data-pure-comments-list]");
+		if (!list) return;
+		const item = document.createElement("li");
+		item.className = "pure-recent-comments__empty";
+		const heading = document.createElement("strong");
+		heading.textContent = title;
+		const detail = document.createElement("span");
+		detail.textContent = description;
+		item.append(heading, detail);
+		list.replaceChildren(item);
+		const status = panel.querySelector<HTMLElement>("[data-pure-comments-status]");
+		if (status) status.textContent = title;
+	};
+
+	const renderComments = (panel: HTMLElement, payload: unknown) => {
+		const list = panel.querySelector<HTMLUListElement>("[data-pure-comments-list]");
+		if (!list) return;
+		const comments = getCommentRows(payload)
+			.filter((comment): comment is Record<string, unknown> => Boolean(comment) && typeof comment === "object")
+			.map((record) => {
+				const nick = cleanCommentText(record.nick || record.display_name, "访客");
+				const text = cleanCommentText(record.comment || record.content);
+				const insertedAt = record.insertedAt || record.createdAt || record.time;
+				const page = getCommentPage(record.url || record.path);
+				const commentUrl = new URL(page.href, window.location.origin);
+				const commentId = String(record.objectId ?? "").trim();
+				if (commentId) commentUrl.hash = commentId;
+				return { record, nick, text, insertedAt, page, commentHref: `${commentUrl.pathname}${commentUrl.search}${commentUrl.hash}` };
+			})
+			.filter(({ text }) => Boolean(text))
+			.slice(0, 4);
+
+		if (!comments.length) {
+			showCommentsMessage(panel, "暂时还没有公开评论", "有新的留言后，它会出现在这里。");
+			return;
+		}
+
+		const items = comments.map(({ record, nick, text, insertedAt, page, commentHref }) => {
+			const item = document.createElement("li");
+			item.className = "pure-recent-comments__item";
+			const link = document.createElement("a");
+			link.className = "pure-recent-comments__link";
+			link.href = commentHref;
+			link.title = `查看 ${nick} 在 ${page.label} 的评论`;
+
+			const avatar = document.createElement("span");
+			avatar.className = "pure-recent-comments__avatar";
+			const initial = document.createElement("span");
+			initial.textContent = nick.slice(0, 1).toUpperCase();
+			avatar.append(initial);
+			if (isSafeHttpUrl(record.avatar)) {
+				const image = document.createElement("img");
+				image.src = String(record.avatar);
+				image.alt = `${nick} 的头像`;
+				image.loading = "lazy";
+				image.decoding = "async";
+				image.referrerPolicy = "no-referrer";
+				image.addEventListener("error", () => avatar.replaceChildren(initial), { once: true });
+				avatar.replaceChildren(image);
+			}
+
+			const body = document.createElement("span");
+			body.className = "pure-recent-comments__body";
+			const topline = document.createElement("span");
+			topline.className = "pure-recent-comments__topline";
+			const name = document.createElement("strong");
+			name.textContent = nick;
+			const time = document.createElement("time");
+			time.textContent = formatCommentTime(insertedAt);
+			if (insertedAt) time.dateTime = String(insertedAt);
+			topline.append(name, time);
+			const pageLabel = document.createElement("span");
+			pageLabel.className = "pure-recent-comments__page";
+			pageLabel.textContent = `评论于 ${page.label}`;
+			const content = document.createElement("span");
+			content.className = "pure-recent-comments__text";
+			content.textContent = text;
+			body.append(topline, pageLabel, content);
+			link.append(avatar, body);
+			item.append(link);
+			return item;
+		});
+
+		list.replaceChildren(...items);
+		const status = panel.querySelector<HTMLElement>("[data-pure-comments-status]");
+		if (status) status.textContent = `已展示 ${comments.length} 条公开评论 · 内容来自 Waline`;
+	};
+
+	const initializeRecentComments = () => {
+		for (const [panel, controller] of activePureCommentRequests) {
+			if (!panel.isConnected) {
+				controller.abort();
+				activePureCommentRequests.delete(panel);
+			}
+		}
+
+		document.querySelectorAll<HTMLElement>("[data-pure-recent-comments]").forEach((panel) => {
+			if (activePureCommentRequests.has(panel)) return;
+			const serverURL = String(panel.dataset.commentServer || "").replace(/\/+$/u, "");
+			if (!serverURL) {
+				showCommentsMessage(panel, "评论系统尚未配置", "启用 Waline 后，这里会自动显示最新评论。");
+				return;
+			}
+
+			const controller = new AbortController();
+			activePureCommentRequests.set(panel, controller);
+			const timeout = window.setTimeout(() => controller.abort("timeout"), 8000);
+			const endpoint = new URL(`${serverURL}/api/comment`);
+			endpoint.searchParams.set("type", "recent");
+			endpoint.searchParams.set("count", "4");
+			endpoint.searchParams.set("lang", "zh-CN");
+
+			fetch(endpoint, { headers: { Accept: "application/json" }, signal: controller.signal })
+				.then(async (response) => {
+					if (!response.ok) throw new Error("Waline comments unavailable");
+					const payload = await response.json();
+					if (Number(payload?.errno) > 0) throw new Error(payload.errmsg || "Waline comments unavailable");
+					renderComments(panel, payload);
+				})
+				.catch(() => {
+					if (controller.signal.aborted && controller.signal.reason !== "timeout") return;
+					showCommentsMessage(panel, "最近评论暂时不可用", "稍后再试，或前往留言板查看完整讨论。");
+				})
+				.finally(() => window.clearTimeout(timeout));
+		});
+	};
+
+	initializeRecentComments();
+	for (const eventName of ["astro:page-load", "swup:contentReplaced", "swup:page:view"]) {
+		document.addEventListener(eventName, initializeRecentComments);
+	}
+</script>

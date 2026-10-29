@@ -1,0 +1,107 @@
+---
+import PureRouteSkeletons from "./PureRouteSkeletons.astro";
+---
+
+<div id="pure-loading" class="pure-loading" data-layout="page" hidden data-pagefind-ignore="all">
+	<span class="sr-only" role="status">正在加载页面…</span>
+	<div class="pure-loading__viewport" aria-hidden="true"><div data-skeleton-content></div></div>
+	<template data-skeleton-template="post">
+	<div class="pure-loading__shape pure-loading__post" data-shape="post">
+		<div class="pure-loading__main">
+			<div class="pure-skeleton pure-skeleton--cover"></div>
+			<div class="pure-loading__meta">{["7rem", "4rem"].map((width) => <span class="pure-skeleton" style={`width: ${width}`}></span>)}</div>
+			<div class="pure-skeleton pure-skeleton--title"></div>
+			<div class="pure-skeleton pure-skeleton--title pure-skeleton--short"></div>
+			<div class="pure-loading__meta">{["5rem", "6rem", "5rem"].map((width) => <span class="pure-skeleton" style={`width: ${width}`}></span>)}</div>
+			<div class="pure-loading__text">{["100%", "94%", "98%", "72%"].map((width) => <div class="pure-skeleton" style={`width: ${width}`}></div>)}</div>
+		</div>
+		<aside class="pure-loading__aside">
+			<div class="pure-skeleton" style="width: 6rem"></div>
+			<div class="pure-loading__text">{["88%", "72%", "90%", "64%"].map((width) => <div class="pure-skeleton" style={`width: ${width}`}></div>)}</div>
+		</aside>
+	</div>
+	</template>
+	<template data-skeleton-template="list">
+	<div class="pure-loading__shape" data-shape="list">
+		<div class="pure-skeleton pure-skeleton--heading"></div>
+		<div class="pure-loading__list-summary"><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div>
+		<div class="pure-loading__list-grid">
+		<div class="pure-loading__list">{[0, 1, 2].map(() => (
+			<div class="pure-loading__card">
+				<div class="pure-skeleton" style="width: 6rem"></div>
+				<div class="pure-skeleton pure-skeleton--title" style="width: 74%"></div>
+				<div class="pure-loading__text">{["100%", "82%"].map((width) => <div class="pure-skeleton" style={`width: ${width}`}></div>)}</div>
+				<div class="pure-loading__meta">{["4rem", "5rem", "4rem"].map((width) => <span class="pure-skeleton" style={`width: ${width}`}></span>)}</div>
+			</div>
+		))}</div>
+		<aside class="pure-loading__list-tags"><div class="pure-skeleton" style="width: 5rem"></div><div class="pure-loading__tag-cloud">{Array.from({ length: 25 }, (_, index) => <span class="pure-skeleton" style={`width: ${3 + index % 3}rem`}></span>)}</div></aside>
+		</div>
+	</div>
+	</template>
+	<template data-skeleton-template="friends">
+	<div class="pure-loading__shape" data-shape="friends">
+		<div class="pure-skeleton pure-skeleton--back"></div>
+		<div class="pure-loading__friends-heading">
+			<div>
+				<div class="pure-loading__friends-title"><div class="pure-skeleton"></div><span class="pure-skeleton"></span></div>
+				<div class="pure-skeleton pure-loading__friends-description"></div>
+			</div>
+			<div class="pure-loading__friends-actions"><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div>
+		</div>
+		<div class="pure-loading__avatars">{Array.from({ length: 22 }, () => <span class="pure-skeleton"></span>)}</div>
+		<div class="pure-skeleton pure-skeleton--search"></div>
+		<div class="pure-loading__filters">{["2.5rem", "3rem", "2.5rem", "4rem", "3.5rem", "3rem", "4.5rem", "4rem", "3rem", "4.5rem", "4.5rem", "5rem"].map((width) => <span class="pure-skeleton" style={`width: ${width}`}></span>)}</div>
+		<div class="pure-loading__friends">{Array.from({ length: 9 }, () => (
+			<div class="pure-loading__friend">
+				<div class="pure-skeleton pure-skeleton--avatar"></div>
+				<div class="pure-loading__friend-copy">
+					<div class="pure-skeleton" style="width: 62%"></div><div class="pure-skeleton"></div>
+					<div class="pure-loading__friend-tags"><span class="pure-skeleton"></span><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div>
+				</div>
+				<div class="pure-loading__friend-footer"><span class="pure-skeleton"></span><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div>
+			</div>
+		))}</div>
+	</div>
+	</template>
+	<template data-skeleton-template="analytics">
+	<div class="pure-loading__shape" data-shape="analytics">
+		<div class="pure-skeleton pure-skeleton--back"></div>
+		<div class="pure-skeleton pure-skeleton--analytics-heading"></div>
+		<div class="pure-skeleton pure-loading__analytics-description"></div>
+		<div class="pure-loading__analytics-notes"><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div>
+		<div class="pure-loading__summary">{[0, 1, 2, 3].map(() => (
+			<div class="pure-loading__metric">
+				<div class="pure-loading__metric-label"><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div>
+				<div class="pure-skeleton pure-loading__metric-value"></div>
+				<div class="pure-skeleton pure-loading__metric-note"></div>
+			</div>
+		))}</div>
+		<div class="pure-loading__analytics-grid">
+			<div class="pure-loading__analytics-main">
+				<div class="pure-loading__panel pure-loading__traffic">
+					<div class="pure-loading__panel-heading"><div class="pure-loading__panel-copy"><div class="pure-skeleton"></div><div class="pure-skeleton"></div></div><span class="pure-skeleton pure-loading__range"></span></div>
+					<div class="pure-skeleton pure-loading__chart"></div>
+					<div class="pure-loading__legend"><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div>
+					<div class="pure-loading__traffic-details">{[0, 1].map(() => <div class="pure-loading__text"><div class="pure-skeleton" style="width: 55%"></div>{[0, 1, 2, 3].map(() => <div class="pure-loading__ranking-row"><span class="pure-skeleton"></span><span class="pure-skeleton"></span><span class="pure-skeleton"></span></div>)}</div>)}</div>
+				</div>
+				<div class="pure-loading__panel"><div class="pure-loading__panel-copy"><div class="pure-skeleton"></div><div class="pure-skeleton"></div></div><div class="pure-skeleton pure-loading__chart"></div></div>
+			</div>
+			<div class="pure-loading__analytics-sidebar">
+				<div class="pure-loading__panel">
+					<div class="pure-loading__panel-copy"><div class="pure-skeleton"></div><div class="pure-skeleton"></div></div>
+					{[0, 1].map(() => <div class="pure-loading__breakdown"><div class="pure-loading__donut"></div><div class="pure-loading__text"><div class="pure-skeleton"></div><div class="pure-skeleton" style="width: 82%"></div><div class="pure-skeleton" style="width: 65%"></div></div></div>)}
+				</div>
+				<div class="pure-loading__panel"><div class="pure-loading__panel-copy"><div class="pure-skeleton"></div><div class="pure-skeleton"></div></div><div class="pure-loading__breakdown"><div class="pure-skeleton pure-loading__map"></div><div class="pure-loading__text">{[0, 1, 2, 3].map(() => <div class="pure-skeleton"></div>)}</div></div></div>
+				<div class="pure-loading__panel"><div class="pure-loading__panel-copy"><div class="pure-skeleton"></div><div class="pure-skeleton"></div></div><div class="pure-loading__breakdown"><div class="pure-loading__donut"></div><div class="pure-loading__text"><div class="pure-skeleton"></div><div class="pure-skeleton"></div><div class="pure-skeleton"></div></div></div></div>
+			</div>
+		</div>
+	</div>
+	</template>
+	<template data-skeleton-template="page">
+	<div class="pure-loading__shape" data-shape="page">
+		<div class="pure-skeleton pure-skeleton--heading"></div>
+		{[0, 1, 2].map(() => <div class="pure-loading__text pure-loading__paragraph">{["100%", "94%", "78%"].map((width) => <div class="pure-skeleton" style={`width: ${width}`}></div>)}</div>)}
+	</div>
+	</template>
+	<PureRouteSkeletons />
+</div>

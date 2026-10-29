@@ -3,6 +3,7 @@ import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import { onMount } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
+import { loadPagefind } from "@/utils/pagefind";
 import type { SearchResult } from "@/global";
 import { url as formatUrl } from "@/utils/url-utils";
 
@@ -109,8 +110,9 @@ const search = async () => {
 	loading = true;
 	try {
 		let found: SearchResult[] = [];
-		if (window.pagefind) {
-			const r = await window.pagefind.search(keyword);
+		const pagefind = await loadPagefind();
+		if (pagefind) {
+			const r = await pagefind.search(keyword);
 			found = await Promise.all(
 				r.results.map(async (item) => {
 					const { content: _content, ...data } = await item.data();
@@ -127,16 +129,10 @@ const search = async () => {
 	}
 };
 onMount(() => {
-	const init = async () => {
-		ready = true;
-		keyword = new URLSearchParams(location.search).get("q") || "";
-		if (keyword) await search();
-	};
-	if (window.pagefind || import.meta.env.DEV) init();
-	else {
-		document.addEventListener("pagefindready", init, { once: true });
-		document.addEventListener("pagefindloaderror", init, { once: true });
-	}
+	ready = true;
+	keyword = new URLSearchParams(location.search).get("q") || "";
+	if (keyword) void search();
+	return () => clearTimeout(timer);
 });
 const input = () => {
 	clearTimeout(timer);

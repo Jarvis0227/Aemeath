@@ -7,7 +7,7 @@ type DetectBuildPlatformOptions = {
 };
 //“FIREFLY_BUILD_PLATFORM”环境变量自定义命名构建平台
 const BUILD_PLATFORM_OVERRIDE_KEY = "FIREFLY_BUILD_PLATFORM";
-const DEFAULT_BUILD_PLATFORM = "Astro 静态构建 · Debian + 宝塔 Nginx";
+const DEFAULT_BUILD_PLATFORM = "Astro 静态构建";
 
 function hasNonEmptyEnv(
 	env: Record<string, string | undefined>,

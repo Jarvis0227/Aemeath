@@ -1,11 +1,15 @@
 ---
 import { Icon } from "astro-icon/components";
 import animalsImage from "@/assets/images/footer-animals.webp";
-import { profileConfig, siteConfig } from "@/config";
+import baishanCloudIcon from "@/assets/images/baishan-cloud.svg";
+import { footerConfig, analyticsConfig, profileConfig, siteConfig } from "@/config";
 import { url } from "@/utils/url-utils";
+
+import FooterOrbit from "./FooterOrbit.astro";
 
 import "@/styles/footer.css";
 
+const statsReady = Boolean(analyticsConfig.umamiAnalytics?.websiteId && analyticsConfig.umamiAnalytics.shareId && analyticsConfig.umamiAnalytics.shareApiBase);
 const currentYear = new Date().getFullYear();
 const startAt = new Date(`${siteConfig.siteStartDate}T00:00:00+08:00`);
 const elapsedSeconds = Math.max(
@@ -17,32 +21,15 @@ const initialHours = Math.floor((elapsedSeconds % 86400) / 3600);
 const initialMinutes = Math.floor((elapsedSeconds % 3600) / 60);
 const initialSeconds = elapsedSeconds % 60;
 
-const socials = [
-	{
-		name: "博客",
-		icon: "material-symbols:home-outline",
-		url: "/",
-		external: false,
-	},
-	{
-		name: "GitHub",
-		icon: "simple-icons:github",
-		url:
-			profileConfig.links.find((item) => item.name === "GitHub")?.url ??
-			"https://github.com/Jarvis0227",
-		external: true,
-	},
-	{
-		name: "Bilibili",
-		icon: "fa7-brands:bilibili",
-		url:
-			profileConfig.links.find((item) => item.name === "Bilibili")?.url ??
-			"https://space.bilibili.com/473321504",
-		external: true,
-	},
-];
+const socials = [{ name: "博客", icon: "material-symbols:home-outline", url: "/", external: false }, ...profileConfig.links.filter((item) => /^https?:/u.test(item.url)).map((item) => ({ name: item.name, icon: item.icon, url: item.url, external: true }))];
 
-const techStack = [
+const techStack: {
+	label: string;
+	tone: string;
+	icon?: string;
+	image?: string;
+	href?: string;
+}[] = [
 	{ label: "Astro", tone: "violet", icon: "simple-icons:astro" },
 	{ label: "Tailwind CSS", tone: "cyan", icon: "simple-icons:tailwindcss" },
 	{
@@ -50,7 +37,12 @@ const techStack = [
 		tone: "orange",
 		icon: "material-symbols:forum-outline-rounded",
 	},
-	{ label: "QEdge", tone: "blue", icon: "material-symbols:cloud-outline" },
+	{
+		label: "白山云",
+		tone: "blue",
+		image: baishanCloudIcon.src,
+		href: "https://home.console.baishan.com/#/dashboard",
+	},
 	{ label: "Umami", tone: "green", icon: "simple-icons:umami" },
 ];
 ---
@@ -62,12 +54,22 @@ const techStack = [
 		</div>
 
 		<div class="site-footer-stack" aria-label="本站使用的技术">
-			{techStack.map((item) => (
-				<span class={`site-footer-stack__badge site-footer-stack__badge--${item.tone}`}>
-					<Icon name={item.icon} aria-hidden="true" />
-					<span>{item.label}</span>
-				</span>
-			))}
+			{techStack.map((item) => {
+				const Tag = item.href ? "a" : "span";
+				return (
+					<Tag
+						class={`site-footer-stack__badge site-footer-stack__badge--${item.tone}`}
+						href={item.href}
+						target={item.href ? "_blank" : undefined}
+						rel={item.href ? "noopener noreferrer" : undefined}
+					>
+						{item.image ? (
+							<img src={item.image} alt="" width="14" height="14" loading="lazy" />
+						) : item.icon && <Icon name={item.icon} aria-hidden="true" />}
+						<span>{item.label}</span>
+					</Tag>
+				);
+			})}
 			<span class="site-footer-stack__badge site-footer-stack__badge--quiet">© {currentYear} / BY-NC-SA</span>
 		</div>
 
@@ -113,49 +115,32 @@ const techStack = [
 			</nav>
 
 			<div class="site-footer__runtime" aria-label="网站运行时间">
-				<div class="site-footer__clock" aria-hidden="true">
-					<span class="site-footer__clock-orbit"></span>
-					<svg viewBox="0 0 100 100">
-						<circle cx="50" cy="50" r="39"></circle>
-						<path d="M50 27v25l17 10"></path>
-						<circle cx="50" cy="52" r="4.5"></circle>
-					</svg>
-				</div>
+				<FooterOrbit />
 				<time data-runtime datetime={siteConfig.siteStartDate}>
-					本站已运行 <strong>{initialDays}</strong> 天 <strong>{initialHours}</strong> 小时 <strong>{initialMinutes}</strong> 分 <strong>{initialSeconds}</strong> 秒
+					本站已萌萌哒 <strong>{initialDays}</strong> 天 <strong>{initialHours}</strong> 小时 <strong>{initialMinutes}</strong> 分 <strong>{initialSeconds}</strong> 秒
 				</time>
 				<span class="site-footer__runtime-sparkle" aria-hidden="true">✦</span>
-			</div>
-
-			<div class="site-footer__records" aria-label="网站备案信息">
-				<a href="https://icp.gov.moe/?keyword=20260788" target="_blank" rel="noreferrer">
-					<svg class="site-footer__shield" viewBox="0 0 36 40" aria-hidden="true">
-						<path d="M18 1.5 33 7v12.1c0 9.4-6.3 15.8-15 19.4C9.3 34.9 3 28.5 3 19.1V7z"></path>
-						<path class="site-footer__shield-mark" d="m10.2 19.7 5.1 5.1 10.8-12"></path>
-					</svg>
-					<span>萌ICP备20260788号</span>
-				</a>
 			</div>
 
 			<div class="site-footer__traffic" aria-label="网站访问统计">
 				<span class="site-footer__traffic-item">
 					<span>今日访客：</span>
-					<strong data-umami-stat="todayVisitors" aria-live="polite">加载中</strong>
+					<strong data-umami-stat="todayVisitors" aria-live="polite">{statsReady ? "加载中" : "未配置"}</strong>
 				</span>
 				<i aria-hidden="true">|</i>
 				<span class="site-footer__traffic-item">
 					<span>今日访问：</span>
-					<strong data-umami-stat="todayPageviews" aria-live="polite">加载中</strong>
+					<strong data-umami-stat="todayPageviews" aria-live="polite">{statsReady ? "加载中" : "未配置"}</strong>
 				</span>
 				<i aria-hidden="true">|</i>
 				<span class="site-footer__traffic-item">
 					<span>本站访客：</span>
-					<strong data-umami-stat="visitors" aria-live="polite">加载中</strong>
+					<strong data-umami-stat="visitors" aria-live="polite">{statsReady ? "加载中" : "未配置"}</strong>
 				</span>
 				<i aria-hidden="true">|</i>
 				<span class="site-footer__traffic-item">
 					<span>本站访问：</span>
-					<strong data-umami-stat="pageviews" aria-live="polite">加载中</strong>
+					<strong data-umami-stat="pageviews" aria-live="polite">{statsReady ? "加载中" : "未配置"}</strong>
 				</span>
 			</div>
 
@@ -169,7 +154,7 @@ const techStack = [
 				<span>© {currentYear} {profileConfig.name}. All Rights Reserved.</span>
 				<span class="site-footer__meta-separator" aria-hidden="true"></span>
 				<a href={url("rss.xml")}>
-					<Icon name="material-symbols:rss-feed-rounded" aria-hidden="true" />
+					<Icon is:inline name="material-symbols:rss-feed-rounded" class="site-footer__rss-icon" aria-hidden="true" />
 					<span>RSS</span>
 				</a>
 				<span class="site-footer__meta-separator" aria-hidden="true"></span>
@@ -191,21 +176,26 @@ const techStack = [
 				<span>&amp;</span>
 				<span class="site-footer__powered-name">Aemeath {siteConfig.themeVersion || "V1.1.1"}</span>
 			</div>
+
+			<div class="site-footer__records" aria-label="网站备案信息">{(footerConfig.records ?? []).map((record) => <a href={record.url} target="_blank" rel="noopener noreferrer"><span>{record.label}</span></a>)}</div>
 		</div>
 	</footer>
 </div>
 
 <script is:inline define:vars={{ startAt: startAt.getTime() }}>
 	const renderFooterRuntime = () => {
-		const runtime = document.querySelector("[data-runtime]");
-		if (!runtime) return;
+		const runtimes = document.querySelectorAll("[data-runtime]");
+		if (!runtimes.length) return;
 
 		const seconds = Math.max(0, Math.floor((Date.now() - startAt) / 1000));
 		const days = Math.floor(seconds / 86400);
 		const hours = Math.floor((seconds % 86400) / 3600);
 		const minutes = Math.floor((seconds % 3600) / 60);
 		const secs = seconds % 60;
-		runtime.innerHTML = `本站已运行 <strong>${days}</strong> 天 <strong>${hours}</strong> 小时 <strong>${minutes}</strong> 分 <strong>${secs}</strong> 秒`;
+		const markup = `本站已萌萌哒 <strong>${days}</strong> 天 <strong>${hours}</strong> 小时 <strong>${minutes}</strong> 分 <strong>${secs}</strong> 秒`;
+		runtimes.forEach((runtime) => {
+			runtime.innerHTML = markup;
+		});
 	};
 
 	if (window.__siteFooterRuntimeInterval) window.clearInterval(window.__siteFooterRuntimeInterval);

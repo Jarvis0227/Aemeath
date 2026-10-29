@@ -1,0 +1,16 @@
+<script>
+	let runtimePromise: Promise<unknown> | undefined;
+
+	const loadFriendsRuntime = () => {
+		if (!document.querySelector("friend-filter") || runtimePromise) return;
+		runtimePromise = import("@/scripts/friends-runtime").catch((error) => {
+			runtimePromise = undefined;
+			console.error("[Friends] Failed to initialize friend cards.", error);
+		});
+	};
+
+	loadFriendsRuntime();
+	document.addEventListener("astro:page-load", loadFriendsRuntime);
+	document.addEventListener("astro:after-swap", loadFriendsRuntime);
+	document.addEventListener("swup:contentReplaced", loadFriendsRuntime);
+</script>

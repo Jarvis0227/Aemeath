@@ -1,325 +1,364 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+import { onMount } from "svelte";
 
-  const balconyWaiting = "/in-grandmas-white-hair-i-saw-time/balcony-grandma-waiting.webp";
-  const balconyApproaching = "/in-grandmas-white-hair-i-saw-time/balcony-sitting.webp";
-  const balconyTogether = "/in-grandmas-white-hair-i-saw-time/balcony-relaxed.webp";
-  const balconySunset = "/in-grandmas-white-hair-i-saw-time/balcony-relaxed-sunset.webp";
-  const balconyEmpty = "/in-grandmas-white-hair-i-saw-time/balcony-empty-blue-hour.webp";
-  const grandmaMemory = "/in-grandmas-white-hair-i-saw-time/grandma-memory.webp";
-  const grandmaHair = "/in-grandmas-white-hair-i-saw-time/grandma-hair.webp";
-  const deskDay = "/in-grandmas-white-hair-i-saw-time/desk-day-v2.webp";
-  const deskDusk = "/in-grandmas-white-hair-i-saw-time/desk-dusk-v2.webp";
-  const deskNight = "/in-grandmas-white-hair-i-saw-time/desk-night-v2.webp";
+// Supply your own scene text and media when using this optional article layout.
+export let copy: Record<string, string> = {};
+const sceneText = (key: string): string => copy[key] || "请添加自己的文章内容";
 
-  let filmRoot: HTMLElement;
-  let plainTextMode = false;
-  let isSmallDevice = false;
-  let mobileNoticeVisible = false;
-  let mobileNoticeTimer: ReturnType<typeof setTimeout> | undefined;
-  let tocRefreshTimer: ReturnType<typeof setTimeout> | undefined;
+export let balconyWaiting = "";
+export let balconyApproaching = "";
+export let balconyTogether = "";
+export let balconySunset = "";
+export let balconyEmpty = "";
+export let grandmaMemory = "";
+export let grandmaHair = "";
+export let deskDay = "";
+export let deskDusk = "";
+export let deskNight = "";
 
-  const refreshArticleToc = () => {
-    if (typeof window === "undefined") return;
-    if (tocRefreshTimer) clearTimeout(tocRefreshTimer);
-    tocRefreshTimer = setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("article-toc-refresh"));
-      tocRefreshTimer = undefined;
-    }, 0);
-  };
+let filmRoot: HTMLElement;
+let plainTextMode = false;
+let isSmallDevice = false;
+let mobileNoticeVisible = false;
+let mobileNoticeTimer: ReturnType<typeof setTimeout> | undefined;
+let tocRefreshTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const showMobileNotice = () => {
-    mobileNoticeVisible = true;
-    if (mobileNoticeTimer) clearTimeout(mobileNoticeTimer);
-    mobileNoticeTimer = setTimeout(() => {
-      mobileNoticeVisible = false;
-      mobileNoticeTimer = undefined;
-    }, 2600);
-  };
+const refreshArticleToc = () => {
+	if (typeof window === "undefined") return;
+	if (tocRefreshTimer) clearTimeout(tocRefreshTimer);
+	tocRefreshTimer = setTimeout(() => {
+		window.dispatchEvent(new CustomEvent("article-toc-refresh"));
+		tocRefreshTimer = undefined;
+	}, 0);
+};
 
-  const toggleTextMode = () => {
-    if (isSmallDevice && plainTextMode) {
-      showMobileNotice();
-      return;
-    }
+const showMobileNotice = () => {
+	mobileNoticeVisible = true;
+	if (mobileNoticeTimer) clearTimeout(mobileNoticeTimer);
+	mobileNoticeTimer = setTimeout(() => {
+		mobileNoticeVisible = false;
+		mobileNoticeTimer = undefined;
+	}, 2600);
+};
 
-    plainTextMode = !plainTextMode;
-    mobileNoticeVisible = false;
-    refreshArticleToc();
-  };
+const toggleTextMode = () => {
+	if (isSmallDevice && plainTextMode) {
+		showMobileNotice();
+		return;
+	}
 
-  onMount(() => {
-    if (!filmRoot) return;
+	plainTextMode = !plainTextMode;
+	mobileNoticeVisible = false;
+	refreshArticleToc();
+};
 
-    const smallDeviceQuery = window.matchMedia("(max-width: 767px)");
-    const syncViewportMode = () => {
-      isSmallDevice = smallDeviceQuery.matches;
-      if (isSmallDevice) {
-        plainTextMode = true;
-        mobileNoticeVisible = false;
-      }
-      refreshArticleToc();
-    };
+onMount(() => {
+	if (!filmRoot) return;
 
-    syncViewportMode();
+	const smallDeviceQuery = window.matchMedia("(max-width: 767px)");
+	const syncViewportMode = () => {
+		isSmallDevice = smallDeviceQuery.matches;
+		if (isSmallDevice) {
+			plainTextMode = true;
+			mobileNoticeVisible = false;
+		}
+		refreshArticleToc();
+	};
 
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const revealTargets = Array.from(
-      filmRoot.querySelectorAll<HTMLElement>("[data-film-reveal]"),
-    );
-    const scenes = Array.from(
-      filmRoot.querySelectorAll<HTMLElement>("[data-film-scene]"),
-    );
-    const balconyScene = filmRoot.querySelector<HTMLElement>(".grandma-film__scene--balcony");
-    const deskScene = filmRoot.querySelector<HTMLElement>(".grandma-film__scene--desk");
-    const endingScene = filmRoot.querySelector<HTMLElement>(".grandma-film__scene--ending");
-    const endingCopyTargets = Array.from(
-      filmRoot.querySelectorAll<HTMLElement>("[data-ending-copy]"),
-    );
-    const dialogueLines = Array.from(
-      filmRoot.querySelectorAll<HTMLElement>("[data-film-dialogue-line]"),
-    );
+	syncViewportMode();
 
-    filmRoot.dataset.filmReady = "true";
+	const reducedMotion = window.matchMedia(
+		"(prefers-reduced-motion: reduce)",
+	).matches;
+	const revealTargets = Array.from(
+		filmRoot.querySelectorAll<HTMLElement>("[data-film-reveal]"),
+	);
+	const scenes = Array.from(
+		filmRoot.querySelectorAll<HTMLElement>("[data-film-scene]"),
+	);
+	const balconyScene = filmRoot.querySelector<HTMLElement>(
+		".grandma-film__scene--balcony",
+	);
+	const deskScene = filmRoot.querySelector<HTMLElement>(
+		".grandma-film__scene--desk",
+	);
+	const endingScene = filmRoot.querySelector<HTMLElement>(
+		".grandma-film__scene--ending",
+	);
+	const endingCopyTargets = Array.from(
+		filmRoot.querySelectorAll<HTMLElement>("[data-ending-copy]"),
+	);
+	const dialogueLines = Array.from(
+		filmRoot.querySelectorAll<HTMLElement>("[data-film-dialogue-line]"),
+	);
 
-    const cleanups: Array<() => void> = [];
-    smallDeviceQuery.addEventListener("change", syncViewportMode);
-    cleanups.push(() => smallDeviceQuery.removeEventListener("change", syncViewportMode));
-    cleanups.push(() => {
-      if (mobileNoticeTimer) clearTimeout(mobileNoticeTimer);
-      if (tocRefreshTimer) clearTimeout(tocRefreshTimer);
-    });
-    let scrollFrame = 0;
+	filmRoot.dataset.filmReady = "true";
 
-    const clamp = (value: number, min = 0, max = 1) =>
-      Math.min(Math.max(value, min), max);
+	const cleanups: Array<() => void> = [];
+	smallDeviceQuery.addEventListener("change", syncViewportMode);
+	cleanups.push(() =>
+		smallDeviceQuery.removeEventListener("change", syncViewportMode),
+	);
+	cleanups.push(() => {
+		if (mobileNoticeTimer) clearTimeout(mobileNoticeTimer);
+		if (tocRefreshTimer) clearTimeout(tocRefreshTimer);
+	});
+	let scrollFrame = 0;
 
-    const easeInOut = (value: number) => {
-      const t = clamp(value);
-      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    };
+	const clamp = (value: number, min = 0, max = 1) =>
+		Math.min(Math.max(value, min), max);
 
-    const updateEndingCopy = (progress: number) => {
-      if (reducedMotion) {
-        endingCopyTargets.forEach((target) => {
-          target.style.setProperty("--ending-copy-opacity", "1");
-          target.style.setProperty("--ending-copy-y", "0rem");
-          target.style.setProperty("--ending-copy-blur", "0rem");
-          target.style.setProperty("--ending-copy-scale", "1");
-        });
-        return;
-      }
+	const easeInOut = (value: number) => {
+		const t = clamp(value);
+		return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+	};
 
-      const fadeWindow = 0.07;
+	const updateEndingCopy = (progress: number) => {
+		if (reducedMotion) {
+			endingCopyTargets.forEach((target) => {
+				target.style.setProperty("--ending-copy-opacity", "1");
+				target.style.setProperty("--ending-copy-y", "0rem");
+				target.style.setProperty("--ending-copy-blur", "0rem");
+				target.style.setProperty("--ending-copy-scale", "1");
+			});
+			return;
+		}
 
-      endingCopyTargets.forEach((target) => {
-        const start = Number(target.dataset.endingStart ?? 0);
-        const fadeIn = easeInOut((progress - start) / fadeWindow);
-        const opacity = fadeIn;
+		const fadeWindow = 0.07;
 
-        target.style.setProperty("--ending-copy-opacity", opacity.toFixed(3));
-        target.style.setProperty(
-          "--ending-copy-y",
-          `${((1 - opacity) * 0.85).toFixed(3)}rem`,
-        );
-        target.style.setProperty(
-          "--ending-copy-blur",
-          `${((1 - opacity) * 0.32).toFixed(3)}rem`,
-        );
-        target.style.setProperty(
-          "--ending-copy-scale",
-          (0.985 + opacity * 0.015).toFixed(3),
-        );
-      });
-    };
+		endingCopyTargets.forEach((target) => {
+			const start = Number(target.dataset.endingStart ?? 0);
+			const fadeIn = easeInOut((progress - start) / fadeWindow);
+			const opacity = fadeIn;
 
-    const setVisible = (target: HTMLElement) => {
-      target.classList.add("is-visible");
-    };
+			target.style.setProperty("--ending-copy-opacity", opacity.toFixed(3));
+			target.style.setProperty(
+				"--ending-copy-y",
+				`${((1 - opacity) * 0.85).toFixed(3)}rem`,
+			);
+			target.style.setProperty(
+				"--ending-copy-blur",
+				`${((1 - opacity) * 0.32).toFixed(3)}rem`,
+			);
+			target.style.setProperty(
+				"--ending-copy-scale",
+				(0.985 + opacity * 0.015).toFixed(3),
+			);
+		});
+	};
 
-    if (reducedMotion) {
-      revealTargets.forEach(setVisible);
-      dialogueLines.forEach((line) => {
-        line.style.setProperty("--dialogue-opacity", "1");
-        line.style.setProperty("--dialogue-y", "0rem");
-      });
-      balconyScene?.style.setProperty("--dialogue-ellipsis", "1");
-      balconyScene?.style.setProperty("--sunset-frame-opacity", "0");
-      balconyScene?.style.setProperty("--memory-pair-opacity", "1");
-      balconyScene?.style.setProperty("--memory-mid-opacity", "1");
-      balconyScene?.style.setProperty("--memory-final-opacity", "1");
-      balconyScene?.style.setProperty("--balcony-copy-opacity", "0");
-      balconyScene?.style.setProperty("--balcony-copy-y", "1.1rem");
-      balconyScene?.style.setProperty("--hair-copy-opacity", "1");
-      balconyScene?.style.setProperty("--hair-copy-y", "0rem");
-      balconyScene?.style.setProperty("--hair-glow-opacity", "1");
-      deskScene?.style.setProperty("--desk-dusk-opacity", "0");
-      deskScene?.style.setProperty("--desk-night-opacity", "1");
-      deskScene?.style.setProperty("--desk-copy-opacity", "1");
-      deskScene?.style.setProperty("--desk-copy-y", "0rem");
-      endingScene?.style.setProperty("--ending-empty-opacity", "1");
-      updateEndingCopy(1);
-    } else {
-      const revealObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            setVisible(entry.target as HTMLElement);
-            revealObserver.unobserve(entry.target);
-          });
-        },
-        { threshold: 0.14, rootMargin: "0px 0px -10% 0px" },
-      );
+	const setVisible = (target: HTMLElement) => {
+		target.classList.add("is-visible");
+	};
 
-      revealTargets.forEach((target) => {
-        if (target.getBoundingClientRect().bottom < 0) setVisible(target);
-        else revealObserver.observe(target);
-      });
-      cleanups.push(() => revealObserver.disconnect());
+	if (reducedMotion) {
+		revealTargets.forEach(setVisible);
+		dialogueLines.forEach((line) => {
+			line.style.setProperty("--dialogue-opacity", "1");
+			line.style.setProperty("--dialogue-y", "0rem");
+		});
+		balconyScene?.style.setProperty("--dialogue-ellipsis", "1");
+		balconyScene?.style.setProperty("--sunset-frame-opacity", "0");
+		balconyScene?.style.setProperty("--memory-pair-opacity", "1");
+		balconyScene?.style.setProperty("--memory-mid-opacity", "1");
+		balconyScene?.style.setProperty("--memory-final-opacity", "1");
+		balconyScene?.style.setProperty("--balcony-copy-opacity", "0");
+		balconyScene?.style.setProperty("--balcony-copy-y", "1.1rem");
+		balconyScene?.style.setProperty("--hair-copy-opacity", "1");
+		balconyScene?.style.setProperty("--hair-copy-y", "0rem");
+		balconyScene?.style.setProperty("--hair-glow-opacity", "1");
+		deskScene?.style.setProperty("--desk-dusk-opacity", "0");
+		deskScene?.style.setProperty("--desk-night-opacity", "1");
+		deskScene?.style.setProperty("--desk-copy-opacity", "1");
+		deskScene?.style.setProperty("--desk-copy-y", "0rem");
+		endingScene?.style.setProperty("--ending-empty-opacity", "1");
+		updateEndingCopy(1);
+	} else {
+		const revealObserver = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (!entry.isIntersecting) return;
+					setVisible(entry.target as HTMLElement);
+					revealObserver.unobserve(entry.target);
+				});
+			},
+			{ threshold: 0.14, rootMargin: "0px 0px -10% 0px" },
+		);
 
-    }
+		revealTargets.forEach((target) => {
+			if (target.getBoundingClientRect().bottom < 0) setVisible(target);
+			else revealObserver.observe(target);
+		});
+		cleanups.push(() => revealObserver.disconnect());
+	}
 
-    const updateDialogue = (progress: number) => {
-      if (!balconyScene || !dialogueLines.length || reducedMotion) return;
+	const updateDialogue = (progress: number) => {
+		if (!balconyScene || !dialogueLines.length || reducedMotion) return;
 
-      const dialogueStart = 0.15;
-      const dialogueEnd = 0.58;
-      const dialogueProgress = clamp((progress - dialogueStart) / (dialogueEnd - dialogueStart));
-      const pairCount = Math.ceil(dialogueLines.length / 2);
-      const pairSegment = dialogueProgress * pairCount;
-      const currentPair = Math.min(pairCount - 1, Math.floor(pairSegment));
-      const localPairProgress = Math.min(pairSegment - currentPair, 1);
-      const incomingWindow = 0.18;
-      const replyStart = 0.45;
-      const replyWindow = 0.18;
+		const dialogueStart = 0.15;
+		const dialogueEnd = 0.58;
+		const dialogueProgress = clamp(
+			(progress - dialogueStart) / (dialogueEnd - dialogueStart),
+		);
+		const pairCount = Math.ceil(dialogueLines.length / 2);
+		const pairSegment = dialogueProgress * pairCount;
+		const currentPair = Math.min(pairCount - 1, Math.floor(pairSegment));
+		const localPairProgress = Math.min(pairSegment - currentPair, 1);
+		const incomingWindow = 0.18;
+		const replyStart = 0.45;
+		const replyWindow = 0.18;
 
-      dialogueLines.forEach((line, index) => {
-        let opacity = 0;
-        let offset = index % 2 === 0 ? 1.2 : -1.2;
-        const pairIndex = Math.floor(index / 2);
-        const isIncoming = index % 2 === 0;
+		dialogueLines.forEach((line, index) => {
+			let opacity = 0;
+			let offset = index % 2 === 0 ? 1.2 : -1.2;
+			const pairIndex = Math.floor(index / 2);
+			const isIncoming = index % 2 === 0;
 
-        if (dialogueProgress >= 1) {
-          opacity = 0;
-        } else if (pairIndex === currentPair) {
-          if (isIncoming) {
-            opacity = clamp(localPairProgress / incomingWindow);
-          } else {
-            opacity = clamp((localPairProgress - replyStart) / replyWindow);
-          }
-          offset = (isIncoming ? 1 : -1) * (1 - opacity) * 1.2;
-        } else if (pairIndex === currentPair - 1 && localPairProgress < incomingWindow) {
-          opacity = 1 - clamp(localPairProgress / incomingWindow);
-          offset = (isIncoming ? -1 : 1) * (1 - opacity) * 0.8;
-        }
+			if (dialogueProgress >= 1) {
+				opacity = 0;
+			} else if (pairIndex === currentPair) {
+				if (isIncoming) {
+					opacity = clamp(localPairProgress / incomingWindow);
+				} else {
+					opacity = clamp((localPairProgress - replyStart) / replyWindow);
+				}
+				offset = (isIncoming ? 1 : -1) * (1 - opacity) * 1.2;
+			} else if (
+				pairIndex === currentPair - 1 &&
+				localPairProgress < incomingWindow
+			) {
+				opacity = 1 - clamp(localPairProgress / incomingWindow);
+				offset = (isIncoming ? -1 : 1) * (1 - opacity) * 0.8;
+			}
 
-        line.style.setProperty("--dialogue-opacity", opacity.toFixed(3));
-        line.style.setProperty("--dialogue-y", `${offset.toFixed(3)}rem`);
-      });
+			line.style.setProperty("--dialogue-opacity", opacity.toFixed(3));
+			line.style.setProperty("--dialogue-y", `${offset.toFixed(3)}rem`);
+		});
 
-      balconyScene.style.setProperty("--dialogue-ellipsis", "0");
-    };
+		balconyScene.style.setProperty("--dialogue-ellipsis", "0");
+	};
 
-    const updateBalconyComposition = (progress: number) => {
-      if (!balconyScene || reducedMotion) return;
+	const updateBalconyComposition = (progress: number) => {
+		if (!balconyScene || reducedMotion) return;
 
-      // Finish the sunset first, then crossfade into the memory scene. The
-      // eased values keep the image and copy from snapping at the boundary.
-      const sunsetIn = easeInOut((progress - 0.44) / 0.16);
-      const sunsetExit = easeInOut((progress - 0.64) / 0.14);
-      const sunsetFrameOpacity = sunsetIn * (1 - sunsetExit);
-      const hairCopyIn = easeInOut((progress - 0.78) / 0.14);
-      const midHairIn = easeInOut((progress - 0.77) / 0.13);
-      const finalHairIn = easeInOut((progress - 0.9) / 0.1);
-      const balconyCopyOpacity = 1 - easeInOut((progress - 0.48) / 0.16);
+		// Finish the sunset first, then crossfade into the memory scene. The
+		// eased values keep the image and copy from snapping at the boundary.
+		const sunsetIn = easeInOut((progress - 0.44) / 0.16);
+		const sunsetExit = easeInOut((progress - 0.64) / 0.14);
+		const sunsetFrameOpacity = sunsetIn * (1 - sunsetExit);
+		const hairCopyIn = easeInOut((progress - 0.78) / 0.14);
+		const midHairIn = easeInOut((progress - 0.77) / 0.13);
+		const finalHairIn = easeInOut((progress - 0.9) / 0.1);
+		const balconyCopyOpacity = 1 - easeInOut((progress - 0.48) / 0.16);
 
-      balconyScene.style.setProperty("--sunset-frame-opacity", sunsetFrameOpacity.toFixed(3));
-      balconyScene.style.setProperty("--memory-pair-opacity", sunsetExit.toFixed(3));
-      balconyScene.style.setProperty("--memory-mid-opacity", midHairIn.toFixed(3));
-      balconyScene.style.setProperty("--memory-final-opacity", finalHairIn.toFixed(3));
-      balconyScene.style.setProperty(
-        "--balcony-copy-opacity",
-        balconyCopyOpacity.toFixed(3),
-      );
-      balconyScene.style.setProperty(
-        "--balcony-copy-y",
-        `${((1 - balconyCopyOpacity) * 1.1).toFixed(3)}rem`,
-      );
-      balconyScene.style.setProperty("--hair-copy-opacity", hairCopyIn.toFixed(3));
-      balconyScene.style.setProperty(
-        "--hair-copy-y",
-        `${((1 - hairCopyIn) * 1.1).toFixed(3)}rem`,
-      );
-      balconyScene.style.setProperty(
-        "--hair-glow-opacity",
-        (sunsetExit * (0.16 + finalHairIn * 0.84)).toFixed(3),
-      );
-    };
+		balconyScene.style.setProperty(
+			"--sunset-frame-opacity",
+			sunsetFrameOpacity.toFixed(3),
+		);
+		balconyScene.style.setProperty(
+			"--memory-pair-opacity",
+			sunsetExit.toFixed(3),
+		);
+		balconyScene.style.setProperty(
+			"--memory-mid-opacity",
+			midHairIn.toFixed(3),
+		);
+		balconyScene.style.setProperty(
+			"--memory-final-opacity",
+			finalHairIn.toFixed(3),
+		);
+		balconyScene.style.setProperty(
+			"--balcony-copy-opacity",
+			balconyCopyOpacity.toFixed(3),
+		);
+		balconyScene.style.setProperty(
+			"--balcony-copy-y",
+			`${((1 - balconyCopyOpacity) * 1.1).toFixed(3)}rem`,
+		);
+		balconyScene.style.setProperty(
+			"--hair-copy-opacity",
+			hairCopyIn.toFixed(3),
+		);
+		balconyScene.style.setProperty(
+			"--hair-copy-y",
+			`${((1 - hairCopyIn) * 1.1).toFixed(3)}rem`,
+		);
+		balconyScene.style.setProperty(
+			"--hair-glow-opacity",
+			(sunsetExit * (0.16 + finalHairIn * 0.84)).toFixed(3),
+		);
+	};
 
-    const updateDeskComposition = (progress: number) => {
-      if (!deskScene || reducedMotion) return;
+	const updateDeskComposition = (progress: number) => {
+		if (!deskScene || reducedMotion) return;
 
-      const duskIn = easeInOut((progress - 0.14) / 0.28);
-      const duskOut = easeInOut((progress - 0.48) / 0.26);
-      const duskOpacity = duskIn * (1 - duskOut);
-      const nightIn = easeInOut((progress - 0.46) / 0.48);
-      const copyIn = easeInOut((progress - 0.08) / 0.24);
-      const copyOut = easeInOut((progress - 0.86) / 0.14);
-      const copyOpacity = copyIn * (1 - copyOut);
+		const duskIn = easeInOut((progress - 0.14) / 0.28);
+		const duskOut = easeInOut((progress - 0.48) / 0.26);
+		const duskOpacity = duskIn * (1 - duskOut);
+		const nightIn = easeInOut((progress - 0.46) / 0.48);
+		const copyIn = easeInOut((progress - 0.08) / 0.24);
+		const copyOut = easeInOut((progress - 0.86) / 0.14);
+		const copyOpacity = copyIn * (1 - copyOut);
 
-      deskScene.style.setProperty("--desk-dusk-opacity", duskOpacity.toFixed(3));
-      deskScene.style.setProperty("--desk-night-opacity", nightIn.toFixed(3));
-      deskScene.style.setProperty("--desk-copy-opacity", copyOpacity.toFixed(3));
-      deskScene.style.setProperty(
-        "--desk-copy-y",
-        `${((1 - copyIn) * 1.1 + copyOut * 0.75).toFixed(3)}rem`,
-      );
-    };
+		deskScene.style.setProperty("--desk-dusk-opacity", duskOpacity.toFixed(3));
+		deskScene.style.setProperty("--desk-night-opacity", nightIn.toFixed(3));
+		deskScene.style.setProperty("--desk-copy-opacity", copyOpacity.toFixed(3));
+		deskScene.style.setProperty(
+			"--desk-copy-y",
+			`${((1 - copyIn) * 1.1 + copyOut * 0.75).toFixed(3)}rem`,
+		);
+	};
 
-    const updateEndingComposition = (progress: number) => {
-      if (!endingScene || reducedMotion) return;
+	const updateEndingComposition = (progress: number) => {
+		if (!endingScene || reducedMotion) return;
 
-      const emptyIn = easeInOut((progress - 0.2) / 0.74);
+		const emptyIn = easeInOut((progress - 0.2) / 0.74);
 
-      endingScene.style.setProperty("--ending-empty-opacity", emptyIn.toFixed(3));
-      updateEndingCopy(progress);
-    };
+		endingScene.style.setProperty("--ending-empty-opacity", emptyIn.toFixed(3));
+		updateEndingCopy(progress);
+	};
 
-    const updateSceneProgress = () => {
-      scrollFrame = 0;
-      scenes.forEach((scene) => {
-        const rect = scene.getBoundingClientRect();
-        const travel = Math.max(scene.offsetHeight - window.innerHeight * 0.64, 1);
-        const progress = reducedMotion
-          ? 1
-          : clamp((window.innerHeight * 0.2 - rect.top) / travel);
-        scene.style.setProperty("--film-progress", progress.toFixed(4));
-        if (scene === balconyScene) {
-          updateDialogue(progress);
-          updateBalconyComposition(progress);
-        } else if (scene === deskScene) {
-          updateDeskComposition(progress);
-        } else if (scene === endingScene) {
-          updateEndingComposition(progress);
-        }
-      });
-    };
+	const updateSceneProgress = () => {
+		scrollFrame = 0;
+		scenes.forEach((scene) => {
+			const rect = scene.getBoundingClientRect();
+			const travel = Math.max(
+				scene.offsetHeight - window.innerHeight * 0.64,
+				1,
+			);
+			const progress = reducedMotion
+				? 1
+				: clamp((window.innerHeight * 0.2 - rect.top) / travel);
+			scene.style.setProperty("--film-progress", progress.toFixed(4));
+			if (scene === balconyScene) {
+				updateDialogue(progress);
+				updateBalconyComposition(progress);
+			} else if (scene === deskScene) {
+				updateDeskComposition(progress);
+			} else if (scene === endingScene) {
+				updateEndingComposition(progress);
+			}
+		});
+	};
 
-    const queueSceneProgress = () => {
-      if (!scrollFrame) scrollFrame = window.requestAnimationFrame(updateSceneProgress);
-    };
+	const queueSceneProgress = () => {
+		if (!scrollFrame)
+			scrollFrame = window.requestAnimationFrame(updateSceneProgress);
+	};
 
-    updateSceneProgress();
-    window.addEventListener("scroll", queueSceneProgress, { passive: true });
-    window.addEventListener("resize", queueSceneProgress);
-    cleanups.push(
-      () => window.removeEventListener("scroll", queueSceneProgress),
-      () => window.removeEventListener("resize", queueSceneProgress),
-      () => window.cancelAnimationFrame(scrollFrame),
-    );
+	updateSceneProgress();
+	window.addEventListener("scroll", queueSceneProgress, { passive: true });
+	window.addEventListener("resize", queueSceneProgress);
+	cleanups.push(
+		() => window.removeEventListener("scroll", queueSceneProgress),
+		() => window.removeEventListener("resize", queueSceneProgress),
+		() => window.cancelAnimationFrame(scrollFrame),
+	);
 
-    return () => cleanups.forEach((cleanup) => cleanup());
-  });
+	return () => {
+		for (const cleanup of cleanups) cleanup();
+	};
+});
 </script>
 
 <article
@@ -327,7 +366,7 @@
   id="grandma-film"
   class="grandma-film markdown-content"
   class:grandma-film--plain={plainTextMode}
-  aria-label="在奶奶的白发里，我看见了时间"
+  aria-label="文章动态阅读模板"
 >
   <aside class="grandma-film__desktop-note" role="note" aria-label="阅读提示">
     <span class="grandma-film__desktop-note-label">阅读提示</span>
@@ -354,203 +393,203 @@
 
   <div id="grandma-film-interactive" class="grandma-film__interactive" hidden={plainTextMode}>
   <section class="grandma-film__prose grandma-film__prose--opening" data-film-reveal>
-    <p>休假结束后，又隔了许久没正经写点东西。</p>
-    <p>其实心里一直堆着满当当的感慨，千头万绪堵在喉咙口，真要落笔时，却又不知道该从何说起。索性就聊聊这半个多月以来，沉在心底的几分真实感受。</p>
+    <p>{sceneText("copy-01")}</p>
+    <p>{sceneText("copy-02")}</p>
   </section>
 
   <section class="grandma-film__chapter grandma-film__chapter--arrival">
-    <h2 id="起因" data-film-reveal>起因</h2>
-    <div class="grandma-film__date-track" aria-label="假期时间线">
+    <h2 id="film-heading-95" data-film-reveal>{sceneText("copy-03")}</h2>
+    <div class="grandma-film__date-track" aria-label="文章场景">
       <div class="grandma-film__date-item" data-film-reveal>
-        <time datetime="2026-08-28">8 / 28</time>
-        <span>开始休假</span>
+        <time datetime="">{sceneText("copy-04")}</time>
+        <span>{sceneText("copy-05")}</span>
       </div>
       <div class="grandma-film__date-item grandma-film__date-item--home" data-film-reveal>
-        <time datetime="2026-08-31">8 / 31 — 9 / 1</time>
-        <span>回了两天家</span>
+        <time datetime="">{sceneText("copy-06")}</time>
+        <span>{sceneText("copy-07")}</span>
       </div>
       <div class="grandma-film__date-item" data-film-reveal>
-        <time datetime="2026-09-06">9 / 6</time>
-        <span>假期结束</span>
+        <time datetime="">{sceneText("copy-08")}</time>
+        <span>{sceneText("copy-09")}</span>
       </div>
     </div>
     <div class="grandma-film__prose grandma-film__prose--narrow" data-film-reveal>
-      <p>假期从 8 月 28 日开始，一直到 9 月 6 日。8 月 31 日和 9 月 1 日，我回了两天家。算下来，前前后后还是有将近半个月，没有像往常那样好好待在家里。</p>
-      <p>放在以前，每周休息日我总要抽一天回去，看看家里人，吃顿热乎的家常菜。这件事早已经成了不用刻意提醒的习惯。可这次一下子隔了这么久，再踏进家门的时候，竟莫名生出了一点生疏的亲切感。</p>
+      <p>{sceneText("copy-10")}</p>
+      <p>{sceneText("copy-11")}</p>
     </div>
   </section>
 
-  <section class="grandma-film__scene grandma-film__scene--balcony" data-film-scene aria-label="奶奶先坐在阳台上，我走过去坐到她身边">
-    <h2 id="在奶奶的白发里看见时间" class="grandma-film__toc-heading grandma-film__toc-heading--scene-anchor">在奶奶的白发里，看见时间</h2>
+  <section class="grandma-film__scene grandma-film__scene--balcony" data-film-scene aria-label="文章场景">
+    <h2 id="film-heading-96" class="grandma-film__toc-heading grandma-film__toc-heading--scene-anchor">{sceneText("copy-12")}</h2>
     <div class="grandma-film__sticky">
       <div class="grandma-film__image-pair" aria-hidden="true">
-        <img class="grandma-film__image grandma-film__image--base" src={balconyWaiting} alt="" />
-        <img class="grandma-film__image grandma-film__image--approaching" src={balconyApproaching} alt="" />
-        <img class="grandma-film__image grandma-film__image--together" src={balconyTogether} alt="" />
-        <img class="grandma-film__image grandma-film__image--sunset" src={balconySunset} alt="" />
+        <img class="grandma-film__image grandma-film__image--base" src={balconyWaiting || undefined} alt="" />
+        <img class="grandma-film__image grandma-film__image--approaching" src={balconyApproaching || undefined} alt="" />
+        <img class="grandma-film__image grandma-film__image--together" src={balconyTogether || undefined} alt="" />
+        <img class="grandma-film__image grandma-film__image--sunset" src={balconySunset || undefined} alt="" />
         <span class="grandma-film__light-sweep"></span>
       </div>
       <div class="grandma-film__image-pair grandma-film__image-pair--memory" aria-hidden="true">
-        <img class="grandma-film__image grandma-film__image--memory-base" src={grandmaMemory} alt="" />
-        <img class="grandma-film__image grandma-film__image--memory-mid" src={grandmaHair} alt="" />
-        <img class="grandma-film__image grandma-film__image--memory-final" src={grandmaHair} alt="" />
+        <img class="grandma-film__image grandma-film__image--memory-base" src={grandmaMemory || undefined} alt="" />
+        <img class="grandma-film__image grandma-film__image--memory-mid" src={grandmaHair || undefined} alt="" />
+        <img class="grandma-film__image grandma-film__image--memory-final" src={grandmaHair || undefined} alt="" />
         <span class="grandma-film__hair-glow"></span>
       </div>
       <p class="grandma-film__scroll-hint" role="note"><span class="grandma-film__scroll-icon" aria-hidden="true"></span>缓慢滚动鼠标，播放动画</p>
       <div class="grandma-film__scene-copy grandma-film__scene-copy--balcony" data-film-reveal>
-        <p class="grandma-film__small-label">周日下午 · 饭后</p>
-        <p>奶奶已经坐在阳台上了。我从屋里走出来，搬了张凳子，坐到她身边。</p>
-        <p>接下来的很长一段时间，我们一句接一句地聊着。</p>
+        <p class="grandma-film__small-label">{sceneText("copy-13")}</p>
+        <p>{sceneText("copy-14")}</p>
+        <p>{sceneText("copy-15")}</p>
       </div>
       <div class="grandma-film__scene-copy grandma-film__scene-copy--hair-transition">
-        <p class="grandma-film__small-label">那一刻</p>
-        <p>我正讲得起劲，目光无意间扫过她的头发。</p>
-        <p class="grandma-film__line-emphasis">那一刻，我像是忽然看见了时间留下的证据。</p>
+        <p class="grandma-film__small-label">{sceneText("copy-16")}</p>
+        <p>{sceneText("copy-17")}</p>
+        <p class="grandma-film__line-emphasis">{sceneText("copy-18")}</p>
       </div>
-      <div class="grandma-film__dialogue" aria-label="我和奶奶的阳台对话">
-        <span class="grandma-film__dialogue-notice">周日下午 · 阳台</span>
+      <div class="grandma-film__dialogue" aria-label="文章场景">
+        <span class="grandma-film__dialogue-notice">{sceneText("copy-19")}</span>
         <article class="grandma-film__dialogue-line grandma-film__dialogue-line--incoming" data-film-dialogue-line>
-          <span class="grandma-film__dialogue-name">奶奶</span>
-          <p>最近工作怎么样？</p>
+          <span class="grandma-film__dialogue-name">{sceneText("copy-20")}</span>
+          <p>{sceneText("copy-21")}</p>
         </article>
         <article class="grandma-film__dialogue-line grandma-film__dialogue-line--outgoing" data-film-dialogue-line>
-          <span class="grandma-film__dialogue-name">我</span>
-          <p>还行。就是一直在想，之后到底要走什么样的路。</p>
+          <span class="grandma-film__dialogue-name">{sceneText("copy-22")}</span>
+          <p>{sceneText("copy-23")}</p>
         </article>
         <article class="grandma-film__dialogue-line grandma-film__dialogue-line--incoming" data-film-dialogue-line>
-          <span class="grandma-film__dialogue-name">奶奶</span>
-          <p>想好了吗？</p>
+          <span class="grandma-film__dialogue-name">{sceneText("copy-24")}</span>
+          <p>{sceneText("copy-25")}</p>
         </article>
         <article class="grandma-film__dialogue-line grandma-film__dialogue-line--outgoing" data-film-dialogue-line>
-          <span class="grandma-film__dialogue-name">我</span>
-          <p>还没有。但我想趁年轻，做点真正属于自己的事情。</p>
+          <span class="grandma-film__dialogue-name">{sceneText("copy-26")}</span>
+          <p>{sceneText("copy-27")}</p>
         </article>
         <article class="grandma-film__dialogue-line grandma-film__dialogue-line--incoming" data-film-dialogue-line>
-          <span class="grandma-film__dialogue-name">奶奶</span>
-          <p>想做什么就去做。别总想着等以后。</p>
+          <span class="grandma-film__dialogue-name">{sceneText("copy-28")}</span>
+          <p>{sceneText("copy-29")}</p>
         </article>
         <article class="grandma-film__dialogue-line grandma-film__dialogue-line--outgoing" data-film-dialogue-line>
-          <span class="grandma-film__dialogue-name">我</span>
-          <p>我只是怕走错路，也怕来不及陪你。</p>
+          <span class="grandma-film__dialogue-name">{sceneText("copy-30")}</span>
+          <p>{sceneText("copy-31")}</p>
         </article>
         <article class="grandma-film__dialogue-line grandma-film__dialogue-line--incoming" data-film-dialogue-line>
-          <span class="grandma-film__dialogue-name">奶奶</span>
-          <p>你能回来坐坐，我就高兴。</p>
+          <span class="grandma-film__dialogue-name">{sceneText("copy-32")}</span>
+          <p>{sceneText("copy-33")}</p>
         </article>
         <article class="grandma-film__dialogue-line grandma-film__dialogue-line--outgoing" data-film-dialogue-line>
-          <span class="grandma-film__dialogue-name">我</span>
-          <p>嗯，那我常回来。</p>
+          <span class="grandma-film__dialogue-name">{sceneText("copy-34")}</span>
+          <p>{sceneText("copy-35")}</p>
         </article>
         <article class="grandma-film__dialogue-line grandma-film__dialogue-line--incoming" data-film-dialogue-line>
-          <span class="grandma-film__dialogue-name">奶奶</span>
-          <p>……</p>
+          <span class="grandma-film__dialogue-name">{sceneText("copy-36")}</span>
+          <p>{sceneText("copy-37")}</p>
         </article>
         <article class="grandma-film__dialogue-line grandma-film__dialogue-line--outgoing" data-film-dialogue-line>
-          <span class="grandma-film__dialogue-name">我</span>
-          <p>……</p>
+          <span class="grandma-film__dialogue-name">{sceneText("copy-38")}</span>
+          <p>{sceneText("copy-39")}</p>
         </article>
       </div>
     </div>
   </section>
 
   <section class="grandma-film__prose grandma-film__prose--narrow" data-film-reveal>
-    <p>从前印象里，她总还留着大半黑发，常常笑着说自己头发白得慢，用不着染。可那天下午，太阳斜斜地落下来，明晃晃照得一清二楚——哪里还有什么黑发，满头都已经是霜白的颜色，连鬓角深处藏着的几根，也全都白透了。</p>
-    <p>我的心里猛地咯噔一下，话音也不自觉顿了半拍。</p>
-    <p>她依旧坐在那里听我说话，依旧会在我起身的时候问一句，要不要再带点什么。可我忽然意识到，那个我以为一直都会在的奶奶，也正在一天一天地老去。</p>
+    <p>{sceneText("copy-40")}</p>
+    <p>{sceneText("copy-41")}</p>
+    <p>{sceneText("copy-42")}</p>
   </section>
 
   <section class="grandma-film__quote" data-film-reveal>
-    <p>我到底，还剩下多少这样的日子？</p>
-    <span>还能有多少次，这样安安静静地坐在她身边？</span>
+    <p>{sceneText("copy-43")}</p>
+    <span>{sceneText("copy-44")}</span>
   </section>
 
   <section class="grandma-film__chapter grandma-film__chapter--time">
-    <h2 id="时间从来不会等你准备好" data-film-reveal>时间从来不会等你准备好</h2>
+    <h2 id="film-heading-97" data-film-reveal>{sceneText("copy-45")}</h2>
     <div class="grandma-film__prose grandma-film__prose--narrow">
-      <p data-film-reveal>时间从来都是最残忍的东西。它不声不响，从不停留。你总觉得日子还长，总想着等忙完这阵，等做出点成绩，等站稳脚跟以后，再好好陪陪家人。</p>
-      <p class="grandma-film__paragraph-break" data-film-reveal>可时间从来不会等你准备好。</p>
-      <p data-film-reveal>它就藏在奶奶新生的白发里，藏在每次回家时她递过来的热汤里，藏在一句句“在外面照顾好自己”的叮嘱里。不知不觉间，它已经把我们的岁月翻过去了大半。</p>
-      <p data-film-reveal>也是从那时起，我重新想起了“时间”这件事。</p>
-      <p data-film-reveal>以前我总觉得，上班嘛，说白了就是公司用钱买你的时间。每天八小时坐满，工作干到位，就对得起这份薪水。</p>
-      <p data-film-reveal>可后来我慢慢想明白，公司真正买走的，或许不是你的时间，而是你在这段时间里能够交付的价值。而你拿去交换的，却是人生中一段不可回收的时间。</p>
-      <p data-film-reveal>最遗憾的是，很多人卖着卖着，就把自己整段的人生都打包卖了出去。</p>
-      <p data-film-reveal>连带着下班后的精力、对未来的规划、对生活的期待，全都困在了那份固定的薪水里。白天把时间交给工作，晚上把精力交给疲惫，等真正想做点自己的事情时，才发现已经没有多少力气了。</p>
-      <p data-film-reveal>我们总以为以后还有机会。</p>
-      <blockquote data-film-reveal>“以后”这两个字，往往是时间最温柔、也最危险的骗局。</blockquote>
-      <p data-film-reveal>我今年 21 岁。过去的人生，几张幻灯片、几页简历就能全部放完，快得像一眨眼。再晃几年，三十岁也就到了。</p>
-      <p data-film-reveal>这个年纪的我，没有太多资源，也没有一张保证成功的底牌。但至少，我还拥有试错的时间，还拥有重新开始的可能。</p>
-      <p data-film-reveal>我不想等到那时候回头看，才发现自己最好的年纪，全都用来给别人的事业添砖加瓦，自己的时间、精力和选择，却始终没有真正掌握在自己手里。</p>
+      <p data-film-reveal>{sceneText("copy-46")}</p>
+      <p class="grandma-film__paragraph-break" data-film-reveal>{sceneText("copy-47")}</p>
+      <p data-film-reveal>{sceneText("copy-48")}</p>
+      <p data-film-reveal>{sceneText("copy-49")}</p>
+      <p data-film-reveal>{sceneText("copy-50")}</p>
+      <p data-film-reveal>{sceneText("copy-51")}</p>
+      <p data-film-reveal>{sceneText("copy-52")}</p>
+      <p data-film-reveal>{sceneText("copy-53")}</p>
+      <p data-film-reveal>{sceneText("copy-54")}</p>
+      <blockquote data-film-reveal>{sceneText("copy-55")}</blockquote>
+      <p data-film-reveal>{sceneText("copy-56")}</p>
+      <p data-film-reveal>{sceneText("copy-57")}</p>
+      <p data-film-reveal>{sceneText("copy-58")}</p>
     </div>
   </section>
 
-  <section class="grandma-film__scene grandma-film__scene--desk" data-film-scene aria-label="从工作到自己的事情">
-      <h2 id="我要把时间的主动权拿回来" class="grandma-film__toc-heading">我要把时间的主动权拿回来</h2>
+  <section class="grandma-film__scene grandma-film__scene--desk" data-film-scene aria-label="文章场景">
+      <h2 id="film-heading-98" class="grandma-film__toc-heading">{sceneText("copy-59")}</h2>
     <div class="grandma-film__sticky">
       <div class="grandma-film__image-pair" aria-hidden="true">
-        <img class="grandma-film__image grandma-film__image--base" src={deskDay} alt="" />
-        <img class="grandma-film__image grandma-film__image--dusk" src={deskDusk} alt="" />
-        <img class="grandma-film__image grandma-film__image--top" src={deskNight} alt="" />
+        <img class="grandma-film__image grandma-film__image--base" src={deskDay || undefined} alt="" />
+        <img class="grandma-film__image grandma-film__image--dusk" src={deskDusk || undefined} alt="" />
+        <img class="grandma-film__image grandma-film__image--top" src={deskNight || undefined} alt="" />
         <span class="grandma-film__desk-glow"></span>
       </div>
       <p class="grandma-film__scroll-hint" role="note"><span class="grandma-film__scroll-icon" aria-hidden="true"></span>缓慢滚动鼠标，播放动画</p>
       <div class="grandma-film__scene-copy grandma-film__scene-copy--desk" data-film-reveal>
-        <p class="grandma-film__small-label">再晃几年</p>
-        <p class="grandma-film__line-emphasis">所以我想，我得把时间的主动权拿回来。</p>
+        <p class="grandma-film__small-label">{sceneText("copy-60")}</p>
+        <p class="grandma-film__line-emphasis">{sceneText("copy-61")}</p>
       </div>
     </div>
   </section>
 
   <section class="grandma-film__chapter grandma-film__chapter--startup">
-    <h2 id="决定自己创业" data-film-reveal>我要自己创业了</h2>
+    <h2 id="film-heading-99" data-film-reveal>{sceneText("copy-62")}</h2>
     <div class="grandma-film__prose grandma-film__prose--narrow">
-      <p data-film-reveal>这句话写出来很轻，可真正扛在身上，一点都不轻。</p>
-      <p data-film-reveal>上班这半年，我其实从来没有停下过自己的事情。从接触跨境电商的第一天开始，我的方向就不是传统电商那条老路。</p>
-      <p data-film-reveal>别人靠铺货，靠低价，靠不断复制别人已经走过的路径；而我更想磨出一套属于自己的玩法——跨境电商 + AIGC + OPC。</p>
-      <p data-film-reveal>从选品逻辑，到内容生产，再到店铺运营，把能够流程化、自动化的环节尽可能沉淀下来。这样以后不管是铺店，还是复制运营方式，都不需要每次从头开始。</p>
-      <p class="grandma-film__paragraph-break" data-film-reveal>这不是一时头脑发热的冲动，但也确实带着一股头脑发热的勇气。</p>
-      <p class="grandma-film__fear" data-film-reveal>我害怕。</p>
-      <p data-film-reveal>尤其是奶奶。有些人，或许真的等不起我们口中的“以后”。</p>
-      <p data-film-reveal>接下来，我会带着这套 Codex，一步一步运营两家店铺：一家完全交给 Codex，去跑一套由我设计好的运营流程；另一家则由我自己独立运营，亲自做判断，也亲自承担结果。</p>
-      <p data-film-reveal>这既是创业，也是一次实验。</p>
-      <p data-film-reveal>我想看看，一个人究竟能不能借助 AI，把自己的想法真正落地；也想看看，当工具越来越强，一个普通人能不能拥有一套不依赖大团队的工作方式。</p>
+      <p data-film-reveal>{sceneText("copy-63")}</p>
+      <p data-film-reveal>{sceneText("copy-64")}</p>
+      <p data-film-reveal>{sceneText("copy-65")}</p>
+      <p data-film-reveal>{sceneText("copy-66")}</p>
+      <p class="grandma-film__paragraph-break" data-film-reveal>{sceneText("copy-67")}</p>
+      <p class="grandma-film__fear" data-film-reveal>{sceneText("copy-68")}</p>
+      <p data-film-reveal>{sceneText("copy-69")}</p>
+      <p data-film-reveal>{sceneText("copy-70")}</p>
+      <p data-film-reveal>{sceneText("copy-71")}</p>
+      <p data-film-reveal>{sceneText("copy-72")}</p>
     </div>
   </section>
 
   <section class="grandma-film__chapter grandma-film__chapter--truth">
-    <h2 id="我知道创业不等于自由" data-film-reveal>我知道创业不等于自由</h2>
+    <h2 id="film-heading-100" data-film-reveal>{sceneText("copy-73")}</h2>
     <div class="grandma-film__prose grandma-film__prose--narrow">
-      <p data-film-reveal>当然，我知道创业不等于自由。</p>
-      <p data-film-reveal>至少在一开始，它意味着更多的不确定、更长的工作时间，以及更直接的压力。上班有固定的发薪日，有同事、有流程，也有人替你分担一部分问题。自己做以后，没有人会替你回答为什么没有订单，为什么犯了错，为什么还没有结果。</p>
-      <p data-film-reveal>这些我都知道。</p>
-      <p data-film-reveal>所以我并不是因为看不起上班，也不是因为笃定自己一定会成功，才选择走这条路。</p>
-      <p data-film-reveal>恰恰是因为我知道它可能很难，甚至可能失败，所以才想趁自己还年轻的时候，认真为自己闯一次。</p>
-      <p data-film-reveal>有人说，安稳上班不好吗，何必折腾？</p>
-      <p data-film-reveal>可我总觉得，人活着，就是要争这一口气。</p>
-      <p class="grandma-film__line-emphasis" data-film-reveal>争的不是和谁比高低，也不是非要证明自己比别人强。争的是一份对人生的主动权。</p>
-      <p data-film-reveal>我要自己决定每天的时间花在哪里，决定自己的精力投入什么事情，决定自己愿意为什么样的结果负责。</p>
-      <p data-film-reveal>我想靠自己的双手，走出一条不一样的路。</p>
-      <p data-film-reveal>哪怕这条路并不平坦，哪怕中间会绕远、会犯错、会有一段时间看不到结果，至少那也是我自己选的路。</p>
-      <p data-film-reveal>不想等到白发爬上自己鬓角的时候，才遗憾年轻时没有为自己认真活过一次。</p>
+      <p data-film-reveal>{sceneText("copy-74")}</p>
+      <p data-film-reveal>{sceneText("copy-75")}</p>
+      <p data-film-reveal>{sceneText("copy-76")}</p>
+      <p data-film-reveal>{sceneText("copy-77")}</p>
+      <p data-film-reveal>{sceneText("copy-78")}</p>
+      <p data-film-reveal>{sceneText("copy-79")}</p>
+      <p data-film-reveal>{sceneText("copy-80")}</p>
+      <p class="grandma-film__line-emphasis" data-film-reveal>{sceneText("copy-81")}</p>
+      <p data-film-reveal>{sceneText("copy-82")}</p>
+      <p data-film-reveal>{sceneText("copy-83")}</p>
+      <p data-film-reveal>{sceneText("copy-84")}</p>
+      <p data-film-reveal>{sceneText("copy-85")}</p>
     </div>
   </section>
 
-  <section class="grandma-film__scene grandma-film__scene--ending" data-film-scene aria-label="蓝调时刻的空阳台">
-    <h2 id="路是走出来的不是想出来的" class="grandma-film__toc-heading">路是走出来的，不是想出来的</h2>
+  <section class="grandma-film__scene grandma-film__scene--ending" data-film-scene aria-label="文章场景">
+    <h2 id="film-heading-101" class="grandma-film__toc-heading">{sceneText("copy-86")}</h2>
     <div class="grandma-film__sticky">
       <div class="grandma-film__image-pair" aria-hidden="true">
-        <img class="grandma-film__image grandma-film__image--base" src={balconySunset} alt="" />
-        <img class="grandma-film__image grandma-film__image--top" src={balconyEmpty} alt="" />
+        <img class="grandma-film__image grandma-film__image--base" src={balconySunset || undefined} alt="" />
+        <img class="grandma-film__image grandma-film__image--top" src={balconyEmpty || undefined} alt="" />
         <span class="grandma-film__vignette"></span>
       </div>
       <p class="grandma-film__scroll-hint" role="note"><span class="grandma-film__scroll-icon" aria-hidden="true"></span>缓慢滚动鼠标，播放动画</p>
-      <div class="grandma-film__ending-copy" aria-label="文章结尾">
-        <p data-ending-copy data-ending-start="0.06" data-ending-end="0.22">其实还有很多情绪没有说出口，也不必都说透。</p>
-        <p data-ending-copy data-ending-start="0.19" data-ending-end="0.35">千言万语，最终都要落到实处。</p>
-        <h2 data-ending-copy data-ending-start="0.32" data-ending-end="0.53">路是走出来的，<br />不是想出来的。</h2>
-        <p data-ending-copy data-ending-start="0.5" data-ending-end="0.67">也希望读到这篇文章的人，能够珍惜时间，珍惜身边的人。</p>
-        <p data-ending-copy data-ending-start="0.63" data-ending-end="0.8">不要把所有重要的事情，都推给那个永远不会真正到来的“以后”。因为我们以为还很长的日子，可能转眼就过去了。</p>
-        <p data-ending-copy data-ending-start="0.76" data-ending-end="0.93">接下来的日子，我会把这些想法一点一点做出来，也把该承担的结果一一接住。</p>
-        <p class="grandma-film__last-line" data-ending-copy data-ending-start="0.89" data-ending-end="1">真正值得抓住的，往往就是眼前这一刻。</p>
+      <div class="grandma-film__ending-copy" aria-label="文章场景">
+        <p data-ending-copy data-ending-start="0.06" data-ending-end="0.22">{sceneText("copy-87")}</p>
+        <p data-ending-copy data-ending-start="0.19" data-ending-end="0.35">{sceneText("copy-88")}</p>
+        <h2 data-ending-copy data-ending-start="0.32" data-ending-end="0.53">{sceneText("copy-89")}<br />{sceneText("copy-90")}</h2>
+        <p data-ending-copy data-ending-start="0.5" data-ending-end="0.67">{sceneText("copy-91")}</p>
+        <p data-ending-copy data-ending-start="0.63" data-ending-end="0.8">{sceneText("copy-92")}</p>
+        <p data-ending-copy data-ending-start="0.76" data-ending-end="0.93">{sceneText("copy-93")}</p>
+        <p class="grandma-film__last-line" data-ending-copy data-ending-start="0.89" data-ending-end="1">{sceneText("copy-94")}</p>
       </div>
     </div>
   </section>

@@ -179,6 +179,11 @@ const {
 			return new Intl.NumberFormat("zh-CN").format(Number(value) || 0);
 		}
 
+		function formatFriendCount(value) {
+			const count = Math.max(0, Math.floor(Number(value) || 0));
+			return count >= 10000 ? `${(count / 10000).toFixed(1)}w` : formatNumber(count);
+		}
+
 		function flushPendingSummaryCounts(summary) {
 			summary.querySelectorAll("[data-analytics-pending-count]").forEach((element) => {
 				const target = Number(element.dataset.analyticsPendingCount);
@@ -446,13 +451,26 @@ const {
 			renderFriendClickBadges();
 		}
 
+		function renderFriendSitePageviews(stats) {
+			if (!stats) return;
+			const count = (Number(stats.pageviews) || 0) + historicalPageviewCount;
+			document.querySelectorAll("[data-friend-site-pageviews]").forEach((element) => {
+				element.textContent = formatFriendCount(count);
+				const badge = element.closest(".friend-click-count");
+				const label = `本站总访问 ${formatNumber(count)} 次`;
+				badge?.setAttribute("title", label);
+				badge?.setAttribute("aria-label", label);
+			});
+		}
+
 		function renderFriendClickBadges() {
 			const localCounts = getLocalFriendClickCounts();
 			document.querySelectorAll("[data-friend-clicks-for]").forEach((element) => {
 				const site = normalizeSiteUrl(element.getAttribute("data-friend-clicks-for"));
 				const count = (friendClickCountsBySite.get(site) || 0) + (localCounts.get(site) || 0);
 				const valueElement = element.querySelector("[data-friend-clicks-value]");
-				if (valueElement) valueElement.textContent = formatNumber(count);
+				if (valueElement) valueElement.textContent = formatFriendCount(count);
+				element.setAttribute("title", `从本站点击 ${formatNumber(count)} 次`);
 				element.setAttribute("aria-label", `从本站点击 ${formatNumber(count)} 次`);
 			});
 		}
@@ -497,7 +515,7 @@ const {
 			document.querySelectorAll('[data-umami-stat="todayVisitors"], [data-umami-stat="todayPageviews"]').forEach((element) => {
 				element.textContent = "加载中";
 			});
-			document.querySelectorAll("[data-friend-clicks-value]").forEach((element) => {
+			document.querySelectorAll("[data-friend-clicks-value], [data-friend-site-pageviews]").forEach((element) => {
 				element.textContent = "加载中";
 			});
 		}
@@ -506,7 +524,8 @@ const {
 			const blockLocalStats = shouldBlockLocalStats();
 			const needsViews = !blockLocalStats && Boolean(document.querySelector("[data-umami-pageviews]"));
 			const statElements = blockLocalStats ? [] : [...document.querySelectorAll("[data-umami-stat]")];
-			const needsStats = statElements.length > 0;
+			const needsSitePageviews = Boolean(document.querySelector("[data-friend-site-pageviews]"));
+			const needsStats = statElements.length > 0 || needsSitePageviews;
 			const needsTodayStats = statElements.some((element) =>
 				["todayVisitors", "todayPageviews"].includes(element.getAttribute("data-umami-stat")),
 			);
@@ -532,7 +551,11 @@ const {
 				const todayStats = tasks[2].status === "fulfilled" ? tasks[2].value : null;
 				const friendClickCounts = tasks[3].status === "fulfilled" ? tasks[3].value : null;
 				if (metrics) renderPageViews(metrics);
-				if (needsStats) renderSiteStats(stats, todayStats);
+				if (statElements.length > 0) renderSiteStats(stats, todayStats);
+				if (needsSitePageviews) {
+					if (stats) renderFriendSitePageviews(stats);
+					else document.querySelectorAll("[data-friend-site-pageviews]").forEach((element) => { element.textContent = "加载中"; });
+				}
 				if (friendClickCounts) renderFriendClickCounts(friendClickCounts);
 				if (!friendClickCounts && needsFriendClickCounts) {
 					document.querySelectorAll("[data-friend-clicks-value]").forEach((element) => {

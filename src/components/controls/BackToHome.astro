@@ -19,6 +19,15 @@ import { url } from "@/utils/url-utils";
 <script is:raw is:inline define:vars={{ homeUrl: url("/")}}>
   window.backToHome = function() {
     const url = homeUrl;
+    if (document.documentElement.dataset.siteTheme === "pure") {
+      const destination = new URL(url, window.location.href);
+      if (document.documentElement.dataset.siteThemePersistence === "url") {
+        destination.searchParams.set("siteTheme", "pure");
+      }
+      const navigation = new CustomEvent("pure:navigate", { detail: destination.href, cancelable: true });
+      if (document.dispatchEvent(navigation)) window.location.assign(destination.href);
+      return;
+    }
     if (window.swup) {
       window.swup.navigate(url);
     } else {

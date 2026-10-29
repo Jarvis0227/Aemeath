@@ -1,8 +1,11 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import sanitizeHtml from "sanitize-html";
+import { siteConfig } from "@/config";
 import type { FriendLink } from "@/types/friendsConfig";
+import { getSortedPostsList } from "@/utils/content-utils";
 import { formatDateToYYYYMMDD } from "@/utils/date-utils";
+import { getPostUrlBySlug } from "@/utils/url-utils";
 
 const FETCH_TIMEOUT_MS = 8000;
 const FETCH_RETRY_ATTEMPTS = 3;
@@ -301,7 +304,7 @@ async function fetchText(
 				headers: {
 					Accept: accept,
 					"Cache-Control": "no-cache",
-					"User-Agent": "Rainzt-Moments/1.1 (+https://rainzt.cn/)",
+					"User-Agent": `Aemeath-Moments/1.1 (+${siteConfig.site_url}/)`,
 				},
 			});
 			if (response.ok) {
@@ -435,8 +438,9 @@ async function mapWithConcurrency<T, R>(
 	return results;
 }
 
-export async function loadFriendsFeed(
+async function refreshFriendsFeed(
 	friends: FriendLink[],
+	cachedOnly = false,
 ): Promise<FriendsFeedSnapshot> {
 	const previousSnapshot = await readFriendsFeedSnapshot();
 	// 朋友圈按“日历日期”过滤未来文章：构建当天的文章全部保留，
@@ -446,7 +450,23 @@ export async function loadFriendsFeed(
 		friends,
 		5,
 		async (friend) => {
-			const result = await discoverFriendFeed(friend);
+			// Use this release's posts for our own feed; the live RSS may still
+			// contain a deleted article until this build has been published.
+			if (normalizeSiteUrl(friend.siteurl) === normalizeSiteUrl(siteConfig.site_url)) {
+				const posts = await getSortedPostsList();
+				return {
+					friend,
+					feedUrls: [new URL("rss.xml", siteConfig.site_url).href],
+					items: posts.slice(0, MAX_ITEMS_PER_FRIEND).map((post) => ({
+						title: post.data.title,
+						link: new URL(getPostUrlBySlug(post.id), siteConfig.site_url).href,
+						description: cleanText(post.data.description),
+						publishedAt: post.data.published,
+					})),
+					stale: false,
+				};
+			}
+			const result = cachedOnly ? null : await discoverFriendFeed(friend);
 			if (result) {
 				return {
 					friend,
@@ -505,7 +525,7 @@ export async function loadFriendsFeed(
 		(a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0),
 	);
 
-	await writeFriendsFeedSnapshot(records);
+	if (!cachedOnly) await writeFriendsFeedSnapshot(records);
 
 	const sources = records
 		.filter((record) => record.feedUrls.length > 0)
@@ -525,4 +545,37 @@ export async function loadFriendsFeed(
 		freshSources: sources.filter((source) => !source.stale).length,
 		staleSources: sources.filter((source) => source.stale).length,
 	};
+}
+
+// The friends cards and moments page share one refresh, including requests in flight.
+const feedLoads = new Map<
+	string,
+	{ expiresAt: number; result: Promise<FriendsFeedSnapshot> }
+>();
+export function loadFriendsFeed(
+	friends: FriendLink[],
+	options: { cachedOnly?: boolean } = {},
+): Promise<FriendsFeedSnapshot> {
+	const key = `${Boolean(options.cachedOnly)}:${JSON.stringify(
+		friends.map((friend) => [
+			friend.siteurl,
+			friend.rss,
+			friend.title,
+			friend.imgurl,
+		]),
+	)}`;
+	const now = Date.now();
+	for (const [cachedKey, cached] of feedLoads) {
+		if (cached.expiresAt <= now) feedLoads.delete(cachedKey);
+	}
+	const existing = feedLoads.get(key);
+	if (existing) return existing.result;
+	const result = refreshFriendsFeed(friends, options.cachedOnly).catch(
+		(error) => {
+			feedLoads.delete(key);
+			throw error;
+		},
+	);
+	feedLoads.set(key, { expiresAt: now + 5 * 60_000, result });
+	return result;
 }

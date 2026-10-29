@@ -65,6 +65,7 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 
 <script is:inline define:vars={{ urls: urlsJson, playerMode, hasMultiple }}>
 	(() => {
+		if (document.documentElement.dataset.siteTheme === "pure") return;
 		var urlList = JSON.parse(urls);
 		if (!urlList.length) return;
 		var isMultiple = urlList.length > 1;

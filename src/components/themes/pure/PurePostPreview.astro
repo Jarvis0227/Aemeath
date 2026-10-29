@@ -1,0 +1,28 @@
+---
+// Adapted from Astro Theme Pure's detailed PostPreview (Apache-2.0).
+import { render, type CollectionEntry } from "astro:content";
+import { Icon } from "astro-icon/components";
+import ImageWrapper from "@/components/common/ImageWrapper.astro";
+import { formatDateToYYYYMMDD } from "@/utils/date-utils";
+import { processCoverImageSync } from "@/utils/image-utils";
+import { getFileDirFromPath, getPostUrlBySlug, getTagUrl } from "@/utils/url-utils";
+
+interface Props {
+	entry: CollectionEntry<"posts">;
+}
+const { entry } = Astro.props;
+const { remarkPluginFrontmatter } = await render(entry);
+const cover = processCoverImageSync(entry.data.image, entry.id);
+const postUrl = getPostUrlBySlug(entry.id);
+---
+
+<li class="pure-post-preview">
+	{cover && <ImageWrapper src={cover} alt="" basePath={getFileDirFromPath(entry.filePath || "")} class="pure-post-preview__cover" plainImage />}
+	<a class="pure-post-preview__main" href={postUrl}>
+		<time datetime={entry.data.published.toISOString()}>{formatDateToYYYYMMDD(entry.data.published)}</time>
+		<div class="pure-post-preview__heading"><h2>{entry.data.pinned && <span class="pure-post-preview__pin">置顶</span>}{entry.data.title}</h2><span aria-hidden="true">→</span></div>
+		{entry.data.description && <p class="pure-post-preview__description">{entry.data.description}</p>}
+		<div class="pure-post-preview__meta"><span><Icon is:inline name="material-symbols:schedule-outline-rounded" />{remarkPluginFrontmatter.minutes} 分钟</span>{entry.data.category && <span>{entry.data.category}</span>}{entry.data.password && <span><Icon is:inline name="material-symbols:lock-outline" />加密文章</span>}</div>
+	</a>
+	{entry.data.tags.length > 0 && <ul class="pure-tags pure-post-preview__tags">{entry.data.tags.map((tag) => <li><a href={getTagUrl(tag)}>{tag}</a></li>)}</ul>}
+</li>

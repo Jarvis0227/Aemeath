@@ -7,7 +7,7 @@
 	<div class="welcome-toast-icon" aria-hidden="true">✦</div>
 	<div class="welcome-toast-copy">
 		<span class="welcome-toast-kicker">WELCOME</span>
-		<strong class="welcome-toast-title">欢迎来到朝朝听雨</strong>
+		<strong class="welcome-toast-title">欢迎来到Aemeath</strong>
 		<p class="welcome-toast-message">很高兴在这里遇见你。</p>
 	</div>
 	<button class="welcome-toast-close" type="button" aria-label="关闭欢迎提示">
@@ -146,6 +146,7 @@
 </style>
 
 <script>
+	import { serviceConfig } from "@/config/serviceConfig";
 	const welcomeSessionKey = "rain_welcome_seen_v1";
 
 	function getTimeGreeting(hour: number): string {
@@ -187,6 +188,7 @@
 		private abortController?: AbortController;
 
 		connectedCallback() {
+			if (document.documentElement.dataset.siteTheme === "pure") return;
 			if (sessionStorage.getItem(welcomeSessionKey)) return;
 
 			const closeButton =
@@ -215,8 +217,13 @@
 			);
 			const greeting = getTimeGreeting(new Date().getHours());
 
-			if (title) title.textContent = `${greeting}，欢迎来到朝朝听雨`;
+			if (title) title.textContent = `${greeting}，欢迎来到Aemeath`;
 			this.dataset.state = "visible";
+			if (!serviceConfig.visitorLocationUrl) {
+				if (message) message.textContent = "很高兴在这里遇见你。";
+				this.closeTimer = window.setTimeout(() => this.close(), 6500);
+				return;
+			}
 
 			this.abortController = new AbortController();
 			const timeout = window.setTimeout(
@@ -225,7 +232,7 @@
 			);
 
 			try {
-				const response = await fetch("https://v2.xxapi.cn/api/ip", {
+				const response = await fetch(serviceConfig.visitorLocationUrl, {
 					signal: this.abortController.signal,
 				});
 				if (!response.ok) throw new Error("location unavailable");

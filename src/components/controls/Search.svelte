@@ -5,6 +5,7 @@ import { navigateToPage } from "@utils/navigation-utils";
 import { onMount } from "svelte";
 import Icon from "@/components/common/Icon.svelte";
 import type { SearchResult } from "@/global";
+import { loadPagefind } from "@/utils/pagefind";
 import { url as formatUrl, getSearchUrl } from "@/utils/url-utils";
 
 type LocalSearchPost = {
@@ -103,6 +104,7 @@ const searchLocalPosts = async (keyword: string): Promise<SearchResult[]> => {
 };
 
 const togglePanel = () => {
+	void loadPagefind();
 	document
 		.getElementById("search-panel")
 		?.classList.toggle("float-panel-closed");
@@ -149,8 +151,9 @@ const search = async (keyword: string, isDesktop: boolean): Promise<void> => {
 		try {
 			let searchResults: SearchResult[] = [];
 
-			if (window.pagefind) {
-				const response = await window.pagefind.search(keyword);
+			const pagefind = await loadPagefind();
+			if (pagefind) {
+				const response = await pagefind.search(keyword);
 				const pagefindResults = await Promise.all(
 					response.results.map((item) => item.data()),
 				);
@@ -179,22 +182,8 @@ const search = async (keyword: string, isDesktop: boolean): Promise<void> => {
 };
 
 onMount(() => {
-	const initializeSearch = () => {
-		initialized = true;
-		if (keywordDesktop) search(keywordDesktop, true);
-		if (keywordMobile) search(keywordMobile, false);
-	};
-
-	if (window.pagefind || import.meta.env.DEV) {
-		initializeSearch();
-	} else {
-		document.addEventListener("pagefindready", initializeSearch, {
-			once: true,
-		});
-		document.addEventListener("pagefindloaderror", initializeSearch, {
-			once: true,
-		});
-	}
+	initialized = true;
+	return () => clearTimeout(debounceTimer);
 });
 
 $: if (initialized && (keywordDesktop || keywordDesktop === "")) {
@@ -213,7 +202,7 @@ $: if (initialized && (keywordMobile || keywordMobile === "")) {
     <Icon icon="material-symbols:search"
           class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30 dark:text-white/30"></Icon>
     <input placeholder={i18n(I18nKey.search)} bind:value={keywordDesktop}
-           on:focus={() => search(keywordDesktop, true)}
+           on:focus={() => { void loadPagefind(); void search(keywordDesktop, true); }}
            class="transition-all pl-10 text-sm bg-transparent outline-0
          h-full w-40 active:w-64 focus:w-64 text-black/50 dark:text-white/50"
     >
@@ -234,6 +223,7 @@ top-20 left-4 md:left-[unset] right-4 shadow-2xl rounded-2xl p-2">
         <Icon icon="material-symbols:search"
               class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30 dark:text-white/30"></Icon>
         <input placeholder={i18n(I18nKey.search)} bind:value={keywordMobile}
+               on:focus={() => { void loadPagefind(); }}
                class="pl-10 absolute inset-0 text-sm bg-transparent outline-0
                text-black/50 dark:text-white/50"
         >

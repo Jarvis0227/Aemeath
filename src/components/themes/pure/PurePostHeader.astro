@@ -1,0 +1,33 @@
+---
+// Adapted from Astro Theme Pure's Hero component (Apache-2.0).
+import type { CollectionEntry } from "astro:content";
+import { Icon } from "astro-icon/components";
+import ImageWrapper from "@/components/common/ImageWrapper.astro";
+import { coverImageConfig } from "@/config";
+import { formatDateToYYYYMMDD } from "@/utils/date-utils";
+import { getFileDirFromPath, getTagUrl } from "@/utils/url-utils";
+
+interface Props {
+	entry: CollectionEntry<"posts">;
+	cover?: string;
+	minutes: number;
+}
+const { entry, cover, minutes } = Astro.props;
+const basePath = getFileDirFromPath(entry.filePath || "");
+---
+
+<header class="pure-post-hero" data-theme-only="pure" data-pagefind-ignore="all">
+	{cover && coverImageConfig.enableInPost && <div class="pure-post-hero__image">
+		<div class="pure-post-hero__halo" aria-hidden="true"><ImageWrapper src={cover} alt="" basePath={basePath} loading="eager" fetchpriority="high" plainImage /></div>
+		<ImageWrapper src={cover} alt={entry.data.title} basePath={basePath} class="pure-post-hero__cover" loading="eager" fetchpriority="high" plainImage />
+	</div>}
+	<div class="pure-post-hero__info">
+		<span><Icon is:inline name="material-symbols:calendar-today-outline-rounded" /><time datetime={entry.data.published.toISOString()}>{formatDateToYYYYMMDD(entry.data.published)}</time>{entry.data.updated && entry.data.updated.getTime() !== entry.data.published.getTime() && <> / 更新 <time datetime={entry.data.updated.toISOString()}>{formatDateToYYYYMMDD(entry.data.updated)}</time></>}</span>
+		<span><Icon is:inline name="material-symbols:schedule-outline-rounded" />{minutes} 分钟</span>
+		{entry.data.tags.length > 0 && <span><Icon is:inline name="material-symbols:tag-rounded" />{entry.data.tags.map((tag, index) => <>{index > 0 && " / "}<a href={getTagUrl(tag)}>{tag}</a></>)}</span>}
+		{entry.data.password && <span><Icon is:inline name="material-symbols:lock-outline" />加密文章</span>}
+	</div>
+	<h1>{entry.data.title}</h1>
+	{entry.data.description && <p class="pure-post-hero__description">“{entry.data.description}”</p>}
+	<div class="pure-post-hero__divider" aria-hidden="true"></div>
+</header>

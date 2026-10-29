@@ -447,8 +447,8 @@ const initialLayoutClass =
     object-position: center !important;
   }
 
-  /* Hand-designed 2:1 covers keep their source ratio and avoid hover
-     cropping, so small labels stay readable in generated previews. */
+  /* Preserve every cover's source ratio in previews and keep its full
+     content visible in both homepage layouts. */
   #post-list-container.grid-mode :global(.post-card-wrapper.post-card-full-preview .cover-image-container img) {
     object-fit: contain !important;
     object-position: center !important;

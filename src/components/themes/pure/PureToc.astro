@@ -1,0 +1,142 @@
+---
+// Adapted from Astro Theme Pure's TOC (Apache-2.0).
+import type { PureTocItem } from "@/utils/pure-toc-utils";
+import PureTocHeading from "./PureTocHeading.astro";
+
+interface Props {
+	headings: PureTocItem[];
+	showTitle?: boolean;
+}
+const { headings, showTitle = true } = Astro.props;
+---
+
+<pure-article-toc aria-label="本文目录" role="navigation">
+	{showTitle && <h2>本文目录</h2>}
+	<ul>{headings.map((heading) => <PureTocHeading heading={heading} />)}</ul>
+</pure-article-toc>
+
+<script>
+	interface TocLink {
+		link: HTMLAnchorElement;
+		bar: HTMLElement;
+		slug: string;
+		heading?: HTMLElement;
+	}
+
+	class PureArticleToc extends HTMLElement {
+		private links: TocLink[] = [];
+		private controller?: AbortController;
+		private mutationObserver?: MutationObserver;
+		private resizeObserver?: ResizeObserver;
+		private content: HTMLElement | null = null;
+		private frame = 0;
+		private currentSlug = "";
+
+		connectedCallback() {
+			if (document.documentElement.dataset.siteTheme !== "pure") return;
+			this.controller = new AbortController();
+			const { signal } = this.controller;
+			this.links = Array.from(this.querySelectorAll<HTMLAnchorElement>("[data-pure-toc-slug]")).map((link) => ({
+				link,
+				bar: link.previousElementSibling as HTMLElement,
+				slug: link.dataset.pureTocSlug || "",
+			}));
+			this.links.forEach((item) => item.link.addEventListener("click", (event) => this.jumpToHeading(event, item), { signal }));
+			window.addEventListener("scroll", this.scheduleUpdate, { passive: true, signal });
+			window.addEventListener("resize", this.scheduleUpdate, { passive: true, signal });
+			window.addEventListener("hashchange", this.scheduleUpdate, { signal });
+			this.resizeObserver = new ResizeObserver(this.scheduleUpdate);
+			const mount = document.getElementById("pure-content");
+			if (mount) {
+				this.mutationObserver = new MutationObserver(this.resolveHeadings);
+				this.mutationObserver.observe(mount, { childList: true, subtree: true });
+			}
+			this.resolveHeadings();
+			document.fonts.ready.then(() => { if (this.isConnected) this.scheduleUpdate(); });
+		}
+
+		disconnectedCallback() {
+			this.controller?.abort();
+			this.mutationObserver?.disconnect();
+			this.resizeObserver?.disconnect();
+			cancelAnimationFrame(this.frame);
+			this.frame = 0;
+		}
+
+		private resolveHeadings = () => {
+			const mount = document.getElementById("pure-content");
+			this.links.forEach((item) => {
+				const heading = document.getElementById(item.slug);
+				item.heading = heading && mount?.contains(heading) ? heading : undefined;
+			});
+			const content = mount?.querySelector<HTMLElement>(".markdown-content") ?? mount;
+			if (this.content !== content) {
+				this.resizeObserver?.disconnect();
+				this.content = content;
+				if (content) this.resizeObserver?.observe(content);
+			}
+			this.scheduleUpdate();
+		};
+
+		private scheduleUpdate = () => {
+			if (!this.frame) this.frame = requestAnimationFrame(this.updateReadingProgress);
+		};
+
+		private updateReadingProgress = () => {
+			this.frame = 0;
+			const items = this.links.filter((item) => item.heading);
+			const readingLine = Math.max(80, document.querySelector(".pure-header")?.getBoundingClientRect().bottom ?? 0) + 16;
+			const contentEnd = (this.content?.getBoundingClientRect().bottom ?? 0) + 127;
+			const states = items.map((item, index) => {
+				const heading = item.heading as HTMLElement;
+				const start = heading.getBoundingClientRect().top;
+				const end = items[index + 1]?.heading?.getBoundingClientRect().top ?? contentEnd;
+				const sectionEnd = end - heading.offsetHeight;
+				const progress = Math.max(0, Math.min(1, (window.innerHeight - start) / Math.max(1, sectionEnd - start)));
+				return { item, start, inView: start < window.innerHeight && sectionEnd > readingLine, progress };
+			});
+			const current = states.findLast((state) => state.start <= readingLine) ?? states.find((state) => state.inView);
+			states.forEach(({ item, inView, progress }, index) => {
+				item.link.classList.toggle("is-in-view", inView);
+				item.link.classList.toggle("is-view-start", inView && !states[index - 1]?.inView);
+				item.link.classList.toggle("is-view-end", inView && !states[index + 1]?.inView);
+				item.bar.classList.toggle("is-in-view", inView);
+				item.bar.classList.toggle("is-read", !inView && progress === 1);
+				item.bar.style.height = `${progress * 90}%`;
+				if (current?.item === item) item.link.setAttribute("aria-current", "location");
+				else item.link.removeAttribute("aria-current");
+			});
+			if (current && this.currentSlug !== current.item.slug) {
+				this.currentSlug = current.item.slug;
+				const panel = this.closest<HTMLElement>(".pure-toc");
+				if (panel && panel.clientHeight && !this.matches(":hover") && !this.contains(document.activeElement)) {
+					const bounds = panel.getBoundingClientRect();
+					const linkBounds = current.item.link.getBoundingClientRect();
+					const shift = linkBounds.top < bounds.top + 16 ? linkBounds.top - bounds.top - 16 : linkBounds.bottom > bounds.bottom - 16 ? linkBounds.bottom - bounds.bottom + 16 : 0;
+					if (shift) panel.scrollTop += shift;
+				}
+			}
+		};
+
+		private jumpToHeading(event: MouseEvent, item: TocLink) {
+			if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || !item.heading) return;
+			event.preventDefault();
+			const mobile = this.closest<HTMLDetailsElement>(".pure-mobile-toc");
+			if (mobile) mobile.open = false;
+			const hash = `#${encodeURIComponent(item.slug)}`;
+			if (window.location.hash !== hash) history.pushState(null, "", hash);
+			const headerBottom = Math.max(80, document.querySelector(".pure-header")?.getBoundingClientRect().bottom ?? 0);
+			window.scrollTo({ top: Math.max(0, window.scrollY + item.heading.getBoundingClientRect().top - headerBottom - 16), behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+			if (mobile) {
+				const heading = item.heading;
+				const hadTabIndex = heading.hasAttribute("tabindex");
+				if (!hadTabIndex) heading.setAttribute("tabindex", "-1");
+				heading.focus({ preventScroll: true });
+				if (!hadTabIndex) heading.addEventListener("blur", () => heading.removeAttribute("tabindex"), { once: true });
+			}
+			this.scheduleUpdate();
+		}
+	}
+
+	if (!customElements.get("pure-article-toc")) customElements.define("pure-article-toc", PureArticleToc);
+</script>

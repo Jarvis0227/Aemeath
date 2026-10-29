@@ -22,6 +22,7 @@ import GrandmaTimeFilm from "@/components/article/GrandmaTimeFilm.svelte";
 import MonthlyExperiment from "@/components/article/MonthlyExperiment.svelte";
 import MonthlyScrollReveal from "@/components/article/MonthlyScrollReveal.svelte";
 import CoverImage from "@/components/common/CoverImage.astro";
+import PurePostHeader from "@/components/themes/pure/PurePostHeader.astro";
 import PostMetadata from "@/components/layout/PostMeta.astro";
 import RecommendedPost from "@/components/misc/RecommendedPost.astro";
 import SharePoster from "@/components/misc/SharePoster.svelte";
@@ -32,9 +33,16 @@ import { profileConfig } from "@/config/profileConfig";
 import { siteConfig } from "@/config/siteConfig";
 import { sponsorConfig } from "@/config/sponsorConfig";
 import friendsFeedSnapshot from "@/data/friends-feed-snapshot.json";
+
+const snapshotSources: {
+	friendUrl: string;
+	items: { title: string; link: string; description: string; publishedAt: string | null }[];
+}[] = friendsFeedSnapshot.sources;
 import { formatDateToYYYYMMDD } from "@/utils/date-utils";
 import { getApiUrlList, processCoverImageSync } from "@/utils/image-utils";
 import { url } from "@/utils/url-utils";
+import CentennialRelatedReading from "@/components/article/CentennialRelatedReading.astro";
+import "@/styles/jiangyue-centennial.css";
 
 export async function getStaticPaths() {
 	const blogEntries = await getSortedPosts();
@@ -72,10 +80,14 @@ const preservePostCoverRatio = [
 const forcePostTitleBreak =
 	entry.id === "others/youth-most-expensive/youth-most-expensive";
 const isSeptemberMonthly = entry.id === "monthly-2026-09";
+const isCentennialPost = entry.id === "jiangyue-renjian-yicheng";
+// The centennial cover belongs to article cards; its opening keeps the moonlit background.
+const articleCoverImage = isCentennialPost ? "" : processedImage;
 const postMarkdownClass = [
 	preservePostCoverRatio ? "story-post-layout" : "",
 	entry.id.startsWith("monthly-") ? "monthly-post-layout" : "",
 	isSeptemberMonthly ? "monthly-issue-2026-09" : "",
+	isCentennialPost ? "jiangyue-centennial-post" : "",
 ]
 	.filter(Boolean)
 	.join(" ");
@@ -192,7 +204,7 @@ if (entry.id.startsWith("monthly-")) {
 			.replace(/\s+/g, " ")
 			.trim();
 
-	monthlyMomentItems = friendsFeedSnapshot.sources
+	monthlyMomentItems = snapshotSources
 		.flatMap((source) => {
 			const friend = friendsByUrl.get(normalizeFriendUrl(source.friendUrl));
 			if (!friend) return [];
@@ -223,12 +235,14 @@ if (entry.id.startsWith("monthly-")) {
 ---
 
 <MainGridLayout
-  banner={processedImage}
+  banner={articleCoverImage}
   title={entry.data.title}
   description={entry.data.description}
   lang={entry.data.lang}
   setOGTypeArticle={true}
   postSlug={entry.id}
+  postAiPolished={entry.data.aiPolished}
+  postImageColor={entry.data.imageColor}
   postCategory={entry.data.category || undefined}
   headings={headings}
   bannerPostMeta={bannerPostMeta}
@@ -254,6 +268,8 @@ if (entry.id.startsWith("monthly-")) {
       ]}
     >
       <!-- word count and reading time -->
+      <PurePostHeader entry={entry} cover={articleCoverImage} minutes={remarkPluginFrontmatter.minutes} />
+      <div data-theme-only="aemeath">
       <div
         class="flex flex-row text-black/30 dark:text-white/30 gap-5 mb-3 transition onload-animation"
       >
@@ -327,22 +343,22 @@ if (entry.id.startsWith("monthly-")) {
           aiPolished={entry.data.aiPolished}
         />
         {
-          !processedImage && (
+          !articleCoverImage && (
             <div class="border-(--line-divider) border-dashed border-b mt-3 mb-5" />
           )
         }
       </div>
 
-      <!-- always show cover as long as it has one -->
+      <!-- Article covers can differ from the images used on post cards. -->
 
       {
-        processedImage &&
+        articleCoverImage &&
         coverImageConfig.enableInPost &&
         (
           <div style="margin-top:1rem;">
             <CoverImage
               id="post-cover"
-              src={processedImage}
+              src={articleCoverImage}
               basePath={getFileDirFromPath(entry.filePath || '')}
               class:list={[
                 "mb-8 rounded-xl banner-container onload-animation",
@@ -356,6 +372,7 @@ if (entry.id.startsWith("monthly-")) {
         )
       }
 
+      </div>
       {
         entry.id === "monthly-2026-08" && (
           <MonthlyExperiment
@@ -467,6 +484,8 @@ if (entry.id.startsWith("monthly-")) {
               <Content />
             </Markdown>
           )}
+
+          {isCentennialPost && <CentennialRelatedReading />}
 
           {isSeptemberMonthly && <MonthlyScrollReveal client:load />}
 

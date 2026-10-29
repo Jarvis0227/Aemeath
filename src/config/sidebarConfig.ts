@@ -65,8 +65,8 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			enable: true,
 			// 组件位置
 			position: "top",
-			// 仅在非文章页显示
-			showOnPostPage: false,
+			// 与首页保持一致，在文章详情页也显示
+			showOnPostPage: true,
 		},
 		{
 			// 组件类型：音乐播放器
@@ -129,8 +129,8 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			enable: true,
 			// 组件位置
 			position: "top",
-			// 是否在文章详情页显示
-			showOnPostPage: true,
+			// 文章详情页右侧只显示目录
+			showOnPostPage: false,
 		},
 		{
 			// 组件类型：站点信息组件
@@ -139,14 +139,14 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			enable: true,
 			// 组件位置
 			position: "top",
-			// 是否在文章详情页显示
-			showOnPostPage: true,
+			// 文章详情页右侧只显示目录
+			showOnPostPage: false,
 			// 组件专属配置
 			specificConfig: {
 				siteInfo: {
-					buildPlatform: "Astro 静态构建 · Debian + 宝塔 Nginx",
+					buildPlatform: "Astro 静态构建",
 					// 未能识别的构建平台回退显示文本，可自定义
-					unknownBuildPlatform: "Astro 静态构建 · Debian + 宝塔 Nginx",
+					unknownBuildPlatform: "Astro 静态构建",
 				},
 			},
 		},
@@ -198,7 +198,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 					image: {
 						src: "/assets/images/ad/ad1.webp",
 						alt: "广告横幅",
-						link: "https://haoka.lot-ml.com/plugreg.html?agentid=1423316",
+						link: "https://example.com",
 						external: true,
 					},
 					// 是否允许关闭广告
@@ -320,9 +320,9 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件专属配置
 			specificConfig: {
 				siteInfo: {
-					buildPlatform: "Astro 静态构建 · Debian + 宝塔 Nginx",
+					buildPlatform: "Astro 静态构建",
 					// 未能识别的构建平台回退显示文本，可自定义
-					unknownBuildPlatform: "Astro 静态构建 · Debian + 宝塔 Nginx",
+					unknownBuildPlatform: "Astro 静态构建",
 				},
 			},
 		},

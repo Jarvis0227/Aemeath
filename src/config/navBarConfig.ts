@@ -98,7 +98,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	// 文档链接
 	// links.push({
 	// 	name: "文档",
-	// 	url: "https://docs-rainzt.cn",
+	// 	url: "https://example.com/docs",
 	// 	external: true,
 	// 	icon: "material-symbols:docs",
 	// });

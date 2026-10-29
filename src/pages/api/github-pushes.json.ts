@@ -7,10 +7,14 @@ const repository = "Jarvis0227/Aemeath";
 
 const readCommitDates = () => {
 	try {
-		return execFileSync("git", ["log", "HEAD", "--since=53 weeks ago", "--format=%cI"], {
-			cwd: process.cwd(),
-			encoding: "utf8",
-		})
+		return execFileSync(
+			"git",
+			["log", "HEAD", "--since=53 weeks ago", "--format=%cI"],
+			{
+				cwd: process.cwd(),
+				encoding: "utf8",
+			},
+		)
 			.split(/\r?\n/)
 			.map((value) => value.trim())
 			.filter(Boolean);

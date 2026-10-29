@@ -1,0 +1,17 @@
+---
+// Adapted from Astro Theme Pure's TOCHeading (Apache-2.0).
+import type { PureTocItem } from "@/utils/pure-toc-utils";
+
+interface Props {
+	heading: PureTocItem;
+}
+const { heading } = Astro.props;
+---
+
+<li>
+	<div class="pure-toc-row">
+		<span class="pure-toc-progress" aria-hidden="true"></span>
+		<a class:list={["pure-toc-link", heading.depth > 2 && "pure-toc-link--nested"]} href={`#${heading.slug}`} data-pure-toc-slug={heading.slug} aria-label={`跳到章节：${heading.text}`} title={heading.text}>{heading.text}</a>
+	</div>
+	{heading.children.length > 0 && <ul>{heading.children.map((child) => <Astro.self heading={child} />)}</ul>}
+</li>

@@ -7,6 +7,7 @@ import "@/styles/fancybox-custom.css";
 <script>
   let Fancybox: any;
   const IMG_SELECTOR = ".custom-md img, #post-cover img, .moment-images img";
+  const FRIEND_REVIEW_IMG_SELECTOR = "#waline .waline-friend-review img";
   const LINK_SELECTOR = ".moment-images a[data-fancybox], [data-fancybox]:not(.moment-images a)";
   const svgBlobUrlCache = new Map<string, string>();
 
@@ -101,6 +102,12 @@ import "@/styles/fancybox-custom.css";
     };
   }
 
+  async function loadFancybox() {
+    if (Fancybox) return;
+    const mod = await import("@fancyapps/ui");
+    Fancybox = mod.Fancybox;
+  }
+
   async function preprocessSvgImages() {
     const promises: Promise<void>[] = [];
 
@@ -141,12 +148,13 @@ import "@/styles/fancybox-custom.css";
   }
 
   async function setup() {
-    if (!document.querySelector(IMG_SELECTOR) && !document.querySelector(LINK_SELECTOR)) return;
+    if (
+      !document.querySelector(IMG_SELECTOR) &&
+      !document.querySelector(FRIEND_REVIEW_IMG_SELECTOR) &&
+      !document.querySelector(LINK_SELECTOR)
+    ) return;
 
-    if (!Fancybox) {
-      const mod = await import("@fancyapps/ui");
-      Fancybox = mod.Fancybox;
-    }
+    await loadFancybox();
 
     const commonOptions = getCommonOptions();
 
@@ -164,6 +172,22 @@ import "@/styles/fancybox-custom.css";
     Fancybox.bind(LINK_SELECTOR, {
       ...commonOptions,
       source: (el: any) => el.getAttribute("data-src") || el.getAttribute("href"),
+    });
+
+    await bindFriendReviewImages();
+  }
+
+  async function bindFriendReviewImages() {
+    if (!document.querySelector(FRIEND_REVIEW_IMG_SELECTOR)) return;
+    await loadFancybox();
+    Fancybox.unbind(FRIEND_REVIEW_IMG_SELECTOR);
+    Fancybox.bind(FRIEND_REVIEW_IMG_SELECTOR, {
+      ...getCommonOptions(),
+      groupAll: true,
+      Carousel: {
+        transition: "slide",
+        preload: 2,
+      },
     });
   }
 
@@ -195,5 +219,10 @@ import "@/styles/fancybox-custom.css";
   // 加密文章解密后重新绑定灯箱
   document.addEventListener("password:decrypted", () => {
     setTimeout(setup, 200);
+  });
+
+  // Waline renders this image asynchronously after its first setup pass.
+  document.addEventListener("waline:friend-review-ready", () => {
+    void bindFriendReviewImages();
   });
 </script>

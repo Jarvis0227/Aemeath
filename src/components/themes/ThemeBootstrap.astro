@@ -1,0 +1,90 @@
+---
+import { siteThemeConfig } from "@/config/siteThemeConfig";
+
+interface Props {
+	pureStylesheets: string[];
+}
+
+const {
+	pureStylesheets,
+} = Astro.props;
+---
+
+<meta name="astro-view-transitions-enabled" content="true" />
+<meta name="astro-view-transitions-fallback" content="swap" />
+<script is:inline define:vars={{ siteThemeConfig, pureStylesheets }}>
+	(() => {
+		const root = document.documentElement;
+		const valid = (value) => value === "aemeath" || value === "pure";
+		const requested = new URLSearchParams(window.location.search).get("siteTheme");
+		let saved;
+		try {
+			saved = localStorage.getItem("rainzt.site-theme.v1");
+			if (valid(requested)) localStorage.setItem("rainzt.site-theme.v1", requested);
+		} catch {
+			// The URL also supports theme selection when browser storage is blocked.
+			root.dataset.siteThemePersistence = "url";
+		}
+		const selected = siteThemeConfig.enabled
+			? (valid(requested) ? requested : valid(saved) ? saved : siteThemeConfig.defaultTheme)
+			: "aemeath";
+		root.dataset.siteTheme = selected;
+		if (selected !== "pure") {
+			document.querySelector('[name="astro-view-transitions-enabled"]')?.remove();
+			document.querySelector('[name="astro-view-transitions-fallback"]')?.remove();
+		}
+		if (selected === "pure") root.classList.add("home-portfolio-intro-disabled");
+		if (selected === "pure") {
+			let pendingStylesheets = pureStylesheets.length;
+			const markStylesheetReady = () => {
+				pendingStylesheets -= 1;
+				if (pendingStylesheets <= 0) root.dataset.pureStylesReady = "true";
+			};
+			if (!pendingStylesheets) root.dataset.pureStylesReady = "true";
+			for (const href of pureStylesheets) {
+				if (Array.from(document.querySelectorAll('link[data-site-theme-stylesheet="pure"]')).some((link) => link.getAttribute("href") === href)) {
+					markStylesheetReady();
+					continue;
+				}
+				const stylesheet = document.createElement("link");
+				stylesheet.rel = "stylesheet";
+				stylesheet.href = href;
+				stylesheet.setAttribute("blocking", "render");
+				stylesheet.dataset.siteThemeStylesheet = "pure";
+				stylesheet.addEventListener("load", markStylesheetReady, { once: true });
+				stylesheet.addEventListener("error", () => {
+					console.error("Pure theme stylesheet failed to load:", href);
+					markStylesheetReady();
+				}, { once: true });
+				document.head.append(stylesheet);
+			}
+		}
+		if (root.dataset.siteThemePersistence === "url") {
+			document.addEventListener("click", (event) => {
+				const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+				if (!link || link.getAttribute("href").startsWith("#")) return;
+				const destination = new URL(link.href, window.location.href);
+				if (destination.origin !== window.location.origin) return;
+				if (!/^https?:$/.test(destination.protocol) || /\.(xml|json|png|jpe?g|webp|pdf|zip)$/.test(destination.pathname)) return;
+				destination.searchParams.set("siteTheme", selected);
+				link.href = destination.href;
+			}, true);
+		}
+	})();
+</script>
+
+<script>
+	if (document.documentElement.dataset.siteTheme === "pure") {
+		const root = document.documentElement;
+		void Promise.all([
+			import("@/scripts/pure-theme-runtime").then(({ initialized }) => initialized),
+			import("@/scripts/pure-page-transitions"),
+		]).then(
+			() => { root.dataset.pureRuntimeReady = "true"; },
+			(error) => {
+				console.error("Pure theme runtime failed to initialize:", error);
+				root.dataset.pureRuntimeReady = "true";
+			},
+		);
+	}
+</script>

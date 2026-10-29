@@ -1,0 +1,141 @@
+---
+// Adapted from cworld1/astro-theme-pure BaseLayout/Header (Apache-2.0).
+// The shared page content is mounted once; comments and islands keep their IDs.
+import type { MarkdownHeading } from "astro";
+import { Icon } from "astro-icon/components";
+import PostAiNotice from "@/components/common/PostAiNotice.astro";
+import ThemeSwitch from "@/components/themes/ThemeSwitch.astro";
+import { navBarConfig, footerConfig, profileConfig, siteConfig } from "@/config";
+import type { NavBarLink } from "@/types/navBarConfig";
+import { buildPureToc } from "@/utils/pure-toc-utils";
+import { url } from "@/utils/url-utils";
+import PureLoadingSkeleton from "./PureLoadingSkeleton.astro";
+import PureToc from "./PureToc.astro";
+
+interface Props {
+	title?: string;
+	postSlug?: string;
+	postAiPolished?: boolean;
+	postImageColor?: string;
+	headings: MarkdownHeading[];
+}
+const {
+	title,
+	postSlug,
+	postAiPolished = false,
+	postImageColor,
+	headings,
+} = Astro.props;
+const pages = siteConfig.pages;
+const enabled = (link: NavBarLink) =>
+	!link.pageKey || pages[link.pageKey as keyof typeof pages] !== false;
+const configuredLinks = navBarConfig.links
+	.filter(enabled)
+	.map((link) => ({
+		...link,
+		children: link.children?.filter(enabled),
+	}))
+	.filter((link) => !link.children || link.children.length > 0);
+const links: NavBarLink[] = configuredLinks.map((link) =>
+	link.children?.length === 1 ? link.children[0] : link,
+);
+const toc = buildPureToc(headings);
+const currentPath = Astro.url.pathname;
+const isPostList = currentPath === url("/") || /^\/\d+\/?$/.test(currentPath);
+const routeName = currentPath.split("/").filter(Boolean)[0] || "blog";
+const active = (link: NavBarLink): boolean =>
+	(link.url === "/" && isPostList) ||
+	link.url === currentPath ||
+	Boolean(link.activePaths?.some((path) => currentPath.startsWith(path))) ||
+	Boolean(link.children?.some(active));
+const href = (link: NavBarLink) => (link.external ? link.url : url(link.url));
+const footerCurrentYear = new Date().getFullYear();
+const footerStartAt = new Date(`${siteConfig.siteStartDate}T00:00:00+08:00`);
+const footerElapsedSeconds = Math.max(
+	0,
+	Math.floor((Date.now() - footerStartAt.getTime()) / 1000),
+);
+const footerDays = Math.floor(footerElapsedSeconds / 86400);
+const footerHours = Math.floor((footerElapsedSeconds % 86400) / 3600);
+const footerMinutes = Math.floor((footerElapsedSeconds % 3600) / 60);
+const footerSeconds = footerElapsedSeconds % 60;
+---
+
+<div id="pure-shell" data-theme-only="pure">
+	{postSlug && <div class="pure-highlight" style={postImageColor ? `--pure-post-highlight: ${postImageColor}` : undefined} aria-hidden="true"></div>}
+	<a class="pure-skip-link" href="#swup-container">跳到正文</a>
+	<header class="pure-header" data-pagefind-ignore="all" transition:name="pure-header" transition:persist="pure-header" transition:animate="none">
+		<a class="pure-brand" href={url("/")}>{siteConfig.navbar.title || siteConfig.title}</a>
+		<div class="pure-header__actions">
+			<ThemeSwitch id="pure-theme-switch" showFonts />
+			<a class="pure-icon-button pure-search-button" href={url("/search/")} aria-label="搜索" title="搜索"><Icon is:inline name="material-symbols:search-rounded" /></a>
+			<button type="button" class="pure-icon-button" id="pure-scheme-switch" aria-label="切换浅色与深色模式" title="切换浅色与深色模式"><Icon is:inline name="material-symbols:wb-sunny-outline-rounded" class="pure-scheme-light" /><Icon is:inline name="material-symbols:dark-mode-outline-rounded" class="pure-scheme-dark" /></button>
+			<button type="button" class="pure-icon-button pure-menu-button" id="pure-menu-switch" aria-controls="pure-navigation" aria-expanded="false" aria-label="展开导航"><Icon is:inline name="material-symbols:menu-rounded" /></button>
+		</div>
+		<nav id="pure-navigation" aria-label="主导航">
+			{links.map((link) => link.children ? (
+				<details class="pure-nav-group" name="pure-navigation-menu">
+					<summary class:list={[active(link) && "is-current"]}><span>{link.name}</span><svg class="pure-nav-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></summary>
+					<div class="pure-nav-group__links">{link.children.map((child) => <a href={href(child)} target={child.external ? "_blank" : undefined} rel={child.external ? "noopener noreferrer" : undefined} aria-current={active(child) ? "page" : undefined}>{child.name}</a>)}</div>
+				</details>
+			) : <a href={href(link)} target={link.external ? "_blank" : undefined} rel={link.external ? "noopener noreferrer" : undefined} aria-current={active(link) ? "page" : undefined}>{link.name}</a>)}
+		</nav>
+	</header>
+	<PureLoadingSkeleton />
+	{!isPostList && <div class:list={["pure-toolbar", toc.length > 0 && "pure-toolbar--with-toc"]}>
+		<div class="pure-toolbar__body">
+			<a class="pure-back-link" href={url("/")}>‹ 返回</a>
+			{postSlug && postAiPolished && <PostAiNotice text="本文使用 AI 辅助创作，请注意甄别。" />}
+		</div>
+	</div>}
+	<div data-pure-page={routeName} class:list={["pure-page", isPostList && "pure-page--blog", postSlug && "pure-page--post", toc.length > 0 && "pure-page--with-toc"]}>
+		<div class="pure-page__body">
+			{title && !postSlug && <h1 class="pure-page-title">{title}</h1>}
+			{toc.length > 0 && <details class="pure-mobile-toc"><summary>本文目录</summary><PureToc headings={toc} showTitle={false} /></details>}
+			<div id="pure-content"></div>
+		</div>
+		{toc.length > 0 && <aside class="pure-toc" data-pagefind-ignore="all"><PureToc headings={toc} /></aside>}
+	</div>
+	<footer class="pure-footer" data-pagefind-ignore="all">
+		<div class="pure-footer__top">
+			<p class="pure-footer__copyright">
+				<span>© {footerCurrentYear} {profileConfig.name}</span>
+				<span class="pure-footer__separator" aria-hidden="true">·</span>
+				<span>Aemeath {siteConfig.themeVersion || "V1.1.1"}</span>
+			</p>
+			<time class="pure-footer__runtime" data-runtime datetime={siteConfig.siteStartDate}>
+				本站已萌萌哒 <strong>{footerDays}</strong> 天 <strong>{footerHours}</strong> 小时 <strong>{footerMinutes}</strong> 分 <strong>{footerSeconds}</strong> 秒
+			</time>
+		</div>
+		<div class="pure-footer__bottom">
+			<div class="pure-footer__stats" aria-label="网站访问统计">
+				<span>今日访客 <strong data-umami-stat="todayVisitors" aria-live="polite">加载中</strong></span>
+				<span>今日访问 <strong data-umami-stat="todayPageviews" aria-live="polite">加载中</strong></span>
+				<span>累计访客 <strong data-umami-stat="visitors" aria-live="polite">加载中</strong></span>
+				<span>累计访问 <strong data-umami-stat="pageviews" aria-live="polite">加载中</strong></span>
+			</div>
+			<nav class="pure-footer__links" aria-label="站点信息">
+				<a href={url("rss.xml")}><Icon is:inline name="material-symbols:rss-feed-rounded" size="1em" aria-hidden="true" /><span>RSS</span></a>
+				<a href={url("sitemap-index.xml")}>站点地图</a>
+			</nav>
+		</div>
+		<div class="pure-footer__record" aria-label="网站备案信息">{(footerConfig.records ?? []).map((record) => <a href={record.url} target="_blank" rel="noopener noreferrer"><span>{record.label}</span></a>)}</div>
+	</footer>
+</div>
+
+<script is:inline>
+	(() => {
+		if (document.documentElement.dataset.siteTheme !== "pure") return;
+		const content = document.getElementById("swup-container");
+		const mount = document.getElementById("pure-content");
+		if (content && mount) {
+			mount.append(content);
+			document.getElementById("aemeath-shell")?.setAttribute("inert", "");
+		}
+		if (document.documentElement.dataset.pureHeaderFrom) {
+			document.querySelector(".pure-header")?.classList.toggle("is-scrolled", document.documentElement.dataset.pureHeaderFrom === "floating");
+		}
+		document.documentElement.dataset.pureShellReady = "true";
+	})();
+</script>
+<span id="pure-page-ready" hidden aria-hidden="true"></span>

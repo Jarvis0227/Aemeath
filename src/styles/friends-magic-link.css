@@ -11,6 +11,7 @@
 
 .friends-heading-actions {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	justify-self: end;
 	gap: 0.55rem;
@@ -43,6 +44,11 @@
 	transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 
+.friends-recommendation-button {
+	font-family: inherit;
+	appearance: none;
+}
+
 .friends-apply-button svg {
 	width: 1.2rem;
 	height: 1.2rem;
@@ -63,6 +69,11 @@
 }
 
 .friends-apply-button:focus-visible {
+	outline: 2px solid rgba(121, 186, 255, 0.72);
+	outline-offset: 3px;
+}
+
+.friends-recommendation-button:focus-visible {
 	outline: 2px solid rgba(121, 186, 255, 0.72);
 	outline-offset: 3px;
 }
@@ -109,6 +120,23 @@
 	height: 1.2rem;
 	flex: none;
 	color: #edcf91;
+}
+
+.friends-recommendation-button svg {
+	width: 1.2rem;
+	height: 1.2rem;
+	flex: none;
+	color: #9bd0ff;
+}
+
+:root.dark .friends-recommendation-button {
+	border-color: rgba(255, 246, 219, 0.3);
+	background: rgba(255, 255, 255, 0.06);
+	color: #a9d5ff;
+}
+
+:root.dark .friends-recommendation-button svg {
+	color: #c1e2ff;
 }
 
 .friends-magic-button:hover,

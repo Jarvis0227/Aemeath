@@ -32,7 +32,7 @@
 				setText("[data-notice-kicker]", meta.kicker);
 				setText("[data-notice-title]", meta.title);
 				setText("[data-notice-desc]", meta.desc);
-				setText("[data-notice-version]", meta.version);
+				setText("[data-notice-version]", meta.displayVersion || meta.version);
 
 				const newBadge = page.querySelector("[data-notice-new-badge]");
 				if (newBadge) newBadge.hidden = version !== latestNoticeVersion;
@@ -41,10 +41,14 @@
 					button.classList.toggle("active", button.dataset.noticeButton === version);
 				});
 
+				const visibleTargets = new Set();
 				page.querySelectorAll(".notice-nav a[data-section]").forEach((link) => {
 					const section = link.dataset.section;
-					const target = meta.sections[section] || meta.sections.summary;
-					const label = meta.labels[section] || link.textContent.trim();
+					const target = meta.sections[section];
+					const label = meta.labels[section];
+					link.hidden = !target || !label || visibleTargets.has(target);
+					if (link.hidden) return;
+					visibleTargets.add(target);
 					link.href = `#${target}`;
 					const dot = link.querySelector("i") || document.createElement("i");
 					link.textContent = "";

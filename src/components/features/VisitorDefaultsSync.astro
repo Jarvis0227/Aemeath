@@ -1,0 +1,35 @@
+---
+import { visitorDefaultsSyncConfig } from "@/config/visitorDefaultsSyncConfig";
+---
+
+<script is:inline define:vars={{ visitorDefaultsSyncConfig }}>
+	(() => {
+		try {
+			const storage = window.localStorage;
+			if (storage.getItem(visitorDefaultsSyncConfig.storageKey) !== "1") {
+				for (const key of visitorDefaultsSyncConfig.preferenceKeys) {
+					storage.removeItem(key);
+				}
+
+				try {
+					for (const key of visitorDefaultsSyncConfig.sessionPreferenceKeys) {
+						window.sessionStorage.removeItem(key);
+					}
+				} catch {
+					// Session storage can be unavailable independently of local storage.
+				}
+
+				storage.setItem(visitorDefaultsSyncConfig.storageKey, "1");
+			}
+
+			// Override the old default once, while preserving future manual changes.
+			const sakuraDefaultMigrationKey = "rainzt.sakura-default-enabled.v1";
+			if (storage.getItem(sakuraDefaultMigrationKey) !== "1") {
+				storage.setItem("sakuraEnabled", "true");
+				storage.setItem(sakuraDefaultMigrationKey, "1");
+			}
+		} catch {
+			// Storage restrictions must not interrupt the rest of page initialization.
+		}
+	})();
+</script>

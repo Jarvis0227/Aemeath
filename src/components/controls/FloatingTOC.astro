@@ -233,6 +233,7 @@ const hideSidebarOnPostPage =
 
   // 检查是否应该显示悬浮目录
   function shouldShowFloatingTOC() {
+    if (document.documentElement.dataset.siteTheme === "pure") return false;
     // 检查是否为文章页面
     if (!window.FloatingTOC.isPostPage()) {
       return false;
@@ -288,6 +289,9 @@ const hideSidebarOnPostPage =
 
     // 更新显示状态
     updateFloatingTOCVisibility();
+
+    // Pure has its own responsive article directory.
+    if (document.documentElement.dataset.siteTheme === "pure") return;
 
     try {
       // 清理旧实例

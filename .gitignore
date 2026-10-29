@@ -63,3 +63,10 @@ package/
 
 # accidental nested copy
 Firefly-master/
+
+# Local review artifacts and generated service metadata
+.artifacts/
+waline/
+ops/
+.env.*
+!.env.example

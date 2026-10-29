@@ -14,6 +14,6 @@ import FloatingButton from "@/components/common/FloatingButton.astro";
 <script is:raw is:inline>
   function backToTop() {
     // 直接使用原生滚动，避免OverlayScrollbars冲突
-    window.scroll({ top: 0, behavior: "smooth" });
+    window.scroll({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
 </script>

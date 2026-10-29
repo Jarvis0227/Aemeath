@@ -1,5 +1,6 @@
 ---
 import { Icon } from "astro-icon/components";
+import { autoListingNotices as notices } from "@/data/auto-listing-notices";
 import noticeHtml from "@/data/notice.html?raw";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 
@@ -15,335 +16,6 @@ const noticeArticles = Array.from(noticeHtml.matchAll(articlePattern)).map(
 	}),
 );
 
-const notices = [
-	{
-		version: "2026-09-17-1",
-		kicker: "UPDATE / 2026.9.17-1",
-		title: "2026.9.17-1 重大 BUG 修复公告",
-		desc: "修复表格批次与线上变种组号可能错配的问题。现在必须先完成表格组号与线上顺序的精确核对，确认一致后才允许处理图片。",
-		brief: "表格批次与线上变种组号精确核对，错配时停止",
-		sections: {
-			summary: "latest-0917-1-summary",
-			"sheet-maker": "latest-0917-1-example",
-			"bulk-import": "latest-0917-1-example",
-			universal: "latest-0917-1-flow",
-			interface: "latest-0917-1-flow",
-			safety: "latest-0917-1-checklist",
-			checklist: "latest-0917-1-checklist",
-		},
-		labels: {
-			summary: "修复内容",
-			"sheet-maker": "重叠批次",
-			"bulk-import": "重叠批次",
-			universal: "核对顺序",
-			interface: "核对顺序",
-			safety: "使用要求",
-			checklist: "使用要求",
-		},
-	},
-	{
-		version: "2026-09-17",
-		kicker: "UPDATE / 2026.9.17",
-		title: "2026.9.17 上架工具更新公告",
-		desc: "本次更新重点是多店铺分开上架、店铺配置与数据目录绑定、PNG 图片兼容，以及多店铺任务失败后的安全恢复。",
-		brief: "多店铺分开上架、目录识别、PNG 兼容和失败恢复",
-		sections: {
-			summary: "latest-0917-summary",
-			"sheet-maker": "latest-0917-multi-store",
-			"bulk-import": "latest-0917-directory",
-			universal: "latest-0917-png",
-			interface: "latest-0917-retry",
-			safety: "latest-0917-review",
-			checklist: "latest-0917-checklist",
-		},
-		labels: {
-			summary: "本次更新",
-			"sheet-maker": "多店铺上架",
-			"bulk-import": "目录识别",
-			universal: "PNG 兼容",
-			interface: "失败恢复",
-			safety: "店铺确认",
-			checklist: "更新检查",
-		},
-	},
-	{
-		version: "2026-09-16",
-		kicker: "UPDATE / 2026.9.16",
-		title: "2026.9.16 上架工具更新公告",
-		desc: "本次汇总 9.6 之后的只读统计、旧链接折扣、店铺方案复制、分批上架和安装准备更新。",
-		brief: "只读统计、旧链接折扣、店铺方案复制、分批上架和安装准备",
-		sections: {
-			summary: "latest-0916-summary",
-			"sheet-maker": "latest-0916-tools",
-			"bulk-import": "latest-0916-discount",
-			universal: "latest-0916-store",
-			interface: "latest-0916-scope",
-			safety: "latest-0916-setup",
-			checklist: "latest-0916-checklist",
-		},
-		labels: {
-			summary: "本次更新",
-			"sheet-maker": "只读统计工具",
-			"bulk-import": "旧链接折扣",
-			universal: "店铺方案复制",
-			interface: "分批上架",
-			safety: "安装准备",
-			checklist: "更新检查",
-		},
-	},
-	{
-		version: "2026-09-06",
-		kicker: "UPDATE / 2026.9.6",
-		title: "2026.9.6 上架工具更新公告",
-		desc: "本次汇总 8.11 之后的型号表、做表、标题兼容、进度恢复、旧链接折扣、图片参数联动和发布安全更新。",
-		brief: "型号表、标题兼容、进度恢复、旧链接折扣、图片参数联动和发布稳定性",
-		sections: {
-			summary: "latest-0906-summary",
-			"sheet-maker": "latest-0906-models",
-			"bulk-import": "latest-0906-title",
-			universal: "latest-0906-discount",
-			interface: "latest-0906-state",
-			safety: "latest-0906-image",
-			checklist: "latest-0906-checklist",
-		},
-		labels: {
-			summary: "本次更新",
-			"sheet-maker": "型号表与做表",
-			"bulk-import": "标题与店铺",
-			universal: "旧链接折扣",
-			interface: "进度与稳定性",
-			safety: "图片参数联动",
-			checklist: "更新检查",
-		},
-	},
-	{
-		version: "2026-08-11",
-		kicker: "UPDATE / 2026.8.11",
-		title: "2026.8.11 上架底层逻辑更新公告",
-		desc: "Shopee 与 TK 主图改为优先独立上传，批量添加新 Model 先清理 BigSeller 继承数据，并统一标题、做表、通用配置、店铺新建和进度统计规则。",
-		brief:
-			"主图优先上传、新 Model 继承值清理、标题与做表规则、店铺新建和进度修复",
-		sections: {
-			summary: "latest-0811-summary",
-			"sheet-maker": "latest-0811-main-image",
-			"bulk-import": "latest-0811-add-model",
-			universal: "latest-0811-title-sheet",
-			interface: "latest-0811-config-progress",
-			safety: "latest-0811-store-profile",
-			checklist: "latest-0811-checklist",
-		},
-		labels: {
-			summary: "本次更新",
-			"sheet-maker": "主图上传",
-			"bulk-import": "添加新 Model",
-			universal: "标题与做表",
-			interface: "配置与进度",
-			safety: "新建店铺",
-			checklist: "更新检查",
-		},
-	},
-	{
-		version: "2026-08-06",
-		kicker: "UPDATE / 2026.8.6",
-		title: "2026.8.6 标题与批量型号工具更新公告",
-		desc: "修复标题被 AI 改乱、批量添加型号数据错位的问题，并新增批量修改已知 Model 工具。",
-		brief: "标题规则修复、批量添加新型号稳定性、修改已知 Model",
-		sections: {
-			summary: "latest-0806-summary",
-			"sheet-maker": "latest-0806-add-model",
-			"bulk-import": "latest-0806-known-model",
-			universal: "latest-0806-title",
-			interface: "latest-0806-ai",
-			safety: "latest-0806-checklist",
-			checklist: "latest-0806-checklist",
-		},
-		labels: {
-			summary: "本次更新",
-			"sheet-maker": "批量添加新型号",
-			"bulk-import": "修改已知 Model",
-			universal: "标题生成规则",
-			interface: "AI 提示与安全暂停",
-			safety: "使用检查",
-			checklist: "使用检查",
-		},
-	},
-	{
-		version: "2026-08-01",
-		kicker: "UPDATE / 2026.8.1",
-		title: "2026.8.1 店铺配置与上架稳定性更新公告",
-		desc: "新增按店铺保存整个平台模板的配置方案，并完成 TK 通用品牌、上架稳定性、概览与主图缩略图优化。",
-		brief: "店铺整套配置、TK 通用品牌、发布确认、概览加速与主图缩略图",
-		sections: {
-			summary: "latest-0801-summary",
-			"sheet-maker": "latest-0801-tk-universal",
-			"bulk-import": "latest-0801-profiles",
-			universal: "latest-0801-reliability",
-			interface: "latest-0801-overview",
-			safety: "latest-0801-checklist",
-			checklist: "latest-0801-checklist",
-		},
-		labels: {
-			summary: "本次更新",
-			"sheet-maker": "TK 通用品牌",
-			"bulk-import": "店铺整套配置",
-			universal: "上架稳定性",
-			interface: "概览与主图",
-			safety: "使用检查",
-			checklist: "使用检查",
-		},
-	},
-	{
-		version: "2026-07-22",
-		kicker: "UPDATE / 2026.7.22",
-		title: "2026.7.22 批量工具更新公告",
-		desc: "新增批量修改错误 SKU，并全面加强批量添加型号的页面识别、写入复核和慢加载兼容。",
-		brief: "批量修改错误 SKU、添加型号安全升级、BigSeller 慢加载兼容",
-		sections: {
-			summary: "latest-0722-summary",
-			"sheet-maker": "latest-0722-sku-fix",
-			"bulk-import": "latest-0722-sku-fix",
-			universal: "latest-0722-add-model",
-			interface: "latest-0722-model-tables",
-			safety: "latest-0722-checklist",
-			checklist: "latest-0722-checklist",
-		},
-		labels: {
-			summary: "本次更新",
-			"sheet-maker": "错误 SKU 修复",
-			"bulk-import": "错误 SKU 修复",
-			universal: "添加型号升级",
-			interface: "型号表维护",
-			safety: "使用检查",
-			checklist: "使用检查",
-		},
-	},
-	{
-		version: "2026-07-13",
-		kicker: "UPDATE / 2026.7.13",
-		title: "2026.7.13 重大 BUG 修复公告",
-		desc: "自动做表曾存在尺寸价格档误判。修复前上架过受影响型号的同事，请立即检查并修改线上商品价格。",
-		brief: "自动做表尺寸价格档修复，历史商品必须立即复查",
-		sections: {
-			summary: "latest-0713-summary",
-			"sheet-maker": "latest-0713-affected",
-			"bulk-import": "latest-0713-affected",
-			universal: "latest-0713-review",
-			interface: "latest-0713-fix",
-			safety: "latest-0713-checklist",
-			checklist: "latest-0713-checklist",
-		},
-		labels: {
-			summary: "紧急处理",
-			"sheet-maker": "受影响型号",
-			"bulk-import": "受影响型号",
-			universal: "历史商品复查",
-			interface: "修复说明",
-			safety: "使用要求",
-			checklist: "完成检查",
-		},
-	},
-	{
-		version: "2026-07-08",
-		kicker: "UPDATE / 2026.7.8",
-		title: "2026.7.8 更新公告",
-		desc: "上架表格一键制作已更新。以后生成表格时，会按图片编号先排完整型号，方便大家检查表格、SKU 和价格。",
-		brief: "上架表格一键制作的排列方式更新，检查表格更方便",
-		sections: {
-			summary: "summary",
-			"sheet-maker": "sheet-maker",
-			"bulk-import": "sheet-maker",
-			universal: "export-order",
-			interface: "history",
-			safety: "history",
-			checklist: "checklist",
-		},
-		labels: {
-			summary: "本次更新内容",
-			"sheet-maker": "表格制作变化",
-			"bulk-import": "表格制作变化",
-			universal: "检查方法",
-			interface: "公告历史",
-			safety: "公告历史",
-			checklist: "更新后检查",
-		},
-	},
-	{
-		version: "2026-07-07",
-		kicker: "UPDATE / 2026.7.7",
-		title: "2026.7.7 更新公告",
-		desc: "本次在 7.6 的表格制作、通用模板和预览校验基础上，继续补齐通用品牌槽位保存、批量上传提示、主界面统计和 Rain 听雨底部抽屉体验。",
-		brief: "通用槽位独立保存，批量上传提示，主界面统计和 Rain 听雨抽屉优化",
-		sections: {
-			summary: "history-0707-summary",
-			"sheet-maker": "history-0707-bulk-import",
-			"bulk-import": "history-0707-bulk-import",
-			universal: "history-0707-universal",
-			interface: "history-0707-interface",
-			safety: "history-0707-safety",
-			checklist: "history-0707-checklist",
-		},
-		labels: {
-			summary: "本次更新内容",
-			"sheet-maker": "批量上传表格",
-			"bulk-import": "批量上传表格",
-			universal: "通用品牌槽位",
-			interface: "主界面体验",
-			safety: "操作安全提示",
-			checklist: "更新后检查",
-		},
-	},
-	{
-		version: "2026-07-06",
-		kicker: "UPDATE / 2026.7.6",
-		title: "2026.7.6 更新公告",
-		desc: "本次重点更新上架表格一键制作、菲律宾型号表、通用全部品牌上架模板，并补齐生成确认、预览和安全校验。",
-		brief: "一键制作表格确认表、菲律宾型号表、通用品牌上架、预览与校验优化",
-		sections: {
-			summary: "history-0706-summary",
-			"sheet-maker": "history-0706-summary",
-			"bulk-import": "history-0706-summary",
-			universal: "history-0706-summary",
-			interface: "history-0706-summary",
-			safety: "history-0706-summary",
-			checklist: "history-0706-summary",
-		},
-		labels: {
-			summary: "历史公告",
-			"sheet-maker": "7.6 表格制作",
-			"bulk-import": "7.6 历史公告",
-			universal: "7.6 通用品牌",
-			interface: "7.6 界面优化",
-			safety: "7.6 预览校验",
-			checklist: "历史检查项",
-		},
-	},
-	{
-		version: "2026-07-01",
-		kicker: "UPDATE / 2026.7.1",
-		title: "2026.7.1 更新公告",
-		desc: "本次主要围绕 BigSeller 新版页面适配、主界面视觉重塑、AI 辅助能力和偷懒小工具扩展。",
-		brief: "BigSeller 适配、UI 重塑、爱弥斯 AI、批量小工具、单主图库教学",
-		sections: {
-			summary: "old-summary",
-			"sheet-maker": "old-lazy-tools",
-			"bulk-import": "old-lazy-tools",
-			universal: "old-aimisi",
-			interface: "old-summary",
-			safety: "old-single-main",
-			checklist: "old-checklist",
-		},
-		labels: {
-			summary: "本次更新内容",
-			"sheet-maker": "偷懒小工具",
-			"bulk-import": "偷懒小工具",
-			universal: "爱弥斯 AI",
-			interface: "主界面更新",
-			safety: "单主图库教学",
-			checklist: "更新后检查",
-		},
-	},
-];
-
 const articleByVersion = new Map(
 	noticeArticles.map((article) => [article.version, article.html]),
 );
@@ -351,8 +23,15 @@ const articleByVersion = new Map(
 const availableNotices = notices.filter((notice) =>
 	articleByVersion.has(notice.version),
 );
-const latestNotice = availableNotices[0] ?? notices[0];
+const latestNotice = availableNotices[0] ?? notices[0] ?? {
+	version: "", displayVersion: "暂无公告", kicker: "NOTICE",
+	title: "暂无公告", desc: "请在 src/data 中添加自己的公告。", brief: "",
+	sections: {} as Record<string, string>, labels: {} as Record<string, string>,
+};
 const latestNoticeVersion = latestNotice.version;
+const noticeNavSections = [
+	...new Set(availableNotices.flatMap((notice) => Object.keys(notice.sections))),
+];
 const noticeMetaJson = JSON.stringify(
 	Object.fromEntries(notices.map((notice) => [notice.version, notice])),
 );
@@ -376,17 +55,21 @@ const noticeMetaJson = JSON.stringify(
 				<p data-notice-desc>{latestNotice.desc}</p>
 				<div class="notice-version">
 					<span>公告版本</span>
-					<strong data-notice-version>{latestNotice.version}</strong>
+					<strong data-notice-version>{latestNotice.displayVersion}</strong>
 				</div>
 			</section>
 
 			<nav class="notice-nav" aria-label="公告目录">
 				<p class="notice-nav-title">快速查看</p>
-				<a href="#summary" data-section="summary"><i></i>本次更新内容</a>
-				<a href="#sheet-maker" data-section="sheet-maker"><i></i>表格制作变化</a>
-				<a href="#export-order" data-section="universal"><i></i>检查方法</a>
-				<a href="#history" data-section="interface"><i></i>公告历史</a>
-				<a href="#checklist" data-section="checklist"><i></i>更新后检查</a>
+				{noticeNavSections.map((section) => (
+					<a
+						href={latestNotice.sections[section] ? `#${latestNotice.sections[section]}` : undefined}
+						data-section={section}
+						hidden={!latestNotice.sections[section]}
+					>
+						<i></i>{latestNotice.labels[section] ?? ""}
+					</a>
+				))}
 			</nav>
 
 			<section class="notice-history" aria-label="历史公告">
@@ -402,7 +85,7 @@ const noticeMetaJson = JSON.stringify(
 							data-notice-button={notice.version}
 						>
 							<strong>
-								{notice.version.replaceAll("-", ".").replace(".0", ".")} {index === 0 ? "最新公告" : "更新公告"}
+								{notice.displayVersion} {index === 0 ? "最新公告" : "更新公告"}
 								{index === 0 && <span class="history-new-badge">NEW</span>}
 							</strong>
 							<span>{notice.brief}</span>
@@ -613,6 +296,10 @@ const noticeMetaJson = JSON.stringify(
 		transform: translateX(0.12rem);
 	}
 
+	.notice-nav a[hidden] {
+		display: none;
+	}
+
 	.notice-nav i {
 		width: 0.42rem;
 		height: 0.42rem;
@@ -820,7 +507,8 @@ const noticeMetaJson = JSON.stringify(
 	.notice-main :global(.tool-block),
 	.notice-main :global(.tutorial-step),
 	.notice-main :global(.notice-note),
-	.notice-main :global(.notice-warning) {
+	.notice-main :global(.notice-warning),
+	.notice-main :global(.notice-critical) {
 		border-radius: 0.75rem;
 	}
 
@@ -860,7 +548,8 @@ const noticeMetaJson = JSON.stringify(
 	}
 
 	.notice-main :global(.notice-note),
-	.notice-main :global(.notice-warning) {
+	.notice-main :global(.notice-warning),
+	.notice-main :global(.notice-critical) {
 		margin: 0.75rem 0;
 		padding: 0.75rem 0.85rem;
 		line-height: 1.75;
@@ -876,6 +565,17 @@ const noticeMetaJson = JSON.stringify(
 		color: color-mix(in oklab, #d97706 70%, var(--notice-ink));
 		background: color-mix(in oklab, #f59e0b 11%, transparent);
 		border: 1px solid color-mix(in oklab, #f59e0b 24%, transparent);
+	}
+
+	.notice-main :global(.notice-critical) {
+		border: 1px solid color-mix(in oklab, #dc2626 38%, var(--line-divider));
+		background: color-mix(in oklab, #dc2626 9%, var(--notice-panel));
+		color: color-mix(in oklab, #dc2626 74%, var(--notice-ink));
+		font-weight: 700;
+	}
+
+	.notice-main :global(.notice-critical strong) {
+		color: inherit;
 	}
 
 	.notice-main :global(.tutorial-grid) {
@@ -958,6 +658,20 @@ const noticeMetaJson = JSON.stringify(
 		overscroll-behavior-x: contain;
 	}
 
+	.notice-main :global(.notice-directory) {
+		margin: 0.75rem 0;
+		padding: 0.85rem;
+		border: 1px solid var(--line-divider);
+		border-radius: 0.75rem;
+		background: var(--notice-panel);
+		color: var(--notice-ink);
+		font-family: var(--font-mono, "JetBrains Mono", monospace);
+		font-size: 0.82rem;
+		line-height: 1.8;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+
 	.notice-main :global(.notice-table) {
 		width: 100%;
 		min-width: 48rem;
@@ -1003,6 +717,14 @@ const noticeMetaJson = JSON.stringify(
 
 	.notice-main :global(.notice-table th:nth-child(4)) {
 		width: 9.5rem;
+	}
+
+	.notice-main :global(.notice-table.wallet-color-table) {
+		min-width: 0;
+	}
+
+	.notice-main :global(.notice-table.wallet-color-table th) {
+		width: 50%;
 	}
 
 	.notice-main :global(.notice-table tbody tr:nth-child(even) td) {
@@ -1074,6 +796,11 @@ const noticeMetaJson = JSON.stringify(
 			background: var(--notice-panel-strong);
 		}
 
+		.notice-main :global(.notice-table.wallet-color-table tr) {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-areas: "market" "model";
+		}
+
 		.notice-main :global(.notice-table td),
 		.notice-main :global(.notice-table tbody tr:nth-child(even) td) {
 			display: grid;
@@ -1126,6 +853,16 @@ const noticeMetaJson = JSON.stringify(
 
 		.notice-main :global(.notice-table td:nth-child(4)::before) {
 			content: "\6b63\786e\89c4\5219";
+		}
+
+		.notice-main :global(.notice-table.wallet-color-table td:nth-child(n)) {
+			display: block;
+		}
+
+		.notice-main :global(.notice-table.wallet-color-table td:nth-child(n)::before) {
+			content: attr(data-label);
+			display: block;
+			margin-bottom: 0.22rem;
 		}
 	}
 

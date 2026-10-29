@@ -448,12 +448,12 @@ body.wallpaper-transparent #navbar.firefly-navbar.scrolled > .firefly-nav-shell 
     overflow: visible;
     border-radius: 9999px;
     transition:
-        width 1100ms cubic-bezier(0.6, 0, 0.4, 1),
-        background-color 260ms ease var(--nav-item-reveal-delay, 760ms),
-        border-color 260ms ease var(--nav-item-reveal-delay, 760ms),
-        box-shadow 260ms ease var(--nav-item-reveal-delay, 760ms),
-        backdrop-filter 260ms ease var(--nav-item-reveal-delay, 760ms),
-        -webkit-backdrop-filter 260ms ease var(--nav-item-reveal-delay, 760ms);
+        width 320ms cubic-bezier(0.6, 0, 0.4, 1),
+        background-color 100ms ease var(--nav-item-reveal-delay, 200ms),
+        border-color 100ms ease var(--nav-item-reveal-delay, 200ms),
+        box-shadow 100ms ease var(--nav-item-reveal-delay, 200ms),
+        backdrop-filter 100ms ease var(--nav-item-reveal-delay, 200ms),
+        -webkit-backdrop-filter 100ms ease var(--nav-item-reveal-delay, 200ms);
 }
 
 #navbar.firefly-navbar .nav-links > .dropdown-container {
@@ -481,8 +481,8 @@ body.wallpaper-transparent #navbar.firefly-navbar.scrolled > .firefly-nav-shell 
     left: calc(50% + var(--nav-item-expanded-offset, 0px));
     transform: translate(-50%, -50%);
     transition:
-        left 1100ms cubic-bezier(0.6, 0, 0.4, 1),
-        opacity 300ms ease var(--nav-item-reveal-delay, 760ms),
+        left 320ms cubic-bezier(0.6, 0, 0.4, 1),
+        opacity 120ms ease var(--nav-item-reveal-delay, 200ms),
         visibility 0s;
 }
 
@@ -820,7 +820,7 @@ body.wallpaper-transparent #navbar.firefly-navbar.scrolled > .firefly-nav-shell 
     backdrop-filter: none;
     transform: translate(-50%, -50%);
     transition:
-        width 1100ms cubic-bezier(0.6, 0, 0.4, 1),
+        width 320ms cubic-bezier(0.6, 0, 0.4, 1),
         background-color 180ms ease,
         border-color 180ms ease,
         box-shadow 180ms ease,
@@ -838,9 +838,9 @@ body.wallpaper-transparent #navbar.firefly-navbar.scrolled > .firefly-nav-shell 
     pointer-events: none;
     transform: translate(-50%, -50%);
     transition:
-        left 1100ms cubic-bezier(0.6, 0, 0.4, 1),
-        opacity 220ms ease-out,
-        visibility 0s linear 220ms;
+        left 320ms cubic-bezier(0.6, 0, 0.4, 1),
+        opacity 120ms ease-out,
+        visibility 0s linear 120ms;
 }
 
 #navbar.firefly-navbar.scrolled .nav-links > .dropdown-container.nav-compact-active {
@@ -868,9 +868,9 @@ body.wallpaper-transparent #navbar.firefly-navbar.scrolled > .firefly-nav-shell 
     overflow: hidden;
     opacity: 0;
     transition:
-        width 360ms ease,
-        margin-left 360ms ease,
-        opacity 260ms ease;
+        width 180ms ease,
+        margin-left 180ms ease,
+        opacity 140ms ease;
 }
 
 /* Keep the selected button's footprint stable while its label travels. */
@@ -892,12 +892,12 @@ body.wallpaper-transparent #navbar.firefly-navbar.scrolled > .firefly-nav-shell 
     -webkit-backdrop-filter: blur(20px) saturate(1.2);
     backdrop-filter: blur(20px) saturate(1.2);
     transition:
-        width 1100ms cubic-bezier(0.6, 0, 0.4, 1),
-        background-color 260ms ease var(--nav-item-reveal-delay, 760ms),
-        border-color 260ms ease var(--nav-item-reveal-delay, 760ms),
-        box-shadow 260ms ease var(--nav-item-reveal-delay, 760ms),
-        backdrop-filter 260ms ease var(--nav-item-reveal-delay, 760ms),
-        -webkit-backdrop-filter 260ms ease var(--nav-item-reveal-delay, 760ms);
+        width 320ms cubic-bezier(0.6, 0, 0.4, 1),
+        background-color 100ms ease var(--nav-item-reveal-delay, 200ms),
+        border-color 100ms ease var(--nav-item-reveal-delay, 200ms),
+        box-shadow 100ms ease var(--nav-item-reveal-delay, 200ms),
+        backdrop-filter 100ms ease var(--nav-item-reveal-delay, 200ms),
+        -webkit-backdrop-filter 100ms ease var(--nav-item-reveal-delay, 200ms);
 }
 
 #navbar.firefly-navbar.scrolled .nav-links.is-hover-expanded > .dropdown-container {
@@ -907,8 +907,8 @@ body.wallpaper-transparent #navbar.firefly-navbar.scrolled > .firefly-nav-shell 
     pointer-events: auto;
     transform: translate(-50%, -50%);
     transition:
-        left 1100ms cubic-bezier(0.6, 0, 0.4, 1),
-        opacity 300ms ease var(--nav-item-reveal-delay, 760ms),
+        left 320ms cubic-bezier(0.6, 0, 0.4, 1),
+        opacity 120ms ease var(--nav-item-reveal-delay, 200ms),
         visibility 0s;
 }
 
@@ -930,9 +930,9 @@ body.wallpaper-transparent #navbar.firefly-navbar.scrolled > .firefly-nav-shell 
     translate: 0 0;
     transform: translateY(0) !important;
     transition:
-        opacity 260ms ease var(--nav-submenu-reveal-delay, 0ms),
-        translate 260ms ease var(--nav-submenu-reveal-delay, 0ms),
-        transform 260ms ease var(--nav-submenu-reveal-delay, 0ms),
+        opacity 140ms ease var(--nav-submenu-reveal-delay, 0ms),
+        translate 140ms ease var(--nav-submenu-reveal-delay, 0ms),
+        transform 140ms ease var(--nav-submenu-reveal-delay, 0ms),
         visibility 0s linear var(--nav-submenu-reveal-delay, 0ms) !important;
 }
 

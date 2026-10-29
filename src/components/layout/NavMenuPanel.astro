@@ -1,6 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
 import ImageWrapper from "@/components/common/ImageWrapper.astro";
+import ThemeSwitch from "@/components/themes/ThemeSwitch.astro";
 import { profileConfig } from "@/config/profileConfig";
 import { siteConfig } from "@/config/siteConfig";
 import type { NavBarLink } from "@/types/config";
@@ -197,14 +198,23 @@ const getLinkIcon = (item: NavBarLink, fallback: string) =>
 					</a>
 				)
 			)}
+			<ThemeSwitch id="aemeath-mobile-theme-switch" navigation inline />
 		</nav>
 		<div class="mobile-footer">
-			<span class="mobile-prompt">Rainzt.cn · 开发、写作与记录</span>
+			<span class="mobile-prompt">{siteConfig.title} · {siteConfig.subtitle}</span>
 		</div>
 	</aside>
 </div>
 
 <script>
+	// Swup reruns this script after navigation; replace the previous listeners.
+	const menuWindow = window as Window & {
+		__fireflyMobileMenuEvents?: AbortController;
+	};
+	menuWindow.__fireflyMobileMenuEvents?.abort();
+	const menuEvents = new AbortController();
+	menuWindow.__fireflyMobileMenuEvents = menuEvents;
+
 	function closeMobileMenu() {
 		const setMenuOpen = (window as Window & {
 			__fireflySetMobileMenuOpen?: (open: boolean) => void;
@@ -273,9 +283,9 @@ const getLinkIcon = (item: NavBarLink, fallback: string) =>
 		};
 
 		void copy();
-	});
+	}, { signal: menuEvents.signal });
 
 	document.addEventListener("keydown", function(event) {
 		if (event.key === "Escape") closeMobileMenu();
-	});
+	}, { signal: menuEvents.signal });
 </script>

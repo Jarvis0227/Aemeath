@@ -1,0 +1,45 @@
+---
+// Adapted from Astro Theme Pure's blog/[...page] layout (Apache-2.0).
+import type { Page } from "astro";
+import type { CollectionEntry } from "astro:content";
+import { Icon } from "astro-icon/components";
+import Pagination from "@/components/common/Pagination.astro";
+import Profile from "@/components/widget/Profile.astro";
+import PureRecentComments from "@/components/themes/pure/PureRecentComments.astro";
+import PurePostPreview from "@/components/themes/pure/PurePostPreview.astro";
+import { getTagList } from "@/utils/content-utils";
+import { getTagUrl, url } from "@/utils/url-utils";
+
+interface Props {
+	page: Page<CollectionEntry<"posts">>;
+}
+const { page } = Astro.props;
+const allTags = await getTagList();
+const tags = allTags.slice(0, 50);
+---
+
+<div class="pure-blog" data-theme-only="pure" data-pagefind-ignore="all">
+	<h1 class="pure-page-title">主页</h1>
+	<div class="pure-blog__grid">
+		<section class="pure-blog__posts" aria-label="博客文章">
+			<div class="pure-blog__summary"><p>第 {page.currentPage} 页 · 本页 {page.data.length} 篇，共 {page.total} 篇</p><a href={url("/archive/")}>按年份查看全部文章 →</a></div>
+			<ul class="pure-post-list">
+				{page.data.map((entry) => <PurePostPreview entry={entry} />)}
+			</ul>
+			{page.total > page.size && <Pagination page={page} class="pure-pagination" />}
+		</section>
+		<aside class="pure-blog__rail" aria-label="个人信息、最近评论与文章标签">
+			<Profile class="pure-blog__profile" />
+			<PureRecentComments />
+			{tags.length > 0 && <section class="pure-blog__tags" aria-labelledby="pure-home-tags-title">
+				<h2 id="pure-home-tags-title"><Icon is:inline name="material-symbols:tag-rounded" />标签</h2>
+				<ul class="pure-tags pure-tags--preview">{tags.map((tag) => <li><a href={getTagUrl(tag.name)}>{tag.name}<span>{tag.count}</span></a></li>)}</ul>
+				<a class="pure-tags-more" href={url("/tags/")}>
+					<span>查看全部标签</span>
+					<span class="pure-tags-more__count">共 {allTags.length} 个</span>
+					<span class="pure-tags-more__arrow" aria-hidden="true">→</span>
+				</a>
+			</section>}
+		</aside>
+	</div>
+</div>

@@ -6,23 +6,30 @@ const SITE_LANG = "zh_CN";
 
 export const siteConfig: SiteConfig = {
 	// 站点标题
-	title: "朝朝听雨",
+	title: "Aemeath",
 
 	// 站点副标题
-	subtitle: "物物而不物于物，念念而不念于念",
+	subtitle: "请填写自己的站点副标题",
 
 	// Aemeath 主题版本
-	themeVersion: "V4.1.6",
+	themeVersion: "V4.3.0",
 
 	// 站点 URL
-	site_url: "https://rainzt.cn",
+	site_url: "https://example.com",
 
 	// 站点描述
 	description:
-		"Aemeath 是朝朝听雨（Rain）的个人博客站点，记录技术实践、项目进展与日常写作。",
+		"基于 Astro 与 Svelte 的个人博客，请填写自己的站点介绍。",
 
 	// 站点关键词
-	keywords: ["Aemeath", "Rain", "Astro", "ACGN", "博客", "技术博客", "静态博客"],
+	keywords: [
+		"Aemeath",
+		"Astro",
+		"ACGN",
+		"博客",
+		"技术博客",
+		"静态博客",
+	],
 
 	// 主题色
 	themeColor: {
@@ -50,19 +57,19 @@ export const siteConfig: SiteConfig = {
 	// Favicon 配置
 	favicon: [
 		{
-			src: "/favicon/chaoc-tingyu-avatar-512.png?v=20260823",
+			src: "/favicon/xiaoai-avatar-512.png?v=20261028",
 			sizes: "512x512",
 		},
 		{
-			src: "/favicon/chaoc-tingyu-avatar-192.png?v=20260823",
+			src: "/favicon/xiaoai-avatar-192.png?v=20261028",
 			sizes: "192x192",
 		},
 		{
-			src: "/favicon/chaoc-tingyu-avatar-180.png?v=20260823",
+			src: "/favicon/xiaoai-avatar-180.png?v=20261028",
 			sizes: "180x180",
 		},
 		{
-			src: "/favicon/chaoc-tingyu-avatar-32.png?v=20260823",
+			src: "/favicon/xiaoai-avatar-32.png?v=20261028",
 			sizes: "32x32",
 		},
 	],
@@ -77,11 +84,11 @@ export const siteConfig: SiteConfig = {
 		// 4. 网络图片: { type: "url", value: "https://example.com/logo.png", alt: "Logo" }
 		logo: {
 			type: "image",
-			value: "assets/images/chaoc-tingyu-avatar.webp",
-			alt: "朝朝听雨",
+			value: "/assets/ai-xiaoai-avatar.png?v=20261028",
+			alt: "Aemeath",
 		},
 		// 导航栏标题
-		title: "朝朝听雨",
+		title: "Aemeath",
 		// 全宽导航栏，导航栏是否占满屏幕宽度
 		widthFull: false,
 		// 导航菜单对齐方式，left：左对齐，center：居中
@@ -93,7 +100,7 @@ export const siteConfig: SiteConfig = {
 	},
 
 	// 站点开始日期，用于统计运行天数
-	siteStartDate: "2026-07-08",
+	siteStartDate: "2026-01-01",
 
 	// 站点时区（IANA 时区字符串），用于格式化bangumi、rss里的构建日期时间等等..
 	// 示例："Asia/Shanghai", "UTC", 如果为空，则按照构建服务器的时区进行时区转换
@@ -169,7 +176,7 @@ export const siteConfig: SiteConfig = {
 	// bangumi配置
 	bangumi: {
 		// Bangumi用户ID
-		userId: "1143164",
+		userId: "",
 		// 数据模式：static=构建时获取，dynamic=客户端实时获取
 		// static 模式在构建时获取数据并静态渲染，部署后数据不更新
 		// dynamic 模式在浏览器中实时请求 API，始终显示最新数据
@@ -189,7 +196,7 @@ export const siteConfig: SiteConfig = {
 		// Bilibili 配置
 		bilibili: {
 			// 你的 Bilibili 用户 UID
-			uid: "38932988",
+			uid: "",
 		},
 		// TMDB 配置（可选，需要翻墙）
 		// tmdb: {

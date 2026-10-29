@@ -1,0 +1,182 @@
+---
+import { url } from "@/utils/url-utils";
+---
+
+<footer-orbit class="site-footer__planet" aria-hidden="true"
+	title="地球：Solar System Scope（CC BY 4.0）；月球：NASA SVS / LRO。贴图已缩小并合成云层。来源与许可：/images/footer-orbit/README.md"
+	data-earth={url("images/footer-orbit/earth.webp")}
+	data-moon={url("images/footer-orbit/moon.webp")}
+>
+	<img class="site-footer__planet-poster" src={url("images/footer-orbit/poster.webp")} width="144" height="144" alt="" loading="lazy" decoding="async" />
+	<canvas width="144" height="144"></canvas>
+</footer-orbit>
+
+<script>
+	import { createPlanetRaster, type PlanetRaster, type PlanetTexture } from "@/utils/footer-orbit-sphere";
+
+	async function loadTexture(src: string): Promise<PlanetTexture> {
+		const image = new Image();
+		image.src = src;
+		await image.decode();
+		const surface = document.createElement("canvas");
+		surface.width = image.naturalWidth;
+		surface.height = image.naturalHeight;
+		const context = surface.getContext("2d", { willReadFrequently: true });
+		if (!context) throw new Error("Canvas unavailable");
+		context.drawImage(image, 0, 0);
+		return {
+			data: context.getImageData(0, 0, surface.width, surface.height).data,
+			width: surface.width,
+			height: surface.height,
+		};
+	}
+
+	class FooterOrbit extends HTMLElement {
+		private motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+		private observer?: IntersectionObserver;
+		private frame = 0;
+		private lastFrame = 0;
+		private elapsed = 0;
+		private inView = false;
+		private loading = false;
+		private drawScene?: (seconds: number) => void;
+
+		connectedCallback() {
+			this.motion.addEventListener("change", this.updatePlayback);
+			document.addEventListener("visibilitychange", this.updatePlayback);
+			this.observer = new IntersectionObserver(([entry]) => {
+				this.inView = entry.isIntersecting;
+				this.updatePlayback();
+			});
+			this.observer.observe(this);
+		}
+
+		disconnectedCallback() {
+			this.pause();
+			this.observer?.disconnect();
+			this.motion.removeEventListener("change", this.updatePlayback);
+			document.removeEventListener("visibilitychange", this.updatePlayback);
+		}
+
+		private async prepare() {
+			this.loading = true;
+			try {
+				const [earth, moon] = await Promise.all([
+					loadTexture(this.dataset.earth || ""),
+					loadTexture(this.dataset.moon || ""),
+				]);
+				if (!this.isConnected) return;
+				const canvas = this.querySelector("canvas");
+				const context = canvas?.getContext("2d");
+				if (!canvas || !context) return;
+				// Fixed 2x backing resolution keeps this small footer scene bounded.
+				context.scale(2, 2);
+				const earthRaster = createPlanetRaster(earth, 88, (23.4 * Math.PI) / 180);
+				const moonRaster = createPlanetRaster(moon, 24);
+				const earthSurface = document.createElement("canvas");
+				const moonSurface = document.createElement("canvas");
+				earthSurface.width = earthSurface.height = 88;
+				moonSurface.width = moonSurface.height = 24;
+				const earthContext = earthSurface.getContext("2d");
+				const moonContext = moonSurface.getContext("2d");
+				if (!earthContext || !moonContext) return;
+				const earthImage = new ImageData(88, 88);
+				const moonImage = new ImageData(24, 24);
+				const paintSphere = (raster: PlanetRaster, image: ImageData, target: CanvasRenderingContext2D, rotation: number) => {
+					image.data.set(raster.draw(rotation));
+					target.putImageData(image, 0, 0);
+				};
+				const projectOrbit = (angle: number) => {
+					const tilt = (-24 * Math.PI) / 180;
+					const x = 29.5 * Math.cos(angle);
+					const y = 10.9 * Math.sin(angle);
+					const depth = 27.4 * Math.sin(angle);
+					const scale = 200 / (200 - depth);
+					return {
+						x: 36 + (x * Math.cos(tilt) - y * Math.sin(tilt)) * scale,
+						y: 36 + (x * Math.sin(tilt) + y * Math.cos(tilt)) * scale,
+						depth,
+						scale,
+					};
+				};
+				this.drawScene = (seconds) => {
+					const angle = (seconds / 8) * Math.PI * 2 + 0.8;
+					const moonPosition = projectOrbit(angle);
+					const moonRadius = 6 * moonPosition.scale;
+					paintSphere(earthRaster, earthImage, earthContext, seconds / 32 + 0.08);
+					paintSphere(moonRaster, moonImage, moonContext, angle / (Math.PI * 2));
+					context.clearRect(0, 0, 72, 72);
+					const orbit = (front: boolean) => {
+						context.save();
+						context.strokeStyle = getComputedStyle(this).color;
+						context.globalAlpha = front ? 0.65 : 0.28;
+						context.lineWidth = 0.7;
+						context.beginPath();
+						for (let point = 0; point <= 64; point++) {
+							const projected = projectOrbit((front ? 0 : Math.PI) + (point / 64) * Math.PI);
+							if (point === 0) context.moveTo(projected.x, projected.y);
+							else context.lineTo(projected.x, projected.y);
+						}
+						context.stroke();
+						context.restore();
+					};
+					const paintMoon = () => context.drawImage(moonSurface, moonPosition.x - moonRadius, moonPosition.y - moonRadius, moonRadius * 2, moonRadius * 2);
+					orbit(false);
+					// Draw by depth so the far-side Moon is really occluded by Earth.
+					if (moonPosition.depth < 0) paintMoon();
+					context.drawImage(earthSurface, 14, 14, 44, 44);
+					context.beginPath();
+					context.arc(36, 36, 22, 0, Math.PI * 2);
+					context.strokeStyle = "rgba(104, 183, 242, 0.6)";
+					context.lineWidth = 0.5;
+					context.stroke();
+					orbit(true);
+					if (moonPosition.depth >= 0) paintMoon();
+				};
+				this.drawScene(this.elapsed);
+				this.dataset.ready = "true";
+				this.updatePlayback();
+			} catch {
+				// Keep the rendered Earth/Moon poster when textures or Canvas fail.
+				this.dataset.state = "fallback";
+			} finally {
+				this.loading = false;
+			}
+		}
+
+		private pause() {
+			cancelAnimationFrame(this.frame);
+			this.frame = 0;
+			this.lastFrame = 0;
+		}
+
+		private updatePlayback = () => {
+			if (this.motion.matches || !this.inView || document.hidden) {
+				this.pause();
+				this.dataset.state = "paused";
+				return;
+			}
+			if (!this.drawScene) {
+				if (!this.loading) void this.prepare();
+				return;
+			}
+			if (!this.frame) {
+				this.dataset.state = "running";
+				this.frame = requestAnimationFrame(this.tick);
+			}
+		};
+
+		private tick = (now: number) => {
+			if (!this.lastFrame) this.lastFrame = now;
+			const delta = now - this.lastFrame;
+			if (delta >= 1000 / 30) {
+				this.elapsed += Math.min(delta, 100) / 1000;
+				this.lastFrame = now;
+				this.drawScene?.(this.elapsed);
+			}
+			this.frame = requestAnimationFrame(this.tick);
+		};
+	}
+
+	if (!customElements.get("footer-orbit")) customElements.define("footer-orbit", FooterOrbit);
+</script>

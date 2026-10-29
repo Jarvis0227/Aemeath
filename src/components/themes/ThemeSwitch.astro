@@ -1,0 +1,145 @@
+---
+import { Icon } from "astro-icon/components";
+import FontSwitch from "@/components/controls/FontSwitch.svelte";
+import { siteThemeConfig } from "@/config/siteThemeConfig";
+
+interface Props {
+	id: string;
+	showFonts?: boolean;
+	inline?: boolean;
+	navigation?: boolean;
+}
+const { id, showFonts = false, inline = false, navigation = false } = Astro.props;
+const label = inline && showFonts ? "主题与字体" : "主题";
+const choices = [
+	{ value: "aemeath", name: "Aemeath", detail: "壁纸 · 卡片 · 侧栏" },
+	{ value: "pure", name: "Pure", detail: "简洁导航 · 专注阅读" },
+];
+---
+
+{siteThemeConfig.enabled && (
+	<details class:list={[
+		"site-theme-switch",
+		inline && "site-theme-switch--inline",
+		navigation && "site-theme-switch--navigation",
+		navigation && !inline && "dropdown-container",
+	]} id={id} data-pagefind-ignore="all">
+		<summary class:list={[navigation && !inline && "nav-link"]} aria-label={inline ? label : "切换站点主题"} title={inline ? label : "切换站点主题"}>
+			<span class:list={["site-theme-switch__heading", navigation && !inline && "nav-link-inner"]}>
+				<Icon is:inline name="material-symbols:dashboard-customize-outline-rounded" class:list={[navigation && !inline && "nav-icon"]} />
+				<span class:list={["site-theme-switch__label", navigation && "nav-text"]}>{label}</span>
+			</span>
+			{navigation && <Icon is:inline name="material-symbols:keyboard-arrow-down-rounded" class:list={["site-theme-switch__arrow", !inline && "dropdown-arrow"]} />}
+		</summary>
+		<div class="site-theme-switch__panel" aria-label="选择站点主题">
+			<p>站点主题</p>
+			{choices.map((choice) => (
+				<button type="button" data-site-theme-choice={choice.value} aria-pressed="false">
+					<span><strong>{choice.name}</strong><small>{choice.detail}</small></span>
+					<Icon is:inline name="material-symbols:check-rounded" class="site-theme-switch__check" />
+				</button>
+			))}
+			{showFonts && <div class="site-theme-switch__fonts"><p>字体样式</p><FontSwitch client:theme="pure" /></div>}
+		</div>
+	</details>
+)}
+
+<script>
+	import { siteThemeConfig } from "@/config/siteThemeConfig";
+	import type { SiteTheme } from "@/types/siteThemeConfig";
+
+	function syncThemeChoices() {
+		const theme = document.documentElement.dataset.siteTheme ?? siteThemeConfig.defaultTheme;
+		document.querySelectorAll<HTMLButtonElement>("[data-site-theme-choice]").forEach((button) => {
+			button.setAttribute("aria-pressed", String(button.dataset.siteThemeChoice === theme));
+		});
+	}
+
+	function chooseTheme(theme: SiteTheme) {
+		if (document.documentElement.dataset.siteTheme === theme) return;
+		const destination = new URL(window.location.href);
+		try {
+			localStorage.setItem("rainzt.site-theme.v1", theme);
+			// A URL override must not defeat the visitor's new selection.
+			destination.searchParams.delete("siteTheme");
+		} catch {
+			destination.searchParams.set("siteTheme", theme);
+		}
+		// A document navigation releases the outgoing layout's islands and effects.
+		window.location.assign(destination.href);
+	}
+
+	document.addEventListener("click", (event) => {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const button = target.closest<HTMLButtonElement>("[data-site-theme-choice]");
+		const choice = button?.dataset.siteThemeChoice;
+		if (choice === "aemeath" || choice === "pure") chooseTheme(choice);
+		document.querySelectorAll<HTMLDetailsElement>(".site-theme-switch[open]").forEach((panel) => {
+			if (!panel.contains(target) || button) panel.open = false;
+		});
+	});
+	document.addEventListener("keydown", (event) => {
+		if (event.key !== "Escape") return;
+		const panels = document.querySelectorAll<HTMLDetailsElement>(".site-theme-switch[open]");
+		if (!panels.length) return;
+		event.stopImmediatePropagation();
+		panels.forEach((panel) => {
+			panel.open = false;
+			panel.querySelector<HTMLElement>("summary")?.focus();
+		});
+	});
+	window.addEventListener("pageshow", (event) => {
+		if (event.persisted && siteThemeConfig.enabled && !new URLSearchParams(location.search).has("siteTheme")) {
+			try {
+				const saved = localStorage.getItem("rainzt.site-theme.v1");
+				if ((saved === "pure" || saved === "aemeath") && saved !== document.documentElement.dataset.siteTheme) {
+					location.reload();
+					return;
+				}
+			} catch { /* The current document still works without storage. */ }
+		}
+		syncThemeChoices();
+	});
+	document.addEventListener("swup:content:replace", syncThemeChoices);
+	syncThemeChoices();
+</script>
+
+<style is:global>
+	.site-theme-switch { position: relative; color: var(--pure-ink, var(--text-color)); }
+	.site-theme-switch > summary { display: flex; align-items: center; justify-content: center; gap: 0.35rem; min-width: 2.75rem; min-height: 2.75rem; padding: 0.5rem; border-radius: 0.5rem; cursor: pointer; list-style: none; }
+	.site-theme-switch > summary::-webkit-details-marker { display: none; }
+	.site-theme-switch > summary:hover { background: var(--pure-muted, var(--btn-plain-bg-hover)); }
+	.site-theme-switch__heading { display: inline-flex; align-items: center; gap: 0.35rem; }
+	.site-theme-switch__heading > svg { flex: 0 0 auto; width: 1.25rem; height: 1.25rem; }
+	.site-theme-switch__label { font-size: 0.8125rem; }
+	.site-theme-switch__panel { position: absolute; top: calc(100% + 0.5rem); right: 0; z-index: 90; width: min(16rem, calc(100vw - 2rem)); padding: 0.75rem; border: 1px solid var(--pure-line, var(--line-color)); border-radius: 0.75rem; background: var(--pure-bg, var(--float-panel-bg)); }
+	.site-theme-switch__panel > p { padding: 0.25rem 0.5rem 0.65rem; font-size: 0.8125rem; color: var(--pure-secondary, var(--content-meta)); }
+	.site-theme-switch__panel button { display: flex; align-items: center; justify-content: space-between; text-align: left; width: 100%; padding: 0.75rem; border-radius: 0.5rem; cursor: pointer; }
+	.site-theme-switch__panel button:hover, .site-theme-switch__panel button[aria-pressed="true"] { background: var(--pure-muted, var(--btn-plain-bg-hover)); }
+	.site-theme-switch__panel strong, .site-theme-switch__panel small { display: block; }
+	.site-theme-switch__panel strong { font-size: 0.9375rem; font-weight: 600; }
+	.site-theme-switch__panel small { margin-top: 0.25rem; color: var(--pure-secondary, var(--content-meta)); font-size: 0.75rem; }
+	.site-theme-switch__check { visibility: hidden; width: 1.25rem; height: 1.25rem; }
+	.site-theme-switch__fonts { margin-top: 0.5rem; border-top: 1px solid var(--pure-line, var(--line-color)); padding: 0.75rem 0.25rem 0.25rem; }
+	.site-theme-switch__fonts > p { margin-bottom: 0.5rem; font-size: 0.8125rem; }
+	.site-theme-switch__fonts .font-switch-option { justify-content: center; padding: 0.7rem 0.25rem; }
+	.site-theme-switch--inline > summary { justify-content: start; width: 100%; padding: 0.7rem 0.8rem; }
+	.site-theme-switch--inline .site-theme-switch__panel { position: static; width: 100%; border: 0; padding: 0.25rem; }
+	.site-theme-switch--inline .site-theme-switch__label { display: inline; }
+	.site-theme-switch--navigation .site-theme-switch__label { display: inline; font-size: inherit; }
+	.site-theme-switch--navigation > summary { color: var(--nav-fg-1, var(--text-color)); }
+	.site-theme-switch--navigation[open] > summary { color: var(--primary); }
+	.site-theme-switch--navigation .site-theme-switch__arrow { flex: 0 0 auto; width: 1rem; height: 1rem; transition: transform 180ms ease; }
+	.site-theme-switch--navigation[open] > summary .site-theme-switch__arrow { transform: rotate(180deg); }
+	.site-theme-switch--navigation.site-theme-switch--inline { margin-top: 0.4rem; }
+	.site-theme-switch--navigation.site-theme-switch--inline > summary { justify-content: space-between; min-height: 44px; padding: 0.66rem 0.6rem; border-radius: 0.64rem; font-size: 0.93rem; font-weight: 700; }
+	.site-theme-switch--navigation.site-theme-switch--inline .site-theme-switch__heading { gap: 0.72rem; }
+	.site-theme-switch--navigation.site-theme-switch--inline .site-theme-switch__heading > svg { width: 1.35rem; }
+	@media (prefers-reduced-motion: reduce) { .site-theme-switch--navigation .site-theme-switch__arrow { transition: none; } }
+	[aria-pressed="true"] > .site-theme-switch__check { visibility: visible; }
+	.site-theme-switch :is(summary, button):focus-visible { outline: 2px solid var(--pure-accent, var(--primary)); outline-offset: 3px; }
+	@media (max-width: 600px) { .site-theme-switch__label { display: none; } }
+	@media (max-width: 767px) { #navbar .site-theme-switch > summary { min-width: 36px; min-height: 36px; width: 36px; height: 36px; padding: 0.375rem; } }
+	@media (max-width: 420px) { #navbar .site-theme-switch > summary { min-width: 34px; min-height: 34px; width: 34px; height: 34px; } }
+</style>

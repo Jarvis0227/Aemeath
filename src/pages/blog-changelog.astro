@@ -77,6 +77,7 @@ const timelineEntries = entriesWithRelated;
 		</div>
 
 		<div class="blog-changelog__board" data-view="graph">
+			{entries.length === 0 && <p class="card-base p-6" role="status">暂无更新记录，请在 <code>src/data/blog-changelog.ts</code> 中添加自己的日志。</p>}
 			<ol class="blog-changelog__timeline" data-changelog-timeline aria-label="按时间排列的博客更新记录">
 				{timelineEntries.map((entry) => (
 					<li class:list={["blog-changelog__timeline-item", `tone-${entry.tone}`]} id={entry.anchor} data-changelog-timeline-entry data-index={entry.index}>

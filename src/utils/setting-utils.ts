@@ -1100,6 +1100,7 @@ export function setWallpaperMode(mode: WALLPAPER_MODE): void {
 }
 
 export function initWallpaperMode(): void {
+	if (document.documentElement.dataset.siteTheme === "pure") return;
 	// 初始化透明模式参数（透明度/模糊度/卡片透明度）
 	applyStoredOverlaySettingsToDocument();
 	const storedMode = getStoredWallpaperMode();
@@ -1203,6 +1204,7 @@ export function clearSelectedWallpaper(): void {
 }
 
 export function applyStoredSelectedWallpaper(): void {
+	if (typeof document !== "undefined" && document.documentElement.dataset.siteTheme === "pure") return;
 	const index = getStoredSelectedWallpaperIndex();
 	if (
 		typeof localStorage !== "undefined" &&
@@ -1247,6 +1249,7 @@ export function applyStoredSelectedWallpaper(): void {
 }
 
 function loadWallpaperSlideImage(slide: HTMLElement | null): void {
+	if (document.documentElement.dataset.siteTheme === "pure" || document.documentElement.dataset.wallpaperMode === "none") return;
 	const image = slide?.querySelector<HTMLImageElement>("img");
 	if (!image) return;
 	const deferredSrc = image.getAttribute("data-src");
@@ -1355,9 +1358,19 @@ export function clearSelectedWallpaperFromDocument(
 			slide.dataset.wallpaperDevice === "mobile" &&
 			(slide.dataset.originalWallpaper === "true") === isNationalDay,
 	);
-	const currentDesktopSlide = desktopSlides.find((slide) =>
-		slide.classList.contains("active"),
-	);
+	const root = document.documentElement;
+	const initialSource = preserveCurrentWallpaper &&
+		wallpaperWrapper.dataset.initialWallpaperApplied !== "true" &&
+		root.dataset.initialWallpaperNational === String(isNationalDay)
+		? root.dataset.initialWallpaperDesktop
+		: undefined;
+	const currentDesktopSlide = desktopSlides.find((slide) => {
+		const image = slide.querySelector<HTMLImageElement>("img");
+		return initialSource
+			? (image?.getAttribute("data-src") || image?.getAttribute("src")) === initialSource
+			: slide.classList.contains("active");
+	});
+	wallpaperWrapper.dataset.initialWallpaperApplied = "true";
 	const desktopOrdinal =
 		preserveCurrentWallpaper && currentDesktopSlide
 			? getWallpaperThemeOrdinal(

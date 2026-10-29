@@ -8,8 +8,12 @@ export type FriendLink = {
 	screenshot?: string; // 站点截图 URL（供后续友链展示或维护使用）
 	tags?: string[]; // 标签数组
 	recommended?: boolean; // 是否使用推荐友链样式
+	recommendationReason?: string; // 推荐理由，用于友链评选说明
 	recommendedTier?: "full" | "degraded"; // 推荐友链层级，降级推荐仅保留静态卡片装饰
 	temporarilyUnavailable?: boolean; // 手动显示暂时失联状态
+	visibilityStatus?: "normal" | "temporarily_unavailable" | "policy_violation";
+	violationStartedAt?: number;
+	unavailableStartedAt?: number; // 短暂失联 30 天整改期的开始时间（Unix 秒）
 	weight: number; // 权重，数字越大排序越靠前
 	enabled: boolean; // 是否启用
 };

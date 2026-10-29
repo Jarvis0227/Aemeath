@@ -267,7 +267,7 @@ const { class: className, style } = Astro.props;
 		),
 	].map(
 		(index) =>
-			`/assets/images/wallpaper/wallpaper-${index}.webp`,
+			`/assets/images/wallpaper/thumbs/wallpaper-${index}.webp`,
 	);
 
 	function getRandomWutheringWavesImage(): string {
@@ -289,14 +289,25 @@ const { class: className, style } = Astro.props;
 		private minuteTimer?: number;
 		private alignmentTimer?: number;
 		private imageInitialized = false;
+		private imageObserver?: IntersectionObserver;
 
 		connectedCallback() {
 			this.updateGreeting();
-			this.loadLandscapeImage();
+			if ("IntersectionObserver" in window) {
+				this.imageObserver = new IntersectionObserver((entries) => {
+					if (!entries.some((entry) => entry.isIntersecting)) return;
+					this.imageObserver?.disconnect();
+					this.loadLandscapeImage();
+				}, { rootMargin: "200px" });
+				this.imageObserver.observe(this);
+			} else {
+				this.loadLandscapeImage();
+			}
 			this.alignToNextMinute();
 		}
 
 		disconnectedCallback() {
+			this.imageObserver?.disconnect();
 			if (this.minuteTimer) window.clearInterval(this.minuteTimer);
 			if (this.alignmentTimer) window.clearTimeout(this.alignmentTimer);
 		}
@@ -321,7 +332,7 @@ const { class: className, style } = Astro.props;
 			image.onload = () => this.setLandscapeImage(imageUrl);
 			image.onerror = () =>
 				this.setLandscapeImage(
-					"/assets/images/wallpaper/wallpaper-01.webp",
+					"/assets/images/wallpaper/thumbs/wallpaper-01.webp",
 				);
 			image.src = imageUrl;
 		}

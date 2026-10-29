@@ -1,0 +1,8 @@
+/* Keep the inactive theme out of layout before the selected theme stylesheet arrives. */
+[data-theme-only="pure"] { display: none; }
+html[data-wallpaper-mode="none"] #wallpaper-wrapper { display: none !important; }
+html[data-site-theme="pure"] [data-theme-only="pure"] { display: block; }
+html[data-site-theme="pure"] [data-theme-only="aemeath"],
+html[data-site-theme="pure"] #aemeath-shell,
+html[data-site-theme="pure"] .top-gradient-highlight { display: none !important; }
+html[data-site-theme="pure"]:not([data-pure-styles-ready][data-pure-shell-ready]) body { visibility: hidden; }

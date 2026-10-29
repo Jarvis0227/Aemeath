@@ -1,4 +1,5 @@
 import { setMaxListeners } from "node:events";
+import { fileURLToPath } from "node:url";
 import { unified } from "@astrojs/markdown-remark";
 import sitemap from "@astrojs/sitemap";
 import svelte from "@astrojs/svelte";
@@ -93,6 +94,17 @@ export default defineConfig({
 	},
 
 	integrations: [
+		{
+			name: "theme-hydration",
+			hooks: {
+				"astro:config:setup": ({ addClientDirective }) => {
+					addClientDirective({
+						name: "theme",
+						entrypoint: fileURLToPath(new URL("./src/directives/theme.ts", import.meta.url)),
+					});
+				},
+			},
+		},
 		swup({
 			theme: false,
 			animationClass: "transition-swup-", // see https://swup.js.org/options/#animationselector
@@ -115,6 +127,8 @@ export default defineConfig({
 			// with a partial DOM swap leaves stale containers/styles behind, so both
 			// directions use a normal document navigation instead.
 			ignore: (targetUrl) => {
+				// Pure owns navigation through Astro and persists its header.
+				if (document.documentElement.dataset.siteTheme === "pure") return true;
 				const targetPath = targetUrl.split(/[?#]/)[0] || "/";
 				const currentPath = window.location.pathname;
 				return targetPath === "/portfolio/" || currentPath === "/portfolio/";
@@ -126,6 +140,7 @@ export default defineConfig({
 			resolveUrl: (url) => url,
 			animateHistoryBrowsing: false,
 			skipPopStateHandling: (event) => {
+				if (document.documentElement.dataset.siteTheme === "pure") return true;
 				// 跳过锚点链接的处理，让浏览器原生处理
 				return event.state?.url?.includes("#");
 			},

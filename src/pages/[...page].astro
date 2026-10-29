@@ -2,6 +2,7 @@
 import type { GetStaticPaths } from "astro";
 import Pagination from "@/components/common/Pagination.astro";
 import PostPage from "@/components/layout/PostPage.astro";
+import PureBlog from "@/components/themes/pure/PureBlog.astro";
 import { siteConfig } from "@/config";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { getSortedPosts } from "@/utils/content-utils";
@@ -9,6 +10,13 @@ export const getStaticPaths = (async ({ paginate }) => {
 	const allBlogPosts = await getSortedPosts();
 	// 使用配置中的文章数量
 	const pageSize = siteConfig.pagination.postsPerPage;
+	if (allBlogPosts.length === 0) {
+		return [{ params: { page: undefined }, props: { page: {
+			data: [], start: 0, end: 0, size: pageSize, total: 0,
+			currentPage: 1, lastPage: 1,
+			url: { current: "/", prev: undefined, next: undefined, first: "/", last: "/" },
+		} } }];
+	}
 	return paginate(allBlogPosts, { pageSize });
 }) satisfies GetStaticPaths;
 // https://github.com/withastro/astro/issues/6507#issuecomment-1489916992
@@ -19,6 +27,9 @@ const len = page.data.length;
 ---
 
 <MainGridLayout>
+  {len === 0 && <section class="card-base p-8 mb-4" role="status"><h1 class="text-2xl font-bold mb-3">还没有文章</h1><p>运行 <code>pnpm new-post</code>，在 <code>src/content/posts/</code> 中添加自己的第一篇文章。</p></section>}
+  <PureBlog page={page} />
+  <div data-theme-only="aemeath">
   <PostPage page={page} />
   {
     page.total > page.size && (
@@ -29,6 +40,7 @@ const len = page.data.length;
       />
     )
   }
+  </div>
 </MainGridLayout>
 
 <script>

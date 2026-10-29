@@ -3,6 +3,7 @@ import { getEntry, render } from "astro:content";
 import Comment from "@components/comment/index.astro";
 import Markdown from "@components/common/Markdown.astro";
 import FriendAvatarMarquee from "@components/friends/FriendAvatarMarquee.astro";
+import FriendRecommendationGuide from "@components/friends/FriendRecommendationGuide.astro";
 import FriendsMagicLink from "@components/friends/FriendsMagicLink.astro";
 import { Icon } from "astro-icon/components";
 import {
@@ -12,10 +13,15 @@ import {
 	getEnabledFriends,
 	siteConfig,
 } from "@/config";
+import friendAvatarColors from "@/constants/friend-avatar-colors.json";
 import friendsLatencySnapshot from "@/data/friends-latency-snapshot.json";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import type { FriendLatencySnapshot } from "@/types/friendLatency";
+import { getFriendLatencyDisplay } from "@/utils/friend-latency";
+import { loadFriendsFeed } from "@/utils/friends-feed";
+import { formatRemediationCountdown, remediationSeconds } from "@/utils/friend-remediation";
 import "@/styles/friends-magic-link.css";
 
 // 检查页面是否启用
@@ -40,6 +46,15 @@ const isCommentEnabled =
 // 使用配置文件中的友链数据，按权重排序
 const items = getEnabledFriends();
 const projects = friendsProjects.filter((item) => item.enabled);
+const avatarColors = friendAvatarColors.colors as Record<string, { hue: number; saturation: number }>;
+const avatarTagStyle = (source: string) => {
+	const color = avatarColors[source];
+	return color ? `--friend-avatar-hue: ${color.hue}; --friend-avatar-saturation: ${color.saturation}%;` : undefined;
+};
+// 控制推荐卡片扫光、Canvas 流动星星和标题循环发光。
+const recommendedSweepEnabled = true;
+const recommendedStarsEnabled = true;
+const recommendedTitleGlowEnabled = false;
 const allTags = [...new Set(items.flatMap((item) => item.tags || []))].sort();
 const normalizeFriendUrl = (url: string) =>
 	url
@@ -49,22 +64,21 @@ const normalizeFriendUrl = (url: string) =>
 		.replace(/\/+$/, "")
 		.toLowerCase();
 const ownSiteUrl = normalizeFriendUrl(siteConfig.site_url);
-type FriendLatencyState = "fast" | "normal" | "slow" | "down";
-type FriendLatencySnapshot = {
-	generatedAt: string | null;
-	timezone: string;
-	slot: string | null;
-	results: Record<
-		string,
-		{
-			state: FriendLatencyState;
-			milliseconds?: number;
-			checkedAt: string;
-		}
-	>;
-};
-const latencySnapshot = friendsLatencySnapshot as FriendLatencySnapshot;
-
+const recommendedFriends = items.filter(
+	(item) => item.recommended === true && normalizeFriendUrl(item.siteurl) !== ownSiteUrl,
+);
+const feed = await loadFriendsFeed(items, { cachedOnly: import.meta.env.DEV });
+const rssUpdates = new Map<string, { date: Date; title: string; stale: boolean }>();
+const staleFeeds = new Set(feed.sources.filter(source => source.stale).map(source => normalizeFriendUrl(source.friendUrl)));
+for (const entry of feed.items) {
+	if (!entry.publishedAt) continue;
+	const key = normalizeFriendUrl(entry.friendUrl);
+	const previous = rssUpdates.get(key);
+	if (!previous || entry.publishedAt > previous.date) {
+		rssUpdates.set(key, { date: entry.publishedAt, title: entry.title, stale: staleFeeds.has(key) });
+	}
+}
+const rssDateLabel = (date: Date) => date.toLocaleDateString("sv-SE", { timeZone: "Asia/Shanghai" });
 // 页面标题和描述
 const title = friendsPageConfig.title || i18n(I18nKey.friends);
 const description =
@@ -76,6 +90,7 @@ const description =
 	description={description}
 >
   <div
+    id="friends-page"
     class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32"
   >
       <div class="card-base z-10 px-9 py-6 relative w-full">
@@ -88,9 +103,9 @@ const description =
             >
               <Icon is:inline name="material-symbols:group" class="text-[1.5rem]" />
             </div>
-            <div class="shrink-0 whitespace-nowrap text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+            <h1 class="friends-title shrink-0 whitespace-nowrap text-3xl font-bold text-neutral-900 dark:text-neutral-100">
               {title}
-            </div>
+            </h1>
             <span class="friends-count" aria-label={`当前共收录 ${items.length} 个友链`}>
               <strong>{items.length}</strong>
               <span>个</span>
@@ -106,6 +121,7 @@ const description =
         </div>
 
         <div class="friends-heading-actions">
+          <FriendRecommendationGuide friends={recommendedFriends} />
           <a
             href="#post-comments"
             class="friends-apply-button"
@@ -196,34 +212,42 @@ const description =
         {
 		items.map((item) => {
 			const isOwnSite = normalizeFriendUrl(item.siteurl) === ownSiteUrl;
+			const latency = getFriendLatencyDisplay(friendsLatencySnapshot as FriendLatencySnapshot, item.siteurl);
+			const rssUpdate = rssUpdates.get(normalizeFriendUrl(item.siteurl));
+			const rssDate = rssUpdate ? rssDateLabel(rssUpdate.date) : null;
+			const rssLabel = rssUpdate
+				? `${rssUpdate.stale ? "RSS 缓存" : "RSS"} 最近文章时间：${rssDate}，${rssUpdate.title}`
+				: `${item.title}，RSS 暂无有效更新日期`;
 			const isRecommended = !isOwnSite && item.recommended === true;
 			const isDegradedRecommended = isRecommended && item.recommendedTier === "degraded";
-			const scheduledLatency = latencySnapshot.results[normalizeFriendUrl(item.siteurl)];
-			const isTemporarilyUnavailable = item.temporarilyUnavailable === true;
-			const latencyState = isTemporarilyUnavailable
-				? "down"
-				: scheduledLatency?.state || "checking";
-			const latencyValue =
-				latencyState === "down"
-					? "失联"
-					: scheduledLatency?.milliseconds
-						? `${scheduledLatency.milliseconds}ms`
-						: "待探测";
-			const latencyLabel =
-				latencyState === "down"
-					? `${item.title}，最近一次定时 GET 探测未连通`
-					: scheduledLatency?.milliseconds
-						? `${item.title}，最近一次东八区定时 GET 探测响应时间 ${scheduledLatency.milliseconds} 毫秒`
-						: `${item.title}，等待东八区定时 GET 探测`;
-
+			const visibilityStatus = item.visibilityStatus || (item.temporarilyUnavailable ? "temporarily_unavailable" : "normal");
+			const isTemporarilyUnavailable = visibilityStatus === "temporarily_unavailable";
+			const isPolicyViolation = visibilityStatus === "policy_violation";
+			const violationStartedAt = Number.isSafeInteger(item.violationStartedAt) && (item.violationStartedAt || 0) > 0 ? item.violationStartedAt || 0 : 0;
+			const unavailableStartedAt = Number.isSafeInteger(item.unavailableStartedAt) && (item.unavailableStartedAt || 0) > 0 ? item.unavailableStartedAt || 0 : 0;
+			const remediationStartedAt = isTemporarilyUnavailable ? unavailableStartedAt : violationStartedAt;
+			const remediationDeadline = remediationStartedAt ? remediationStartedAt + remediationSeconds(visibilityStatus) : 0;
 			return (
               <a
-                href={item.siteurl}
+                href={isTemporarilyUnavailable || isPolicyViolation ? undefined : item.siteurl}
+                data-friend-site-url={item.siteurl}
+                data-friend-unavailable={String(isTemporarilyUnavailable)}
+                data-friend-visibility-status={visibilityStatus}
+                data-friend-violation-started-at={violationStartedAt || undefined}
+                data-friend-unavailable-started-at={unavailableStartedAt || undefined}
+                data-friend-title={item.title}
+                data-friend-recommended={String(isRecommended)}
+                data-friend-own-site={String(isOwnSite)}
+                data-friend-original-tabindex=""
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-disabled={isTemporarilyUnavailable || isPolicyViolation ? "true" : undefined}
+                tabindex={isTemporarilyUnavailable || isPolicyViolation ? -1 : undefined}
                 aria-label={
                   isTemporarilyUnavailable
-                    ? `${item.title}，短暂失联`
+                    ? `${item.title}，短暂失联，${formatRemediationCountdown(remediationStartedAt, visibilityStatus)}`
+                    : isPolicyViolation
+                    ? `${item.title}，违规友链，${formatRemediationCountdown(remediationStartedAt, visibilityStatus)}`
                     : isRecommended
                     ? `${item.title}，推荐友链`
                     : isOwnSite
@@ -231,52 +255,41 @@ const description =
                       : item.title
                 }
                 data-tags={item.tags?.join(",")}
+                style={avatarTagStyle(item.imgurl)}
                 data-umami-event={isOwnSite ? undefined : "friend-link-click"}
                 data-umami-event-site={isOwnSite ? undefined : item.siteurl}
                 class:list={[
                   "friend-card friend-list-card group flex items-center gap-3 p-2.5 rounded-xl relative overflow-visible",
                   isOwnSite && "friend-card--own",
                   isRecommended && "friend-card--recommended",
+                  isRecommended && !recommendedTitleGlowEnabled && "friend-card--recommended-no-title-glow",
                   isDegradedRecommended && "friend-card--recommended-degraded",
                   isTemporarilyUnavailable && "friend-card--temporarily-unavailable",
+                  isPolicyViolation && "friend-card--policy-violation",
                 ]}
               >
-              {/* 背景装饰 - 仅悬停显示 */}
-              <div class="friend-card-surface absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+              {/* 背景容器继续负责屏幕外暂停观察；上层光带单独绘制。 */}
+              <div class:list={[
+                "friend-card-surface absolute inset-0 rounded-xl overflow-hidden pointer-events-none",
+                isRecommended && !isDegradedRecommended && recommendedSweepEnabled && "friend-recommended-sweep",
+              ]}>
+                <img
+                  class="friend-card-avatar-backdrop"
+                  src={item.imgurl}
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  decoding="async"
+                />
                 <div class="absolute inset-0 bg-(--primary) opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                 {
-                  isRecommended && !isDegradedRecommended && (
+                  isRecommended && !isDegradedRecommended && recommendedStarsEnabled && (
                     <recommended-star-flow class="friend-recommended-flow" aria-hidden="true">
                       <canvas class="friend-recommended-canvas"></canvas>
                     </recommended-star-flow>
                   )
                 }
               </div>
-
-              {
-                (isRecommended || isOwnSite) && (
-                  <span
-                    class:list={[
-                      "friend-recommended-badge",
-                      isOwnSite && "friend-site-owner-badge",
-                    ]}
-                    aria-hidden="true"
-                  >
-                    <svg
-                      class:list={[isOwnSite ? "friend-owner-icon" : "friend-recommended-icon"]}
-                      viewBox="0 0 24 24"
-                      role="presentation"
-                    >
-                      {isOwnSite ? (
-                        <path d="m4.7 10.4 7.3-5.6 7.3 5.6v7.3c0 .83-.67 1.5-1.5 1.5H6.2c-.83 0-1.5-1.5-1.5-1.5v-7.3Zm3.1 1.1v6.2h2.8v-3.3h2.8v3.3h2.8v-6.2L12 8.6l-4.2 2.9Z" />
-                      ) : (
-                        <path d="M12 3.1c.7 0 1.32.42 1.6 1.06l1.41 3.32c.18.43.58.73 1.04.77l3.59.32c.7.06 1.29.54 1.49 1.22.2.67-.03 1.4-.59 1.82l-2.73 2.08c-.37.28-.53.76-.4 1.2l.84 3.49c.17.69-.09 1.41-.68 1.79-.58.39-1.35.39-1.94 0l-3.02-1.96a1.37 1.37 0 0 0-1.5 0l-3.02 1.96c-.59.39-1.36.39-1.94 0-.59-.38-.85-1.1-.68-1.79l.84-3.49c.13-.44-.03-.92-.4-1.2l-2.73-2.08c-.56-.42-.79-1.15-.59-1.82.2-.68.79-1.16 1.49-1.22l3.59-.32c.46-.04.86-.34 1.04-.77l1.41-3.32A1.73 1.73 0 0 1 12 3.1Z" />
-                      )}
-                    </svg>
-                    <span>{isOwnSite ? "本站主理人" : "推荐友链"}</span>
-                  </span>
-                )
-              }
 
               {/* 头像 */}
               <div class="friend-card-avatar relative z-10 w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-black/5 dark:border-white/5 group-hover:scale-105 transition-transform duration-300">
@@ -292,8 +305,9 @@ const description =
 
               {/* 内容 */}
               <div class="friend-card-content relative z-10 grow min-w-0 flex flex-col justify-center gap-0.5">
-                <div class="flex items-center justify-between">
+                <div class="friend-card-heading flex items-center justify-between gap-2 min-w-0">
                   <div
+                    data-sweep-text={isRecommended && !isDegradedRecommended && recommendedSweepEnabled ? item.title : undefined}
                     class:list={[
                       "friend-card-title font-bold text-base text-neutral-900 dark:text-neutral-100 transition-colors truncate",
                       isRecommended && "friend-card-title--recommended",
@@ -301,17 +315,25 @@ const description =
                   >
                     {item.title}
                   </div>
+                    <span class:list={["friend-latency", `friend-latency--${latency.state}`]} title={latency.label} aria-label={latency.label}>
+                      <span class="friend-latency-dot" aria-hidden="true"></span>
+                      {latency.value.endsWith("ms") ? (
+                        <><span>{latency.value.slice(0, -2)}</span><span class="friend-click-count-unit" aria-hidden="true">ms</span></>
+                      ) : <span>{latency.value}</span>}
+                    </span>
                 </div>
 
                 <div
                   class="friend-card-description text-sm line-clamp-1"
                   title={item.desc}
+                  data-friend-description-title={item.desc}
+                  hidden={isPolicyViolation}
                 >
                   {item.desc}
                 </div>
 
                 {/* 标签 */}
-				<div class="flex flex-wrap items-center gap-1 mt-1">
+				<div class="friend-card-tags flex flex-wrap items-center gap-1 mt-1">
 					{item.tags && item.tags.length > 0
                     ? item.tags
                         .slice(0, isOwnSite ? 4 : 3)
@@ -324,45 +346,54 @@ const description =
                 </div>
               </div>
 
-              {!isOwnSite && (
+              <div class="friend-card-footer">
+                <div class="friend-card-footer__identity">
+                  {(isRecommended || isOwnSite) && (
+                    <span class:list={["friend-recommended-badge", isOwnSite && "friend-site-owner-badge"]} aria-hidden="true">
+                      <svg class:list={[isOwnSite ? "friend-owner-icon" : "friend-recommended-icon"]} viewBox="0 0 24 24" role="presentation">
+                        {isOwnSite ? (
+                          <path d="m4.7 10.4 7.3-5.6 7.3 5.6v7.3c0 .83-.67 1.5-1.5 1.5H6.2c-.83 0-1.5-1.5-1.5-1.5v-7.3Zm3.1 1.1v6.2h2.8v-3.3h2.8v3.3h2.8v-6.2L12 8.6l-4.2 2.9Z" />
+                        ) : (
+                          <path d="M12 3.1c.7 0 1.32.42 1.6 1.06l1.41 3.32c.18.43.58.73 1.04.77l3.59.32c.7.06 1.29.54 1.49 1.22.2.67-.03 1.4-.59 1.82l-2.73 2.08c-.37.28-.53.76-.4 1.2l.84 3.49c.17.69-.09 1.41-.68 1.79-.58.39-1.35.39-1.94 0l-3.02-1.96a1.37 1.37 0 0 0-1.5 0l-3.02 1.96c-.59.39-1.36.39-1.94 0-.59-.38-.85-1.1-.68-1.79l.84-3.49c.13-.44-.03-.92-.4-1.2l-2.73-2.08c-.56-.42-.79-1.15-.59-1.82.2-.68.79-1.16 1.49-1.22l3.59-.32c.46-.04.86-.34 1.04-.77l1.41-3.32A1.73 1.73 0 0 1 12 3.1Z" />
+                        )}
+                      </svg>
+                      <span data-sweep-text={isRecommended && !isDegradedRecommended && recommendedSweepEnabled ? "推荐友链" : undefined}>{isOwnSite ? "本站主理人" : "推荐友链"}</span>
+                    </span>
+                  )}
+                  {rssUpdate ? (
+                    <time class="friend-rss-updated" datetime={rssUpdate.date.toISOString()} title={rssLabel} aria-label={rssLabel}>
+                      最近更新于 {rssDate}
+                    </time>
+                  ) : (
+                    <span class="friend-rss-updated" title={rssLabel}>RSS 暂无</span>
+                  )}
+                </div>
+                <div class="friend-card-footer__metrics">
                 <span
                   class="friend-click-count"
-                  data-friend-clicks-for={item.siteurl}
-                  title="从本站点击次数"
-                  aria-label={`${item.title}，从本站点击次数`}
+                  data-friend-clicks-for={isOwnSite ? undefined : item.siteurl}
+                  title={isOwnSite ? "本站总访问次数" : "从本站点击次数"}
+                  aria-label={isOwnSite ? "本站总访问次数" : `${item.title}，从本站点击次数`}
                 >
                   <Icon is:inline name="material-symbols:ads-click-rounded" aria-hidden="true" />
-                  <span data-friend-clicks-value aria-live="polite">…</span>
+                  <span data-friend-clicks-value={isOwnSite ? undefined : true} data-friend-site-pageviews={isOwnSite ? true : undefined} aria-live="polite">…</span>
                   <span class="friend-click-count-unit" aria-hidden="true">次</span>
                 </span>
-              )}
 
-              <span
-                class:list={[
-                  "friend-latency",
-                  `friend-latency--${latencyState}`,
-                ]}
-                data-friend-latency-for={item.siteurl}
-                data-friend-latency-name={item.title}
-                data-friend-latency-state={latencyState}
-                title={latencyLabel}
-                aria-label={latencyLabel}
-              >
-                <span class="friend-latency-dot" aria-hidden="true"></span>
-                <span data-friend-latency-value aria-live="polite">
-                  {latencyValue}
-                </span>
-              </span>
+                </div>
+              </div>
 
               {
-                isTemporarilyUnavailable && (
-                  <div class="friend-card-status-overlay" aria-hidden="true">
-                    <div class="friend-card-status-badge">
-                      <Icon is:inline name="material-symbols:cloud-off-rounded" />
-                      <span>短暂失联</span>
-                    </div>
+                <div class="friend-card-status-overlay" hidden={!isTemporarilyUnavailable && !isPolicyViolation} aria-hidden="true">
+                  <div class="friend-card-remediation-overlay" hidden={!isTemporarilyUnavailable && !isPolicyViolation}>
+                    <span class="friend-card-remediation-title" title={item.title}>{item.title}</span>
+                    <div class="friend-card-status-badge" hidden={!isTemporarilyUnavailable}><Icon is:inline name="material-symbols:cloud-off-rounded" aria-hidden="true" /><span>短暂失联</span></div>
+                    <span class="friend-card-policy-label" hidden={!isPolicyViolation}><Icon is:inline name="material-symbols:warning-rounded" aria-hidden="true" />违规友链</span>
+                    <time class="friend-card-remediation-countdown" datetime={remediationDeadline ? new Date(remediationDeadline * 1000).toISOString() : undefined} data-friend-remediation-countdown aria-live="off">
+                      {formatRemediationCountdown(remediationStartedAt, visibilityStatus)}
+                    </time>
                   </div>
-                )
+                </div>
               }
 
               {item.screenshot && (
@@ -403,15 +434,45 @@ const description =
 
           <div class="friends-grid friends-projects-grid">
             {projects.map((item) => (
+              (() => {
+                const visibilityStatus = item.visibilityStatus || (item.temporarilyUnavailable ? "temporarily_unavailable" : "normal");
+                const isTemporarilyUnavailable = visibilityStatus === "temporarily_unavailable";
+                const isPolicyViolation = visibilityStatus === "policy_violation";
+                const violationStartedAt = Number.isSafeInteger(item.violationStartedAt) && (item.violationStartedAt || 0) > 0 ? item.violationStartedAt || 0 : 0;
+                const unavailableStartedAt = Number.isSafeInteger(item.unavailableStartedAt) && (item.unavailableStartedAt || 0) > 0 ? item.unavailableStartedAt || 0 : 0;
+			const remediationStartedAt = isTemporarilyUnavailable ? unavailableStartedAt : violationStartedAt;
+			const remediationDeadline = remediationStartedAt ? remediationStartedAt + remediationSeconds(visibilityStatus) : 0;
+                return (
               <a
-                href={item.siteurl}
+                href={isTemporarilyUnavailable || isPolicyViolation ? undefined : item.siteurl}
+                data-friend-site-url={item.siteurl}
+                data-friend-unavailable={String(isTemporarilyUnavailable)}
+                data-friend-visibility-status={visibilityStatus}
+                data-friend-violation-started-at={violationStartedAt || undefined}
+                data-friend-unavailable-started-at={unavailableStartedAt || undefined}
+                data-friend-title={item.title}
+                data-friend-original-tabindex=""
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${item.title}，加入的项目`}
-                class="friend-card group flex items-center gap-3 p-2.5 rounded-xl relative overflow-visible"
+                aria-label={isTemporarilyUnavailable ? `${item.title}，短暂失联，${formatRemediationCountdown(remediationStartedAt, visibilityStatus)}` : isPolicyViolation ? `${item.title}，违规友链，${formatRemediationCountdown(remediationStartedAt, visibilityStatus)}` : `${item.title}，加入的项目`}
+                aria-disabled={isTemporarilyUnavailable || isPolicyViolation ? "true" : undefined}
+                tabindex={isTemporarilyUnavailable || isPolicyViolation ? -1 : undefined}
+                style={avatarTagStyle(item.imgurl)}
+                class:list={["friend-card group flex items-center gap-3 p-2.5 rounded-xl relative overflow-visible", isTemporarilyUnavailable && "friend-card--temporarily-unavailable", isPolicyViolation && "friend-card--policy-violation"]}
               >
                 <div class="friend-card-surface absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
                   <div class="absolute inset-0 bg-(--primary) opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+                </div>
+
+                <div class="friend-card-status-overlay" hidden={!isTemporarilyUnavailable && !isPolicyViolation} aria-hidden="true">
+                  <div class="friend-card-remediation-overlay" hidden={!isTemporarilyUnavailable && !isPolicyViolation}>
+                    <span class="friend-card-remediation-title" title={item.title}>{item.title}</span>
+                    <div class="friend-card-status-badge" hidden={!isTemporarilyUnavailable}><Icon is:inline name="material-symbols:cloud-off-rounded" aria-hidden="true" /><span>短暂失联</span></div>
+                    <span class="friend-card-policy-label" hidden={!isPolicyViolation}><Icon is:inline name="material-symbols:warning-rounded" aria-hidden="true" />违规友链</span>
+                    <time class="friend-card-remediation-countdown" datetime={remediationDeadline ? new Date(remediationDeadline * 1000).toISOString() : undefined} data-friend-remediation-countdown aria-live="off">
+                      {formatRemediationCountdown(remediationStartedAt, visibilityStatus)}
+                    </time>
+                  </div>
                 </div>
 
                 <div class="friend-card-avatar relative z-10 w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-black/5 dark:border-white/5 group-hover:scale-105 transition-transform duration-300">
@@ -456,6 +517,8 @@ const description =
                   </figure>
                 )}
               </a>
+                );
+              })()
             ))}
           </div>
         </section>
@@ -478,823 +541,7 @@ const description =
     </div>
   )}
 
-  <script slot="head" is:inline>
-    (() => {
-      const avatarFallbackNamespace = "__rainztFriendAvatarFallback";
-      if (window[avatarFallbackNamespace]) return;
 
-      document.addEventListener(
-        "error",
-        (event) => {
-          const image = event.target instanceof HTMLImageElement ? event.target : null;
-          if (!image?.matches("[data-friend-avatar]")) return;
-          if (image.dataset.friendAvatarFallback === "true") return;
-
-          image.dataset.friendAvatarFallback = "true";
-          image.removeAttribute("srcset");
-          image.src = "/favicon/chaoc-tingyu-avatar-512.png?v=20260907";
-          image.alt = "小爱客服头像";
-        },
-        true,
-      );
-
-      window[avatarFallbackNamespace] = true;
-    })();
-
-    if (!customElements.get("friend-filter")) {
-      class FriendFilter extends HTMLElement {
-        selectedTag = "all";
-        tagsList = null;
-        tagsViewport = null;
-        tagsToggle = null;
-        resizeObserver = null;
-
-        constructor() {
-          super();
-        }
-
-        connectedCallback() {
-          this.addEventListener("click", this.handleClick);
-
-          if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", this.setupInteractiveElements, {
-              once: true,
-            });
-          } else {
-            this.setupInteractiveElements();
-          }
-        }
-
-        setupInteractiveElements = () => {
-          const input = this.querySelector("[data-search]");
-          if (input) {
-            input.addEventListener("input", this.handleInput);
-          }
-
-          this.tagsList = this.querySelector("[data-tags-list]");
-          this.tagsViewport = this.querySelector("[data-tags-viewport]");
-          this.tagsToggle = this.querySelector("[data-tags-toggle]");
-          if (this.tagsList && this.tagsViewport && this.tagsToggle) {
-            this.resizeObserver =
-              typeof ResizeObserver !== "undefined"
-                ? new ResizeObserver(this.updateTagsToggle)
-                : null;
-            this.resizeObserver?.observe(this.tagsList);
-            window.addEventListener("resize", this.updateTagsToggle, { passive: true });
-            requestAnimationFrame(this.updateTagsToggle);
-          }
-        };
-
-        disconnectedCallback() {
-          this.removeEventListener("click", this.handleClick);
-          document.removeEventListener("DOMContentLoaded", this.setupInteractiveElements);
-          this.querySelector("[data-search]")?.removeEventListener("input", this.handleInput);
-          this.resizeObserver?.disconnect();
-          window.removeEventListener("resize", this.updateTagsToggle);
-        }
-
-        handleInput = () => this.applyFilters();
-
-        updateTagsToggle = () => {
-          if (!this.tagsList || !this.tagsToggle) return;
-
-          const collapsedHeight = this.tagsList.firstElementChild?.getBoundingClientRect().height ?? 0;
-          const hasOverflow = this.tagsList.scrollHeight > collapsedHeight + 1;
-          const isExpanded = this.tagsViewport.classList.contains("is-expanded");
-
-          if (!hasOverflow && isExpanded) {
-            this.tagsViewport.classList.remove("is-expanded");
-          }
-
-          const expanded = this.tagsViewport.classList.contains("is-expanded");
-          this.tagsToggle.classList.toggle("hidden", !hasOverflow && !expanded);
-          this.tagsToggle.dataset.expanded = String(expanded);
-          this.tagsToggle.setAttribute("aria-expanded", String(expanded));
-          const label = this.tagsToggle.querySelector("[data-tags-toggle-label]");
-          if (label) label.textContent = expanded ? "收起标签" : "展开标签";
-        };
-
-        toggleTags = () => {
-          if (!this.tagsViewport || !this.tagsToggle) return;
-          this.tagsViewport.classList.toggle("is-expanded");
-          this.updateTagsToggle();
-        };
-
-        handleClick(e) {
-          const target = e.target instanceof Element ? e.target : null;
-          const button = target?.closest("button");
-          if (!button) return;
-
-          if (button.hasAttribute("data-tags-toggle")) {
-            this.toggleTags();
-            return;
-          }
-
-          if (!button.dataset.tag) return;
-
-          this.selectedTag = button.dataset.tag;
-          const filters = this.querySelectorAll("button[data-tag]");
-
-          filters.forEach((f) => {
-            const isSelected = f === button;
-            f.classList.toggle("is-active", isSelected);
-            f.setAttribute("aria-pressed", String(isSelected));
-          });
-
-          this.applyFilters();
-        }
-
-        applyFilters() {
-          const container = this.closest(".card-base");
-          if (!container) return;
-
-          const input = this.querySelector("[data-search]");
-          const query = (input?.value || "").toLowerCase().trim();
-          const cards = container.querySelectorAll(".friend-list-card");
-
-          let hasVisible = false;
-
-          cards.forEach((card) => {
-            const cardEl = card;
-            const tags = (cardEl.dataset.tags || "").split(",");
-            const name = (cardEl.querySelector(".font-bold")?.textContent || "").toLowerCase();
-            const desc = (cardEl.querySelector(".line-clamp-1")?.textContent || "").toLowerCase();
-
-            const tagMatch =
-              this.selectedTag === "all" ||
-              (this.selectedTag && tags.includes(this.selectedTag));
-            const searchMatch =
-              !query ||
-              name.includes(query) ||
-              desc.includes(query) ||
-              tags.some((t) => t.toLowerCase().includes(query));
-
-            if (tagMatch && searchMatch) {
-              cardEl.style.display = "";
-              cardEl.classList.add("animate-fade-in-up");
-              hasVisible = true;
-            } else {
-              cardEl.style.display = "none";
-              cardEl.classList.remove("animate-fade-in-up");
-            }
-          });
-
-          const emptyEl = container.querySelector(".friends-empty");
-          if (emptyEl) {
-            emptyEl.classList.toggle("hidden", hasVisible);
-            emptyEl.classList.toggle("flex", !hasVisible);
-          }
-        }
-      }
-      customElements.define("friend-filter", FriendFilter);
-    }
-
-    if (!customElements.get("recommended-star-flow")) {
-      class RecommendedStarFlow extends HTMLElement {
-        constructor() {
-          super();
-          this.canvas = null;
-          this.context = null;
-          this.card = null;
-          this.particles = [];
-          this.width = 0;
-          this.height = 0;
-          this.pixelRatio = 1;
-          this.elapsed = 0;
-          this.lastTimestamp = 0;
-          this.animationFrame = 0;
-          this.resizeFrame = 0;
-          this.hoverAmount = 0;
-          this.hoverTarget = 0;
-          this.initialized = false;
-          this.resizeObserver = null;
-          this.initializeFrame = 0;
-
-          this.handleFrame = this.handleFrame.bind(this);
-          this.initialize = this.initialize.bind(this);
-          this.handleResize = this.handleResize.bind(this);
-          this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
-          this.handlePointerEnter = this.handlePointerEnter.bind(this);
-          this.handlePointerLeave = this.handlePointerLeave.bind(this);
-          this.handleFocusIn = this.handleFocusIn.bind(this);
-          this.handleFocusOut = this.handleFocusOut.bind(this);
-        }
-
-        connectedCallback() {
-          if (this.initialized) return;
-          if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", this.initialize, { once: true });
-            return;
-          }
-          // Swup 插入页面片段时，connectedCallback 可能早于 canvas 子节点完成。
-          // 放到下一帧，确保子节点已经就位后再初始化。
-          this.scheduleInitialize();
-        }
-
-        scheduleInitialize() {
-          if (this.initialized || !this.isConnected || this.initializeFrame) return;
-          this.initializeFrame = requestAnimationFrame(() => {
-            this.initializeFrame = 0;
-            this.initialize();
-          });
-        }
-
-        initialize() {
-          if (this.initialized || !this.isConnected) return;
-          this.canvas = this.querySelector(".friend-recommended-canvas");
-          this.context = this.canvas?.getContext("2d", { alpha: true }) || null;
-          this.card = this.closest(".friend-card--recommended");
-
-          if (!this.canvas || !this.context) {
-            // 片段仍在解析时再次排队，避免偶发地留下未初始化的空 canvas。
-            this.scheduleInitialize();
-            return;
-          }
-          this.initialized = true;
-
-          this.particles = this.createParticles();
-
-          this.card?.addEventListener("pointerenter", this.handlePointerEnter);
-          this.card?.addEventListener("pointerleave", this.handlePointerLeave);
-          this.card?.addEventListener("focusin", this.handleFocusIn);
-          this.card?.addEventListener("focusout", this.handleFocusOut);
-          document.addEventListener("visibilitychange", this.handleVisibilityChange);
-
-          if (typeof ResizeObserver !== "undefined") {
-            this.resizeObserver = new ResizeObserver(this.handleResize);
-            this.resizeObserver.observe(this);
-          } else {
-            window.addEventListener("resize", this.handleResize, { passive: true });
-          }
-
-          this.resizeFrame = requestAnimationFrame(this.handleResize);
-          this.updatePlayback();
-        }
-
-        disconnectedCallback() {
-          document.removeEventListener("DOMContentLoaded", this.initialize);
-          if (this.initializeFrame) {
-            cancelAnimationFrame(this.initializeFrame);
-            this.initializeFrame = 0;
-          }
-          this.stopAnimation();
-          cancelAnimationFrame(this.resizeFrame);
-          this.resizeObserver?.disconnect();
-          window.removeEventListener("resize", this.handleResize);
-          document.removeEventListener("visibilitychange", this.handleVisibilityChange);
-          this.card?.removeEventListener("pointerenter", this.handlePointerEnter);
-          this.card?.removeEventListener("pointerleave", this.handlePointerLeave);
-          this.card?.removeEventListener("focusin", this.handleFocusIn);
-          this.card?.removeEventListener("focusout", this.handleFocusOut);
-          this.initialized = false;
-        }
-
-        createParticles() {
-          let seed = 0x51a7c0de;
-          const random = () => {
-            seed = (seed * 1664525 + 1013904223) >>> 0;
-            return seed / 4294967296;
-          };
-          const layerPattern = [0, 1, 0, 2, 1, 0, 1, 2, 0, 1, 0, 2, 1, 0, 1, 2];
-          const ySlots = [0.2, 0.7, 0.43, 0.77, 0.17, 0.57, 0.32, 0.64, 0.82, 0.5, 0.25, 0.73, 0.16, 0.84, 0.39, 0.58];
-          const layers = [
-            { radius: [3.1, 4.35], alpha: [0.56, 0.7], float: [1.9, 3.5], curve: [2.1, 3.9], glow: [4, 7] },
-            { radius: [4.5, 6.25], alpha: [0.72, 0.88], float: [2.9, 5], curve: [3.5, 6], glow: [7, 11] },
-            { radius: [6.3, 8.35], alpha: [0.88, 1], float: [4, 6.4], curve: [4.8, 7.8], glow: [11, 16] },
-          ];
-          const between = (range) => range[0] + (range[1] - range[0]) * random();
-
-          return Array.from({ length: 16 }, (_, index) => {
-            const layer = layerPattern[index];
-            const profile = layers[layer];
-            return {
-              index,
-              layer,
-              phase: index / 16,
-              baseY: ySlots[index],
-              radius: between(profile.radius),
-              baseAlpha: between(profile.alpha),
-              floatAmplitude: between(profile.float),
-              curveAmplitude: between(profile.curve),
-              glow: between(profile.glow),
-              xDrift: 0.8 + random() * (1.3 + layer * 0.85),
-              driftFrequency: 0.62 + random() * 0.72,
-              curvePhase: random() * Math.PI * 2,
-              twinklePhase: random() * Math.PI * 2,
-              twinkleSpeed: 0.88 + random() * 1.05,
-              rotation: random() * Math.PI * 2,
-              rotationSpeed: (0.2 + random() * (0.18 + layer * 0.09)) * (random() > 0.5 ? 1 : -1),
-              hasTrail: layer > 0 || index % 4 === 0,
-              tailScale: 3.2 + random() * 1.7 + layer * 0.75,
-            };
-          }).sort((a, b) => a.layer - b.layer);
-        }
-
-        handleResize() {
-          cancelAnimationFrame(this.resizeFrame);
-          if (!this.isConnected || !this.canvas || !this.context) return;
-          const bounds = this.getBoundingClientRect();
-          const width = Math.max(1, Math.round(bounds.width));
-          const height = Math.max(1, Math.round(bounds.height));
-          const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-
-          if (
-            width !== this.width ||
-            height !== this.height ||
-            pixelRatio !== this.pixelRatio
-          ) {
-            this.width = width;
-            this.height = height;
-            this.pixelRatio = pixelRatio;
-            this.canvas.width = Math.round(width * pixelRatio);
-            this.canvas.height = Math.round(height * pixelRatio);
-            this.context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-          }
-
-          this.renderFrame();
-        }
-
-        handleFrame(timestamp) {
-          if (!this.shouldAnimate()) {
-            this.animationFrame = 0;
-            return;
-          }
-
-          const delta = this.lastTimestamp
-            ? Math.min(42, timestamp - this.lastTimestamp)
-            : 0;
-          this.lastTimestamp = timestamp;
-          this.hoverAmount +=
-            (this.hoverTarget - this.hoverAmount) * Math.min(1, delta / 180);
-          const speed = 1 + this.hoverAmount * 0.14;
-          this.elapsed += delta * speed;
-          this.renderFrame();
-          this.animationFrame = requestAnimationFrame(this.handleFrame);
-        }
-
-        renderFrame() {
-          if (!this.context || !this.width || !this.height) return;
-          const context = this.context;
-          context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
-          context.clearRect(0, 0, this.width, this.height);
-
-          const time = this.elapsed / 1000;
-          const cycleDuration = 4600;
-          const beamDuration = 3800;
-          const beamProgress = (this.elapsed % beamDuration) / beamDuration;
-          const easedBeam = beamProgress * beamProgress * (3 - 2 * beamProgress);
-          const beamX = (-0.16 + easedBeam * 1.32) * this.width;
-          const beamSpread = Math.max(24, this.width * 0.13);
-
-          for (const particle of this.particles) {
-            const progress = (particle.phase + this.elapsed / cycleDuration) % 1;
-            const radius = particle.radius;
-            const enterDistance = Math.max(0, Math.min(1, progress / 0.14));
-            const exitDistance = Math.max(0, Math.min(1, (1 - progress) / 0.2));
-            const enterFade = enterDistance * enterDistance * (3 - 2 * enterDistance);
-            const exitFade = exitDistance * exitDistance * (3 - 2 * exitDistance);
-            const edgeFade = enterFade * exitFade;
-            const drift = Math.sin(time * particle.driftFrequency + particle.twinklePhase);
-            const curveAngle = progress * Math.PI * 2 + particle.curvePhase;
-            const rawX =
-              radius +
-              progress * Math.max(1, this.width - radius * 2) +
-              drift * particle.xDrift;
-            const x = Math.max(radius, Math.min(this.width - radius, rawX));
-            const rawY =
-              particle.baseY * this.height +
-              Math.sin(curveAngle) * particle.curveAmplitude +
-              Math.sin(progress * Math.PI * 2 - time * 0.72) *
-                (1.6 + particle.layer * 1.15) +
-              drift * particle.floatAmplitude;
-            const safeY = radius + Math.min(5, particle.glow * 0.34) + 2;
-            const y = Math.max(safeY, Math.min(this.height - safeY, rawY));
-            const beamDistance = x - beamX;
-            const beamBoost = Math.exp(
-              -(beamDistance * beamDistance) / (2 * beamSpread * beamSpread),
-            );
-            const twinkle =
-              0.9 +
-              Math.sin(time * particle.twinkleSpeed + particle.twinklePhase) * 0.08;
-            const scale =
-              0.94 +
-              twinkle * 0.06 +
-              beamBoost * 0.24 +
-              this.hoverAmount * 0.08;
-            const alpha = Math.min(
-              1,
-              particle.baseAlpha *
-                edgeFade *
-                (twinkle + beamBoost * 0.38 + this.hoverAmount * 0.13),
-            );
-            const rotation =
-              particle.rotation +
-              time * particle.rotationSpeed +
-              Math.sin(curveAngle) * 0.08;
-
-            if (particle.hasTrail) {
-              this.drawTrail(
-                context,
-                particle,
-                x,
-                y,
-                radius * scale,
-                curveAngle,
-                alpha,
-                beamBoost,
-              );
-            }
-
-            this.drawStar(
-              context,
-              particle,
-              x,
-              y,
-              radius * scale,
-              rotation,
-              alpha,
-              beamBoost,
-            );
-          }
-        }
-
-        drawWaveField(context, time) {
-          const width = this.width;
-          const height = this.height;
-          const hoverLift = 1 + this.hoverAmount * 0.12;
-          const travelProgress = (this.elapsed % 5600) / 5600;
-          const highlightCenter = (-0.22 + travelProgress * 1.44) * width;
-          const layers = [
-            {
-              center: 0.75,
-              amplitude: 0.155,
-              wavelength: 0.78,
-              thickness: 0.31,
-              phase: 2.7,
-              speed: 1.78,
-              fill: "255, 224, 129",
-              crest: "255, 241, 185",
-              fillAlpha: 0.16,
-              crestAlpha: 0.46,
-              lineWidth: 1.55,
-              glow: 10,
-            },
-            {
-              center: 0.56,
-              amplitude: 0.205,
-              wavelength: 0.57,
-              thickness: 0.265,
-              phase: 1.15,
-              speed: 2.2,
-              fill: "255, 210, 81",
-              crest: "255, 247, 201",
-              fillAlpha: 0.24,
-              crestAlpha: 0.82,
-              lineWidth: 2.35,
-              glow: 15,
-            },
-            {
-              center: 0.38,
-              amplitude: 0.145,
-              wavelength: 0.66,
-              thickness: 0.205,
-              phase: 4.35,
-              speed: 2.58,
-              fill: "255, 226, 119",
-              crest: "255, 253, 224",
-              fillAlpha: 0.13,
-              crestAlpha: 0.56,
-              lineWidth: 1.35,
-              glow: 11,
-            },
-          ];
-
-          context.save();
-          context.globalCompositeOperation = "source-over";
-
-          layers.forEach((layer, index) => {
-            const points = this.createWavePoints(layer, time, hoverLift);
-            const lowerPoints = points.map((point) => ({
-              x: point.x,
-              y:
-                point.y +
-                height * layer.thickness +
-                Math.sin(point.theta + 0.92) * height * layer.amplitude * 0.28,
-            }));
-
-            const fillGradient = context.createLinearGradient(
-              0,
-              height * (layer.center - layer.amplitude),
-              0,
-              height * (layer.center + layer.thickness + layer.amplitude),
-            );
-            fillGradient.addColorStop(0, `rgba(${layer.crest}, 0)`);
-            fillGradient.addColorStop(
-              0.18,
-              `rgba(${layer.crest}, ${layer.fillAlpha * (1 + this.hoverAmount * 0.18)})`,
-            );
-            fillGradient.addColorStop(
-              0.55,
-              `rgba(${layer.fill}, ${layer.fillAlpha * 0.72})`,
-            );
-            fillGradient.addColorStop(1, `rgba(${layer.fill}, 0)`);
-
-            context.beginPath();
-            context.moveTo(points[0].x, points[0].y);
-            points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
-            for (let i = lowerPoints.length - 1; i >= 0; i -= 1) {
-              context.lineTo(lowerPoints[i].x, lowerPoints[i].y);
-            }
-            context.closePath();
-            context.fillStyle = fillGradient;
-            context.fill();
-
-            context.save();
-            context.beginPath();
-            context.moveTo(lowerPoints[0].x, lowerPoints[0].y);
-            lowerPoints
-              .slice(1)
-              .forEach((point) => context.lineTo(point.x, point.y));
-            context.strokeStyle = `rgba(${layer.fill}, ${layer.crestAlpha * 0.36})`;
-            context.lineWidth = Math.max(0.9, layer.lineWidth * 0.72);
-            context.lineCap = "round";
-            context.shadowColor = `rgba(${layer.fill}, 0.22)`;
-            context.shadowBlur = layer.glow * 0.65;
-            context.stroke();
-            context.restore();
-
-            const crestGradient = this.createCrestGradient(
-              context,
-              layer,
-              highlightCenter,
-            );
-            context.save();
-            context.beginPath();
-            context.moveTo(points[0].x, points[0].y);
-            points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
-            context.strokeStyle = crestGradient;
-            context.lineWidth = layer.lineWidth + this.hoverAmount * 0.2;
-            context.lineCap = "round";
-            context.lineJoin = "round";
-            context.shadowColor = `rgba(${layer.crest}, ${0.24 + this.hoverAmount * 0.08})`;
-            context.shadowBlur = layer.glow + this.hoverAmount * 3;
-            context.stroke();
-            context.restore();
-
-            if (index === 1) {
-              this.drawCrestFoam(context, points, layer, highlightCenter);
-            }
-          });
-
-          context.restore();
-        }
-
-        createWavePoints(layer, time, hoverLift) {
-          const points = [];
-          const step = Math.max(3, Math.round(this.width / 92));
-          const wavelength = Math.max(88, this.width * layer.wavelength);
-          const breathing = 0.94 + Math.sin(time * 0.82 + layer.phase) * 0.06;
-          const amplitude =
-            Math.max(7, this.height * layer.amplitude) * hoverLift * breathing;
-          const centerY = this.height * layer.center;
-
-          for (let x = -step; x <= this.width + step; x += step) {
-            const theta =
-              (x / wavelength) * Math.PI * 2 - time * layer.speed + layer.phase;
-            const wave =
-              Math.sin(theta) +
-              Math.sin(theta * 2 - 0.68) * 0.22 +
-              Math.sin(theta * 3 + 0.42) * 0.07;
-            points.push({ x, y: centerY + wave * amplitude, theta });
-          }
-
-          return points;
-        }
-
-        createCrestGradient(context, layer, highlightCenter) {
-          const width = Math.max(1, this.width);
-          const center = highlightCenter / width;
-          const stops = [
-            [0, 0],
-            [0.06, layer.crestAlpha * 0.5],
-            [0.2, layer.crestAlpha * 0.82],
-            [0.82, layer.crestAlpha * 0.82],
-            [0.95, layer.crestAlpha * 0.42],
-            [1, 0],
-          ];
-          const highlightStops = [
-            [center - 0.2, layer.crestAlpha * 0.82],
-            [center - 0.09, Math.min(0.94, layer.crestAlpha * 1.58)],
-            [center, Math.min(1, layer.crestAlpha * 2.05)],
-            [center + 0.1, Math.min(0.9, layer.crestAlpha * 1.46)],
-            [center + 0.22, layer.crestAlpha * 0.78],
-          ];
-
-          highlightStops.forEach(([position, alpha]) => {
-            if (position > 0 && position < 1) stops.push([position, alpha]);
-          });
-          stops.sort((a, b) => a[0] - b[0]);
-
-          const gradient = context.createLinearGradient(0, 0, width, 0);
-          let lastPosition = -1;
-          stops.forEach(([position, alpha]) => {
-            const safePosition = Math.max(0, Math.min(1, position));
-            if (safePosition <= lastPosition) return;
-            gradient.addColorStop(
-              safePosition,
-              `rgba(${layer.crest}, ${alpha * (1 + this.hoverAmount * 0.12)})`,
-            );
-            lastPosition = safePosition;
-          });
-          return gradient;
-        }
-
-        drawCrestFoam(context, points, layer, highlightCenter) {
-          const spread = Math.max(58, this.width * 0.24);
-          context.save();
-          context.lineCap = "round";
-          context.lineJoin = "round";
-
-          for (let i = 2; i < points.length - 2; i += 1) {
-            const point = points[i];
-            const previous = points[i - 1];
-            const next = points[i + 1];
-            const isCrest = point.y < previous.y && point.y <= next.y;
-            if (!isCrest) continue;
-
-            const distance = point.x - highlightCenter;
-            const envelope = Math.exp(
-              -(distance * distance) / (2 * spread * spread),
-            );
-            const alpha = (0.18 + envelope * 0.58) * (1 + this.hoverAmount * 0.12);
-            const arcWidth = Math.max(16, this.width * 0.075);
-
-            context.beginPath();
-            context.moveTo(point.x - arcWidth, point.y + 2.2);
-            context.quadraticCurveTo(
-              point.x - arcWidth * 0.28,
-              point.y - 2.8,
-              point.x + arcWidth * 0.64,
-              point.y + 1.2,
-            );
-            context.strokeStyle = `rgba(${layer.crest}, ${Math.min(0.9, alpha)})`;
-            context.lineWidth = 1.1 + envelope * 0.45;
-            context.shadowColor = `rgba(${layer.crest}, ${0.28 + envelope * 0.32})`;
-            context.shadowBlur = 5 + envelope * 8;
-            context.stroke();
-          }
-
-          context.restore();
-        }
-
-        sampleWaveLift(x, time, layer) {
-          const wavelength = Math.max(88, this.width * (0.71 + layer * 0.065));
-          const theta =
-            (x / wavelength) * Math.PI * 2 -
-            time * (1.26 + layer * 0.11) +
-            1.15 +
-            layer * 0.78;
-          const wave =
-            Math.sin(theta) +
-            Math.sin(theta * 2 - 0.68) * 0.2 +
-            Math.sin(theta * 3 + 0.42) * 0.06;
-          return wave * (1.7 + layer * 1.05) * (1 + this.hoverAmount * 0.12);
-        }
-
-        drawTrail(context, particle, x, y, radius, curveAngle, alpha, beamBoost) {
-          const tailLength = radius * particle.tailScale;
-          const slope =
-            (particle.curveAmplitude * Math.PI * 2 * Math.cos(curveAngle)) /
-            Math.max(this.width, 1);
-          const startX = x - tailLength;
-          const startY = y - slope * tailLength;
-          const gradient = context.createLinearGradient(startX, startY, x, y);
-          gradient.addColorStop(0, "rgba(248, 197, 76, 0)");
-          gradient.addColorStop(
-            1,
-            `rgba(248, 192, 59, ${Math.min(0.7, alpha * (0.45 + beamBoost * 0.22))})`,
-          );
-
-          context.save();
-          context.globalCompositeOperation = "source-over";
-          context.strokeStyle = gradient;
-          context.lineWidth = Math.max(0.9, radius * 0.48);
-          context.lineCap = "round";
-          context.shadowColor = `rgba(244, 182, 47, ${0.38 + beamBoost * 0.3})`;
-          context.shadowBlur = 5 + beamBoost * 7;
-          context.beginPath();
-          context.moveTo(startX, startY);
-          context.quadraticCurveTo(
-            x - tailLength * 0.45,
-            y - slope * tailLength * 0.24,
-            x - radius * 0.7,
-            y,
-          );
-          context.stroke();
-          context.restore();
-        }
-
-        drawStar(context, particle, x, y, radius, rotation, alpha, beamBoost) {
-          const fillColors = ["255, 220, 125", "250, 200, 76", "246, 185, 50"];
-          const fill = fillColors[particle.layer];
-
-          context.save();
-          context.translate(x, y);
-          context.globalCompositeOperation = "source-over";
-          context.shadowColor = `rgba(241, 171, 31, ${0.48 + beamBoost * 0.3})`;
-          context.shadowBlur = particle.glow + beamBoost * 10 + this.hoverAmount * 3;
-          this.traceRoundedStar(context, radius, rotation, 0.18);
-          context.fillStyle = `rgba(${fill}, ${alpha})`;
-          context.fill();
-          context.strokeStyle = `rgba(255, 247, 193, ${Math.min(1, alpha + 0.16)})`;
-          context.lineWidth = 0.72 + particle.layer * 0.18;
-          context.stroke();
-          context.restore();
-        }
-
-        traceRoundedStar(context, outerRadius, rotation, rounding) {
-          const innerRadius = outerRadius * 0.48;
-          const points = Array.from({ length: 10 }, (_, index) => {
-            const radius = index % 2 === 0 ? outerRadius : innerRadius;
-            const angle = rotation - Math.PI / 2 + (index * Math.PI) / 5;
-            return {
-              x: Math.cos(angle) * radius,
-              y: Math.sin(angle) * radius,
-            };
-          });
-          const first = points[0];
-          const last = points[points.length - 1];
-
-          context.beginPath();
-          context.moveTo(
-            first.x + (last.x - first.x) * rounding,
-            first.y + (last.y - first.y) * rounding,
-          );
-
-          points.forEach((point, index) => {
-            const previous = points[(index + points.length - 1) % points.length];
-            const next = points[(index + 1) % points.length];
-            const beforeX = point.x + (previous.x - point.x) * rounding;
-            const beforeY = point.y + (previous.y - point.y) * rounding;
-            const afterX = point.x + (next.x - point.x) * rounding;
-            const afterY = point.y + (next.y - point.y) * rounding;
-            if (index > 0) context.lineTo(beforeX, beforeY);
-            context.quadraticCurveTo(point.x, point.y, afterX, afterY);
-          });
-          context.closePath();
-        }
-
-        shouldAnimate() {
-          // 这组粒子是推荐友链的核心视觉提示，不因系统“减少动态效果”而消失；
-          // 仅在页面进入后台时暂停，回到页面后由 visibilitychange 自动恢复。
-          return !document.hidden;
-        }
-
-        updatePlayback() {
-          if (this.shouldAnimate()) {
-            if (!this.animationFrame) {
-              this.lastTimestamp = 0;
-              this.animationFrame = requestAnimationFrame(this.handleFrame);
-            }
-          } else {
-            this.stopAnimation();
-            this.renderFrame();
-          }
-        }
-
-        stopAnimation() {
-          cancelAnimationFrame(this.animationFrame);
-          this.animationFrame = 0;
-          this.lastTimestamp = 0;
-        }
-
-        handleVisibilityChange() {
-          this.updatePlayback();
-        }
-
-        handlePointerEnter() {
-          this.hoverTarget = 1;
-        }
-
-        handlePointerLeave() {
-          this.hoverTarget = 0;
-        }
-
-        handleFocusIn() {
-          this.handlePointerEnter();
-        }
-
-        handleFocusOut(event) {
-          if (!this.card?.contains(event.relatedTarget)) {
-            this.handlePointerLeave();
-          }
-        }
-      }
-
-      customElements.define("recommended-star-flow", RecommendedStarFlow);
-    }
-
-  </script>
 
   <style is:global>
     .friends-grid {
@@ -1302,6 +549,38 @@ const description =
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 0.75rem;
     }
+
+    .friend-latency {
+      display: inline-flex;
+      flex: none;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.2rem;
+      min-height: 20px;
+      color: var(--friend-latency-color, var(--content-meta));
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .friend-latency-dot {
+      width: 6px;
+      height: 6px;
+      flex: none;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .friend-latency--fast { --friend-latency-color: #32c574; }
+    .friend-latency--normal { --friend-latency-color: #4b9df5; }
+    .friend-latency--slow { --friend-latency-color: #e8ad25; }
+    .friend-latency--down { --friend-latency-color: #f1637b; }
+    html.dark .friend-latency--fast { --friend-latency-color: #72e3a8; }
+    html.dark .friend-latency--normal { --friend-latency-color: #83bdff; }
+    html.dark .friend-latency--slow { --friend-latency-color: #ffd164; }
+    html.dark .friend-latency--down { --friend-latency-color: #ff91a4; }
 
     .friends-count {
       display: inline-flex;
@@ -1331,6 +610,48 @@ const description =
       border-color: color-mix(in srgb, var(--primary) 32%, var(--line-divider));
       background: transparent;
       color: color-mix(in srgb, var(--text-color) 76%, var(--primary));
+    }
+
+    html[data-site-theme="pure"] #pure-shell [data-pure-page="friends"] .pure-page-title {
+      display: none;
+    }
+
+    html[data-site-theme="pure"] #pure-shell .friends-heading-copy > div:first-child {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    html[data-site-theme="pure"] #pure-shell .friends-heading-copy > div:first-child > div:first-child {
+      display: none;
+    }
+
+    html[data-site-theme="pure"] #pure-shell .friends-title {
+      margin: 0;
+      color: var(--pure-ink);
+      font-size: 1.875rem;
+      line-height: 1.3;
+      font-weight: 500;
+    }
+
+    html[data-site-theme="pure"] #pure-shell .friends-count {
+      padding: 0.25rem 0.5rem;
+      border: 0;
+      border-radius: 0.375rem;
+      color: var(--pure-secondary);
+      background: transparent;
+      font-size: 0.75rem;
+    }
+
+    html[data-site-theme="pure"] #pure-shell .friends-count strong {
+      color: var(--pure-accent);
+      font-size: inherit;
+      font-weight: 500;
+    }
+
+    html[data-site-theme="pure"] #pure-shell .friend-avatar-marquee {
+      display: flex !important;
+      margin: 0 0 1.25rem;
     }
 
     .friends-projects {
@@ -1529,6 +850,17 @@ const description =
         0 0 0.82rem rgba(244, 190, 54, 0.34);
     }
 
+    /* 常态保持静止，悬停放大仍保留。 */
+    .friend-card--recommended:not(.friend-card--recommended-degraded) .friend-card-avatar {
+      transform-origin: center;
+    }
+
+    .friend-card--recommended:not(.friend-card--recommended-degraded):is(:hover, :focus-visible, :active) .friend-card-avatar {
+      animation-play-state: paused;
+      transform: scale(1);
+      scale: 1.05;
+    }
+
     .friend-card--recommended .friend-card-description {
       color: #7d6b43;
     }
@@ -1651,7 +983,7 @@ const description =
         transform 220ms ease;
     }
 
-    .friend-click-count :global(svg) {
+    :is(.friend-click-count, .friend-latency) svg {
       width: 0.8rem;
       height: 0.8rem;
       flex: none;
@@ -1685,7 +1017,7 @@ const description =
       color: #9a6a0b;
     }
 
-    .friend-card--recommended .friend-click-count :global(svg) {
+    .friend-card--recommended .friend-click-count svg {
       color: #d69712;
     }
 
@@ -1693,128 +1025,12 @@ const description =
       color: #f4cd6b;
     }
 
-    :global(.dark) .friend-card--recommended .friend-click-count :global(svg) {
+    :global(.dark) .friend-card--recommended .friend-click-count svg {
       color: #f1be4c;
     }
 
     .friend-card-content {
       padding-right: 4.65rem;
-    }
-
-    .friend-latency {
-      position: absolute;
-      right: 0.62rem;
-      bottom: 0.55rem;
-      z-index: 24;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.32rem;
-      min-width: 4.08rem;
-      height: 1.72rem;
-      padding: 0 0.52rem;
-      border: 1px dashed rgba(255, 246, 219, 0.42);
-      border-radius: 10px 7px 12px 8px;
-      background-color: transparent;
-      box-shadow:
-        0 0.3rem 0.5rem rgba(17, 17, 25, 0.12),
-        0 0.08rem 0.24rem rgba(17, 17, 25, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.22);
-      color: color-mix(in srgb, var(--content-meta) 88%, var(--text-color));
-      font-size: 0.68rem;
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
-      line-height: 1;
-      white-space: nowrap;
-      pointer-events: none;
-      transform: none;
-      transition:
-        border-color 220ms ease,
-        color 220ms ease,
-        box-shadow 220ms ease,
-        transform 220ms ease;
-    }
-
-    .friend-latency-dot {
-      width: 0.42rem;
-      height: 0.42rem;
-      flex: none;
-      border-radius: 999px;
-      background: currentColor;
-      box-shadow: 0 0 0.35rem color-mix(in srgb, currentColor 42%, transparent);
-    }
-
-    .friend-latency--checking {
-      color: #6daee2;
-    }
-
-    .friend-latency--checking .friend-latency-dot {
-      animation: friend-latency-pulse 1.2s ease-in-out infinite;
-    }
-
-    .friend-latency--fast {
-      color: #69b78e;
-    }
-
-    .friend-latency--normal {
-      color: #78a8dd;
-    }
-
-    .friend-latency--slow {
-      color: #d4a15e;
-    }
-
-    .friend-latency--down {
-      color: #dc879b;
-    }
-
-    .friend-card:hover .friend-latency,
-    .friend-card:focus-visible .friend-latency {
-      border-color: rgba(255, 246, 219, 0.62);
-      box-shadow:
-        0 0.34rem 0.5rem rgba(17, 17, 25, 0.16),
-        0 0.1rem 0.26rem rgba(17, 17, 25, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-      transform: translateY(-0.04rem);
-    }
-
-    :global(.dark) .friend-latency {
-      border-color: rgba(255, 246, 219, 0.26);
-      background-color: transparent;
-      color: color-mix(in srgb, var(--content-meta) 92%, white);
-    }
-
-    :global(.dark) .friend-latency--checking {
-      color: #a7d7f8;
-    }
-
-    :global(.dark) .friend-latency--fast {
-      color: #a6e8c6;
-    }
-
-    :global(.dark) .friend-latency--normal {
-      color: #b1d8ff;
-    }
-
-    :global(.dark) .friend-latency--slow {
-      color: #ffdaa0;
-    }
-
-    :global(.dark) .friend-latency--down {
-      color: #ffb9c7;
-    }
-
-    @keyframes friend-latency-pulse {
-      0%,
-      100% {
-        opacity: 0.42;
-        transform: scale(0.8);
-      }
-
-      50% {
-        opacity: 1;
-        transform: scale(1);
-      }
     }
 
     .friend-card {
@@ -1828,8 +1044,8 @@ const description =
         0 0.48rem 1.05rem rgba(68, 128, 164, 0.09),
         0 0.12rem 0.32rem rgba(67, 108, 139, 0.06),
         inset 0 1px 0 rgba(255, 255, 255, 0.68);
-      -webkit-backdrop-filter: blur(4px) saturate(1.04);
-      backdrop-filter: blur(4px) saturate(1.04);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
       transition:
         transform 220ms ease,
         border-color 220ms ease,
@@ -1837,7 +1053,14 @@ const description =
         box-shadow 220ms ease;
     }
 
+    .friend-card-footer,
+    .friend-card-footer__identity,
+    .friend-card-footer__metrics {
+      display: contents;
+    }
+
     .friend-card--temporarily-unavailable {
+      cursor: not-allowed;
       isolation: isolate;
       border-color: var(--friend-card-border-color);
       background:
@@ -1862,6 +1085,23 @@ const description =
     .friend-card--temporarily-unavailable .friend-card-avatar {
       transform: scale(1.025);
     }
+
+    .friend-card--policy-violation .friend-card-description { display: none; }
+    .friend-card--policy-violation .friend-card-avatar,
+    .friend-card--policy-violation .friend-card-title,
+    .friend-card--policy-violation .friend-card-tag { filter: blur(0.06rem) saturate(0.74); opacity: 0.84; }
+    .friend-card-status-overlay[hidden],
+    .friend-card-status-badge[hidden],
+    .friend-card-policy-label[hidden],
+    .friend-card-remediation-overlay[hidden] { display: none; }
+    .friend-card-remediation-overlay:not([hidden]) { position: relative; z-index: 1; display: flex; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: space-between; gap: 0.35rem; }
+    .friend-card-remediation-title { max-width: 100%; overflow: hidden; padding: 0.2rem 0.6rem; border: 1px solid rgba(255,255,255,.56); border-radius: 999px; background: rgba(255,255,255,.54); color: #364858; font-size: .76rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+    .friend-card-policy-label { display: inline-flex; align-items: center; gap: .45rem; min-height: 2.45rem; padding: .45rem 1rem; border: 1px solid rgba(255,255,255,.66); border-radius: 999px; background: rgba(255,239,199,.72); color: #8a5a12; font-size: .9rem; font-weight: 850; white-space: nowrap; }
+    .friend-card-policy-label :global(svg) { width: 1.12rem; height: 1.12rem; }
+    .friend-card-remediation-countdown { max-width: 100%; padding: .18rem .56rem; border-radius: 999px; background: rgba(255,255,255,.5); color: #4a6375; font-size: .69rem; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.35; text-align: center; white-space: normal; }
+
+    .friend-card--policy-violation .friend-card-remediation-countdown { color: #77521e; }
+    :global(.dark) .friend-card--policy-violation .friend-card-remediation-countdown { color: #ebd39e; }
 
     .friend-card-status-overlay {
       position: absolute;
@@ -1919,8 +1159,8 @@ const description =
       display: inline-flex;
       align-items: center;
       gap: 0.58rem;
-      min-height: 2.9rem;
-      padding: 0.62rem 1.25rem;
+      min-height: 2.45rem;
+      padding: 0.45rem 1rem;
       border: 1px solid rgba(255, 255, 255, 0.6);
       border-radius: 999px;
       color: #567184;
@@ -1929,7 +1169,7 @@ const description =
         0 0.4rem 1.1rem rgba(70, 105, 123, 0.14),
         inset 0 1px 0 rgba(255, 255, 255, 0.88),
         inset 0 -1px 0 rgba(98, 137, 154, 0.12);
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: 800;
       letter-spacing: 0.02em;
       white-space: nowrap;
@@ -1980,6 +1220,10 @@ const description =
         inset 0 -1px 0 rgba(0, 0, 0, 0.18);
     }
 
+    :global(.dark) .friend-card-remediation-title { border-color: rgba(205,225,234,.36); background: rgba(31,49,59,.72); color: #e1edf2; }
+    :global(.dark) .friend-card-policy-label { border-color: rgba(242,208,137,.34); background: rgba(74,53,24,.72); color: #f1d28e; }
+    :global(.dark) .friend-card-remediation-countdown { background: rgba(25,39,47,.62); color: #c1dbe5; }
+
     :global(.dark) .friend-card-status-badge {
       border-color: rgba(214, 239, 246, 0.38);
       color: #c1dbe5;
@@ -1990,20 +1234,24 @@ const description =
     }
 
     @media (prefers-reduced-motion: reduce) {
+      .friend-card--recommended:not(.friend-card--recommended-degraded) .friend-card-avatar {
+        animation: none;
+      }
+
       .friend-card--temporarily-unavailable .friend-card-avatar,
       .friend-card--temporarily-unavailable .friend-card-title,
       .friend-card--temporarily-unavailable .friend-card-description,
       .friend-card--temporarily-unavailable .friend-card-tag {
         transition: none;
       }
+      .friend-card--policy-violation .friend-card-avatar,
+      .friend-card--policy-violation .friend-card-title,
+      .friend-card--policy-violation .friend-card-tag { transition: none; }
 
       .friend-card-status-overlay::before {
         animation: none;
       }
 
-      .friend-latency--checking .friend-latency-dot {
-        animation: none;
-      }
     }
 
     .friend-card:hover,
@@ -2123,6 +1371,7 @@ const description =
 
     .friend-card--recommended {
       --friend-recommended-cycle: 3.8s;
+      --friend-recommended-sweep-cycle: 3s;
       isolation: isolate;
       border-color: var(--friend-card-border-color);
       background-color: color-mix(in srgb, #fff1b8 25%, transparent);
@@ -2258,25 +1507,92 @@ const description =
       filter: drop-shadow(0 0 0.14rem rgba(135, 216, 245, 0.28));
     }
 
-    .friend-card--recommended::before {
+    /* 背景光带与文字光带共用周期，并在周期末同时离开可视区域。 */
+    .friend-recommended-sweep::before {
       position: absolute;
-      inset: -0.4rem -0.55rem;
-      z-index: 0;
-      border-radius: 1rem;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 2;
+      width: 45%;
       content: "";
       pointer-events: none;
       background: linear-gradient(
-        105deg,
-        transparent 18%,
-        rgba(255, 232, 133, 0.08) 32%,
-        rgba(255, 202, 36, 0.68) 50%,
-        rgba(255, 241, 177, 0.14) 67%,
-        transparent 84%
+        90deg,
+        transparent 0 20%,
+        rgba(239, 173, 19, 0.1) 35%,
+        rgba(255, 224, 104, 0.48) 50%,
+        rgba(239, 173, 19, 0.1) 65%,
+        transparent 80% 100%
       );
-      filter: blur(0.7rem);
-      opacity: 0.76;
-      mix-blend-mode: screen;
-      animation: friend-recommended-outer-beam var(--friend-recommended-cycle) cubic-bezier(0.42, 0, 0.22, 1) infinite;
+      transform: translateX(-150%) skewX(-25deg);
+    }
+
+    .friend-recommended-sweep.is-sweep-running::before {
+      animation: friend-recommended-sweep var(--friend-recommended-sweep-cycle) linear infinite;
+    }
+
+    /* 标题和徽标使用同一条白色文字高亮，扫过边界对齐 3 秒周期。 */
+    [data-sweep-text] {
+      position: relative;
+    }
+
+    [data-sweep-text]::after {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      content: attr(data-sweep-text);
+      pointer-events: none;
+      color: #fff;
+      text-shadow: none;
+      -webkit-text-stroke: 0.3px rgba(132, 78, 5, 0.55);
+      paint-order: stroke fill;
+      opacity: 0;
+      mask-image: linear-gradient(
+        115deg,
+        transparent 42%,
+        rgba(255, 255, 255, 0.5) 46%,
+        #fff 48% 52%,
+        rgba(255, 255, 255, 0.5) 54%,
+        transparent 58%
+      );
+      mask-size: 238% 100%;
+      mask-repeat: no-repeat;
+    }
+
+    .friend-card--recommended.is-sweep-running [data-sweep-text]::after {
+      opacity: 0.9;
+      animation: friend-recommended-text-sweep var(--friend-recommended-sweep-cycle) linear infinite;
+    }
+
+    .friend-card--recommended.is-sweep-running .friend-recommended-badge [data-sweep-text]::after {
+      opacity: 0.85;
+    }
+
+    @keyframes friend-recommended-text-sweep {
+      from {
+        mask-position: 100% 0;
+      }
+      to {
+        mask-position: 0% 0;
+      }
+    }
+
+    @keyframes friend-recommended-sweep {
+      from {
+        transform: translateX(-80%) skewX(-25deg);
+      }
+      to {
+        transform: translateX(205%) skewX(-25deg);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .friend-recommended-sweep.is-sweep-running::before,
+      .friend-card--recommended.is-sweep-running [data-sweep-text]::after {
+        content: none;
+        animation: none;
+      }
     }
 
     .friend-recommended-flow {
@@ -2286,23 +1602,8 @@ const description =
       display: block;
       overflow: hidden;
       pointer-events: none;
-      opacity: 1;
       isolation: isolate;
       contain: paint;
-      background: linear-gradient(
-        104deg,
-        transparent 0 18%,
-        rgba(255, 210, 61, 0.035) 28%,
-        rgba(255, 226, 112, 0.09) 39%,
-        rgba(255, 246, 184, 0.2) 50%,
-        rgba(255, 226, 112, 0.1) 62%,
-        rgba(255, 208, 52, 0.045) 76%,
-        transparent 94%
-      );
-      background-position: 130% 0;
-      background-size: 250% 100%;
-      animation: friend-recommended-surface-sheen var(--friend-recommended-cycle) cubic-bezier(0.42, 0, 0.22, 1) infinite;
-      transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .friend-recommended-canvas {
@@ -2314,166 +1615,6 @@ const description =
       height: 100%;
       background: transparent;
       opacity: 0.98;
-    }
-
-    .friend-card--recommended:hover .friend-recommended-flow,
-    .friend-card--recommended:focus-visible .friend-recommended-flow {
-      opacity: 1;
-    }
-
-    .friend-recommended-flow::before,
-    .friend-recommended-flow::after {
-      position: absolute;
-      pointer-events: none;
-      content: "";
-    }
-
-    .friend-recommended-flow::before {
-      top: -88%;
-      bottom: -88%;
-      left: -64%;
-      z-index: 2;
-      width: 54%;
-      background:
-        linear-gradient(
-          105deg,
-          transparent 0 31%,
-          rgba(239, 173, 24, 0.2) 37%,
-          rgba(255, 220, 91, 0.58) 43%,
-          rgba(255, 255, 244, 0.98) 49%,
-          rgba(255, 241, 166, 0.82) 53%,
-          rgba(232, 153, 12, 0.3) 61%,
-          transparent 72%
-        ),
-        linear-gradient(
-          101deg,
-          transparent 8%,
-          rgba(248, 181, 29, 0.1) 25%,
-          rgba(255, 226, 111, 0.42) 50%,
-          rgba(245, 174, 19, 0.1) 75%,
-          transparent 92%
-        );
-      box-shadow:
-        0 0 0.75rem rgba(255, 226, 117, 0.5),
-        0 0 1.35rem rgba(235, 156, 13, 0.24);
-      filter: blur(0.16rem) saturate(1.08);
-      mix-blend-mode: normal;
-      transform: translate3d(-8%, 0, 0) skewX(-10deg);
-      transform-origin: center;
-      animation: friend-recommended-beam-primary var(--friend-recommended-cycle) cubic-bezier(0.32, 0.02, 0.24, 1) infinite;
-      will-change: transform, opacity;
-    }
-
-    .friend-recommended-flow::after {
-      top: -76%;
-      bottom: -76%;
-      left: -78%;
-      z-index: 1;
-      width: 78%;
-      background: linear-gradient(
-        104deg,
-        transparent 0 4%,
-        rgba(239, 163, 14, 0.035) 16%,
-        rgba(255, 210, 63, 0.12) 31%,
-        rgba(255, 239, 155, 0.38) 49%,
-        rgba(241, 168, 17, 0.16) 68%,
-        rgba(255, 239, 155, 0.06) 84%,
-        transparent 100%
-      );
-      -webkit-mask-image: linear-gradient(104deg, transparent 0%, #000 12%, #000 84%, transparent 100%);
-      mask-image: linear-gradient(104deg, transparent 0%, #000 12%, #000 84%, transparent 100%);
-      filter: blur(0.68rem) saturate(1.1);
-      mix-blend-mode: normal;
-      transform: translate3d(-6%, 0, 0) skewX(-8deg);
-      transform-origin: center;
-      animation: friend-recommended-beam-halo var(--friend-recommended-cycle) cubic-bezier(0.32, 0.02, 0.24, 1) infinite;
-      will-change: transform, opacity;
-    }
-
-    @keyframes friend-recommended-outer-beam {
-      0% {
-        transform: translate3d(-44%, 0, 0) scaleX(0.82);
-        opacity: 0;
-      }
-
-      12% {
-        opacity: 0.42;
-      }
-
-      58% {
-        opacity: 0.7;
-      }
-
-      88% {
-        opacity: 0.3;
-      }
-
-      100% {
-        transform: translate3d(44%, 0, 0) scaleX(1.08);
-        opacity: 0;
-      }
-    }
-
-    @keyframes friend-recommended-beam-primary {
-      0% {
-        transform: translate3d(-8%, 0, 0) skewX(-10deg);
-        opacity: 0;
-      }
-
-      10% {
-        opacity: 0.64;
-      }
-
-      46% {
-        opacity: 1;
-      }
-
-      83% {
-        opacity: 0.62;
-      }
-
-      100% {
-        transform: translate3d(348%, 0, 0) skewX(-10deg);
-        opacity: 0;
-      }
-    }
-
-    @keyframes friend-recommended-beam-halo {
-      0% {
-        transform: translate3d(-6%, 0, 0) skewX(-8deg) scaleX(0.9);
-        opacity: 0;
-      }
-
-      14% {
-        opacity: 0.28;
-      }
-
-      54% {
-        opacity: 0.68;
-      }
-
-      84% {
-        opacity: 0.52;
-      }
-
-      96% {
-        opacity: 0.22;
-      }
-
-      100% {
-        transform: translate3d(300%, 0, 0) skewX(-8deg) scaleX(1.08);
-        opacity: 0;
-      }
-    }
-
-    @keyframes friend-recommended-surface-sheen {
-      0% {
-        background-position: 130% 0;
-      }
-
-      100% {
-        background-position: -170% 0;
-      }
     }
 
     @keyframes friend-recommended-title-glow {
@@ -2545,12 +1686,12 @@ const description =
       width: fit-content;
       min-width: 0;
       max-width: calc(100% - 1.75rem);
-      padding: 0.12rem 0.56rem 0.16rem;
+      padding: 0;
       overflow: hidden;
-      border: 1px solid color-mix(in srgb, #e8ae2d 46%, transparent);
-      border-radius: 0.72rem;
-      background: color-mix(in srgb, #fff2ae 68%, var(--card-bg));
-      box-shadow: 0 0 0.55rem color-mix(in srgb, #efb229 22%, transparent);
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
       color: #c9870d;
       font-weight: 850;
       letter-spacing: 0.008em;
@@ -2594,9 +1735,6 @@ const description =
     }
 
     :global(.dark) .friend-card--recommended .friend-card-title {
-      border-color: color-mix(in srgb, #e2ac3f 46%, transparent);
-      background: color-mix(in srgb, #8b6419 42%, var(--card-bg));
-      box-shadow: 0 0 0.58rem color-mix(in srgb, #d79a24 28%, transparent);
       color: #f6cf67;
       text-shadow:
         0 1px 0 rgba(92, 56, 5, 0.74),
@@ -2652,19 +1790,205 @@ const description =
       background: transparent;
     }
 
-    /* 降级推荐：保留黄色卡片与静态大星星，不启动扫光、流动层或标题发光。 */
+    .friend-card--recommended-no-title-glow .friend-card-title {
+      animation: none;
+      filter: none;
+      will-change: auto;
+    }
+
+    /* 降级推荐：保留黄色卡片与静态大星星，不启动扫光或标题发光。 */
     .friend-card--recommended-degraded::before,
     .friend-card--recommended-degraded::after {
       animation: none;
       opacity: 0;
     }
 
-    .friend-card--recommended-degraded .friend-recommended-flow {
+    .friend-card--recommended-degraded .friend-card-title {
+      animation: none;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friends-grid:not(.friends-projects-grid) {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      width: 100%;
+      max-width: none;
+      margin-inline: auto;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      grid-template-rows: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      min-height: 88px;
+      padding: 12px 14px;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-card-avatar {
+      grid-column: 1;
+      grid-row: 1;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: transparent;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-card-content {
+      grid-column: 2 / -1;
+      grid-row: 1;
+      gap: 2px;
+      padding-right: 0;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-card-title {
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-card-description {
+      font-size: 11.5px;
+      line-height: 1.4;
+    }
+
+    /* 标签字色与 Pure 共用头像主色，保留各类卡片现有装饰。 */
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-card-tag {
+      color: hsl(var(--friend-avatar-hue, 0) var(--friend-avatar-saturation, 0%) 32%);
+    }
+
+    html.dark[data-site-theme="aemeath"] #aemeath-shell .friend-card-tag {
+      color: hsl(var(--friend-avatar-hue, 0) var(--friend-avatar-saturation, 0%) 83%);
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-card-tag {
+      padding: 2px 6px;
+      font-size: 10px;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-card-tags {
+      gap: 4px;
+      margin-top: 3px;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-card-footer {
+      position: relative;
+      z-index: 10;
+      grid-column: 1 / -1;
+      grid-row: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px 8px;
+      min-width: 0;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card :is(.friend-card-footer__identity, .friend-card-footer__metrics) {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-card-footer__metrics {
+      margin-left: auto;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-click-count {
+      position: static;
+      inset: auto;
+      min-width: 0;
+      height: auto;
+      min-height: 20px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+      font-size: 10px;
+      font-weight: 500;
+      transform: none;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-recommended-badge {
+      position: relative;
+      inset: auto;
+      min-height: 20px;
+      padding: 3px 6px;
+      border-radius: 6px;
+      background: color-mix(in srgb, #fff0b3 62%, transparent);
+      font-size: 10px;
+      letter-spacing: 0;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-recommended-badge::before {
+      content: none;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-recommended-badge svg {
       display: none;
     }
 
-    .friend-card--recommended-degraded .friend-card-title {
-      animation: none;
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-site-owner-badge {
+      background: color-mix(in srgb, var(--primary) 18%, var(--card-bg));
+    }
+
+    html.dark[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-recommended-badge {
+      background: #55451b;
+    }
+
+    html.dark[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-site-owner-badge {
+      background: color-mix(in srgb, var(--primary) 18%, var(--card-bg));
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-rss-updated {
+      color: var(--content-meta);
+      font-size: 10px;
+      line-height: 20px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-click-count-unit {
+      font-size: 9.6px;
+      font-weight: 700;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card :is(.friend-click-count, .friend-latency) svg {
+      width: 12.8px;
+      height: 12.8px;
+    }
+
+    html[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-card-avatar-backdrop {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 192px;
+      max-width: 70%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      opacity: 0.13;
+      -webkit-mask-image: linear-gradient(to right, black 20%, transparent 100%);
+      mask-image: linear-gradient(to right, black 20%, transparent 100%);
+      pointer-events: none;
+    }
+
+    html.dark[data-site-theme="aemeath"] #aemeath-shell .friend-list-card .friend-card-avatar-backdrop {
+      opacity: 0.17;
+    }
+
+    @media (max-width: 900px) {
+      html[data-site-theme="aemeath"] #aemeath-shell .friends-grid:not(.friends-projects-grid) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 600px) {
+      html[data-site-theme="aemeath"] #aemeath-shell .friends-grid:not(.friends-projects-grid) {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
 
   </style>

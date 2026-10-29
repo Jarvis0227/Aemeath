@@ -1,0 +1,79 @@
+---
+import { backgroundWallpaper } from "@/config";
+import {
+	alternateHomepageWallpaper,
+	homepageWallpaper,
+	mobileHomepageWallpaper,
+} from "@/config/backgroundWallpaper";
+import { getBackgroundImages } from "@/utils/layout-utils";
+
+interface Props {
+	enabled: boolean;
+}
+const { enabled } = Astro.props;
+const images = getBackgroundImages();
+const wallpaperConfig = {
+	enabled,
+	...images,
+	nationalSources: [
+		homepageWallpaper,
+		alternateHomepageWallpaper,
+		mobileHomepageWallpaper,
+	],
+	carouselEnabled: backgroundWallpaper.common?.carousel?.enable ?? false,
+	carouselSwitchable: backgroundWallpaper.common?.carousel?.switchable ?? false,
+};
+---
+
+<script is:inline define:vars={{ wallpaperConfig }}>
+	(() => {
+		const root = document.documentElement;
+		if (!wallpaperConfig.enabled || root.dataset.siteTheme !== "aemeath" || root.dataset.wallpaperMode === "none") return;
+		const read = (key) => {
+			try { return localStorage.getItem(key); } catch { return null; }
+		};
+		const national = root.dataset.nationalDayTheme === "true";
+		const theme = national ? "national-day" : "normal";
+		const belongsToTheme = (src) => wallpaperConfig.nationalSources.includes(src) === national;
+		const desktop = wallpaperConfig.desktop.filter(belongsToTheme);
+		const mobile = wallpaperConfig.mobile.filter(belongsToTheme);
+		const storedCarousel = read(`bannerCarouselEnabledByTheme.${theme}`) ?? (!national ? read("bannerCarouselEnabled") : null);
+		const carousel = wallpaperConfig.carouselSwitchable && storedCarousel !== null
+			? storedCarousel === "true"
+			: !national && wallpaperConfig.carouselEnabled;
+		let storedSource = !carousel ? read(`selectedWallpaperSourceByTheme.${theme}`) : null;
+		if (!carousel && !storedSource && read("selectedWallpaperIndexSchemaVersion") !== "3") {
+			// Match setting-utils' index migration without changing visitor preferences.
+			const legacyIndex = Number.parseInt(read("selectedWallpaperIndex"), 10);
+			const schema = read("selectedWallpaperIndexSchemaVersion");
+			const inserted = Math.max(0, wallpaperConfig.desktop.findIndex((src) => !wallpaperConfig.nationalSources.includes(src)));
+			const index = schema === "2"
+				? legacyIndex === 1 ? 1 : legacyIndex === 0 ? inserted : legacyIndex + inserted - 1
+				: legacyIndex + inserted;
+			if (Number.isInteger(legacyIndex) && legacyIndex >= 0) storedSource = wallpaperConfig.desktop[index] || null;
+		}
+		let ordinal = storedSource ? desktop.indexOf(storedSource) : -1;
+		if (ordinal < 0) ordinal = national && desktop.length > 1 ? Math.floor(Math.random() * desktop.length) : 0;
+		const desktopSource = desktop[ordinal] || desktop[0] || "";
+		const mobileSource = mobile[Math.min(ordinal, mobile.length - 1)] || mobile[0] || "";
+		root.dataset.initialWallpaperDesktop = desktopSource;
+		root.dataset.initialWallpaperMobile = mobileSource;
+		root.dataset.initialWallpaperNational = String(national);
+		const variant = national ? "national" : "normal";
+		for (const [device, source, media] of [
+			["desktop", desktopSource, "(min-width: 1024px)"],
+			["mobile", mobileSource, "(max-width: 1023px)"],
+		]) {
+			if (!source) continue;
+			root.style.setProperty(`--wallpaper-initial-${variant}-${device}`, `url(${JSON.stringify(source)})`);
+			const preload = document.createElement("link");
+			preload.rel = "preload";
+			preload.as = "image";
+			preload.href = source;
+			preload.media = media;
+			preload.fetchPriority = "high";
+			preload.dataset.wallpaperPreload = device;
+			document.head.append(preload);
+		}
+	})();
+</script>

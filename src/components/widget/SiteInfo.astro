@@ -52,7 +52,7 @@ const configuredBuildPlatform =
 	widgetConfig?.specificConfig?.siteInfo?.buildPlatform?.trim();
 const unknownBuildPlatform =
 	widgetConfig?.specificConfig?.siteInfo?.unknownBuildPlatform ||
-	"Astro 静态构建 · Debian + 宝塔 Nginx";
+	"Astro 静态构建";
 const buildPlatform =
 	configuredBuildPlatform ||
 	detectBuildPlatform({

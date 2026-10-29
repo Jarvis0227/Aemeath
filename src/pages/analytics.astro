@@ -3,6 +3,7 @@ import { Icon } from "astro-icon/components";
 import AnalyticsSnapshot from "@/components/widget/AnalyticsSnapshot.astro";
 import { analyticsConfig, commentConfig } from "@/config";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { COMMENT_AVATAR_PROVIDERS, DEFAULT_COMMENT_AVATAR } from "@/utils/comment-avatars";
 
 const umamiAnalytics = analyticsConfig.umamiAnalytics;
 const shareId = umamiAnalytics?.shareId ?? "";
@@ -525,7 +526,7 @@ const walineServerUrl =
 		</footer>
 	</section>
 
-<script is:inline define:vars={{ hasPublicStats }}>
+<script is:inline define:vars={{ hasPublicStats, defaultCommentAvatar: DEFAULT_COMMENT_AVATAR, commentAvatarProviders: COMMENT_AVATAR_PROVIDERS }}>
 	(() => {
 		const runtimeKey = "__rainztAnalyticsPageRuntime";
 		const runtime = window[runtimeKey] || {
@@ -1882,19 +1883,21 @@ const walineServerUrl =
 		const renderRecentComments = (root, payload) => {
 			const list = root.querySelector("[data-comments-list]");
 			const status = root.querySelector("[data-comments-status]");
-			const aiAvatarSrc = "/favicon/chaoc-tingyu-avatar-512.png?v=20260907";
+			const aiAvatarSrc = "/assets/ai-xiaoai-avatar.png?v=20261028";
 			if (!list) return;
 
 			const comments = getRecentCommentRows(payload)
 				.filter((comment) => comment && typeof comment === "object")
 				.map((comment) => {
 					const record = comment;
-					const nick = cleanCommentText(record.nick || record.display_name, "访客");
-					const text = cleanCommentText(record.comment || record.content);
+					const nick = cleanCommentText(record.nick || record.display_name, "访客")
+						.replace(/^小爱(?:客服)?$/u, "小爱");
+					const text = cleanCommentText(record.comment || record.content)
+						.replace(/小爱(?:客服)/gu, "小爱");
 					const insertedAt = record.insertedAt || record.createdAt || record.time;
 					const page = getCommentPage(record.url || record.path);
 					const commentHref = getCommentHref(page.href, record.objectId);
-					return { record, nick, text, insertedAt, page, commentHref, isAi: nick === "小爱客服" };
+					return { record, nick, text, insertedAt, page, commentHref, isAi: nick === "小爱" };
 				})
 				.filter(({ text }) => Boolean(text))
 					.slice(0, 8);
@@ -1919,7 +1922,14 @@ const walineServerUrl =
 				const initial = document.createElement("span");
 				initial.textContent = nick.slice(0, 1).toUpperCase();
 				avatar.append(initial);
-				const avatarUrl = isAi ? aiAvatarSrc : record.avatar;
+				let avatarUrl = isAi ? aiAvatarSrc : record.avatar;
+				if (!isSafeHttpUrl(avatarUrl)) avatarUrl = defaultCommentAvatar;
+				const providerUrl = new URL(avatarUrl, window.location.origin);
+				if (!isAi && commentAvatarProviders.some((host) => providerUrl.hostname === host || providerUrl.hostname.endsWith(`.${host}`))) {
+					for (const key of ["default", "f", "forcedefault"]) providerUrl.searchParams.delete(key);
+					providerUrl.searchParams.set("d", "404");
+					avatarUrl = providerUrl.href;
+				}
 				if (isSafeHttpUrl(avatarUrl)) {
 					const image = document.createElement("img");
 					image.src = avatarUrl;
@@ -1927,7 +1937,9 @@ const walineServerUrl =
 					image.loading = "lazy";
 					image.decoding = "async";
 					image.referrerPolicy = "no-referrer";
-					image.addEventListener("error", () => avatar.replaceChildren(initial), { once: true });
+					image.addEventListener("error", () => {
+						image.src = defaultCommentAvatar;
+					}, { once: true });
 					avatar.replaceChildren(image);
 				}
 

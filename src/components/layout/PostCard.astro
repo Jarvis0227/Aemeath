@@ -59,7 +59,7 @@ const decorRules = [
 	},
 	{
 		name: "code",
-		keywords: ["从零搭建 rainzt.cn"],
+		keywords: ["从零搭建博客"],
 	},
 	{
 		name: "blossom",
@@ -188,46 +188,6 @@ const forcePostTitleBreak =
 	entry.id === "others/youth-most-expensive/youth-most-expensive";
 
 const coverWidth = "30%";
-const preserveCoverRatio = new Set([
-	"time-greeting",
-	"custom-cursor",
-	"quote-of-the-day",
-	"schedule-progress",
-	"welcome-toast",
-	"footer-config",
-	"portfolio-showcase-animation-principles",
-	"ai-infinite-canvas-workflow",
-	"auto-listing-system",
-	"agent-ecommerce-automation",
-	"ai-ecommerce-agents",
-	"after-the-tools-i-returned-to-my-blog",
-	"why-i-still-write-in-the-age-of-ai",
-	"chao-chao-listening-rain-years-wind",
-	"others/youth-most-expensive/youth-most-expensive",
-	"in-grandmas-white-hair-i-saw-time",
-	"from-matriarchal-society-to-patriarchy",
-	"codex-292-state-analysis",
-	"monthly-2026-08",
-	"monthly-2026-09",
-	"national-day-2026",
-]).has(entry.id);
-const fullPreviewCover = new Set([
-	"portfolio-showcase-animation-principles",
-	"ai-infinite-canvas-workflow",
-	"auto-listing-system",
-	"agent-ecommerce-automation",
-	"ai-ecommerce-agents",
-	"after-the-tools-i-returned-to-my-blog",
-	"why-i-still-write-in-the-age-of-ai",
-	"chao-chao-listening-rain-years-wind",
-	"others/youth-most-expensive/youth-most-expensive",
-	"in-grandmas-white-hair-i-saw-time",
-	"from-matriarchal-society-to-patriarchy",
-	"codex-292-state-analysis",
-	"monthly-2026-08",
-	"monthly-2026-09",
-	"national-day-2026",
-]).has(entry.id);
 const updateBadgeDate =
 	entry.id === "auto-listing-system" && updated
 		? new Intl.DateTimeFormat("zh-CN", {
@@ -266,7 +226,7 @@ const minutes = remarkPluginFrontmatter.minutes;
   class:list={[
     "post-card-wrapper",
     hasCover ? "has-cover" : "no-cover",
-    fullPreviewCover ? "post-card-full-preview" : "",
+    hasCover ? "post-card-full-preview" : "",
     pinned ? "pinned" : "",
     isNewSystemPost ? "has-new-system-badge" : "",
     isMonthlyPost ? "has-monthly-badge" : "",
@@ -385,14 +345,9 @@ const minutes = remarkPluginFrontmatter.minutes;
             src={processedImage}
             basePath={getFileDirFromPath(entry.filePath || "")}
             alt="Cover Image of the Post"
-            class:list={[
-              "w-full h-full transition-transform duration-300",
-              fullPreviewCover
-                ? "group-hover:scale-100 group-active:scale-100"
-                : "group-hover:scale-110 group-active:scale-115",
-            ]}
+            class="w-full h-full"
             preview={true}
-            preserveAspectRatio={preserveCoverRatio}
+            preserveAspectRatio={true}
             loading={loading}
             apiUrls={apiUrls}
           />
@@ -400,7 +355,7 @@ const minutes = remarkPluginFrontmatter.minutes;
         {
           updateBadgeLabel && (
             <a
-              href="https://rainzt.cn/changelog/"
+              href="/changelog/"
               class="post-card-update-badge"
               aria-label={`${updateBadgeLabel}，查看更新日志`}
             >

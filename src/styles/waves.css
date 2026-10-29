@@ -59,6 +59,10 @@ html[data-waves-enabled="true"] #header-waves {
     animation: wave 25s cubic-bezier(0.5, 0.5, 0.45, 0.5) infinite;
 }
 
+html.is-aemeath-scrolling .waves > .parallax use {
+    animation-play-state: paused !important;
+}
+
 .waves > .parallax use:nth-child(1) {
     animation-delay: -2s;
     animation-duration: 7s;

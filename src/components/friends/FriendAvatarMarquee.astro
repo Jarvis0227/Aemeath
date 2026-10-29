@@ -7,7 +7,7 @@ interface Props {
 }
 
 const { friends, ownSiteUrl } = Astro.props;
-const duration = Math.max(28, friends.length * 1.05);
+const duration = Math.max(22, friends.length * 0.82);
 const normalizeFriendUrl = (url: string) =>
 	url.trim().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/+$/, "").toLowerCase();
 ---
@@ -16,7 +16,6 @@ const normalizeFriendUrl = (url: string) =>
 	class="friend-avatar-marquee"
 	role="navigation"
 	aria-label="友链头像快捷访问"
-	data-duration={duration}
 	style={`--friend-avatar-duration: ${duration}s`}
 >
 	<div class="friend-avatar-marquee-track">
@@ -24,17 +23,37 @@ const normalizeFriendUrl = (url: string) =>
 			<div class="friend-avatar-marquee-group" aria-hidden={copy === 0 ? "true" : undefined}>
 				{friends.map((friend) => {
 					const isOwnSite = normalizeFriendUrl(friend.siteurl) === ownSiteUrl;
+					const status = friend.visibilityStatus || (friend.temporarilyUnavailable ? "temporarily_unavailable" : "normal");
+					const isTemporarilyUnavailable = status === "temporarily_unavailable";
+					const blocked = status !== "normal";
+					const screenshot = friend.screenshot && !friend.screenshot.endsWith("/no-photos.webp")
+						? friend.screenshot
+						: "/friends/screenshots/no-photos.webp";
 					return (
 						<a
-							href={friend.siteurl}
+							href={blocked ? undefined : friend.siteurl}
+							data-friend-screenshot={screenshot}
+							data-friend-site-url={friend.siteurl}
+							data-friend-visibility-status={status}
+							data-friend-violation-started-at={friend.violationStartedAt}
+							data-friend-unavailable-started-at={friend.unavailableStartedAt}
+							data-friend-unavailable={String(isTemporarilyUnavailable)}
+							data-friend-title={friend.title}
+							data-friend-own-site={String(isOwnSite)}
+							data-friend-original-tabindex=""
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label={`${friend.title}，在新标签页打开友链`}
+							aria-disabled={blocked ? "true" : undefined}
+							aria-label={
+								isTemporarilyUnavailable
+									? `${friend.title}，短暂失联`
+									: blocked ? `${friend.title}，违规友链` : `${friend.title}，在新标签页打开友链`
+							}
 							title={friend.title}
-							tabindex={copy === 0 ? -1 : undefined}
+							tabindex={copy === 0 || blocked ? -1 : undefined}
 							draggable="false"
-							data-umami-event={isOwnSite ? undefined : "friend-link-click"}
-							data-umami-event-site={isOwnSite ? undefined : friend.siteurl}
+							data-umami-event={isOwnSite || blocked ? undefined : "friend-link-click"}
+							data-umami-event-site={isOwnSite || blocked ? undefined : friend.siteurl}
 						>
 							<img
 								src={friend.imgurl}
@@ -53,274 +72,194 @@ const normalizeFriendUrl = (url: string) =>
 		))}
 	</div>
 </friend-avatar-marquee>
+<figure
+	class="friend-avatar-site-preview"
+	data-friend-avatar-preview
+	data-fallback-src="/friends/screenshots/no-photos.webp"
+	aria-hidden="true"
+>
+	<div class="friend-avatar-site-preview-skeleton" aria-hidden="true">
+		<span class="friend-avatar-site-preview-skeleton-topbar"></span>
+		<div class="friend-avatar-site-preview-skeleton-content">
+			<span class="friend-avatar-site-preview-skeleton-hero"></span>
+			<span class="friend-avatar-site-preview-skeleton-copy">
+				<i></i><i></i><i></i>
+			</span>
+		</div>
+	</div>
+	<img data-friend-avatar-preview-image alt="" width="480" height="270" decoding="async" />
+</figure>
 
 <script>
 	class FriendAvatarMarqueeElement extends HTMLElement {
-		private track: HTMLElement | null = null;
-		private group: HTMLElement | null = null;
-		private motionQuery: MediaQueryList | null = null;
-		private resizeObserver: ResizeObserver | null = null;
 		private intersectionObserver: IntersectionObserver | null = null;
-		private inViewport = true;
-		private frameId = 0;
-		private lastFrame = 0;
-		private groupWidth = 0;
-		private position = 0;
-		private velocity = 0;
-		private baseSpeed = 0;
-		private pointerId: number | null = null;
-		private startX = 0;
-		private lastX = 0;
-		private lastMoveTime = 0;
-		private flickVelocity = 0;
-		private dragging = false;
-		private hovered = false;
-		private keyboardFocus = false;
-		private settling = false;
-		private ignoreHoverUntilLeave = false;
-		private suppressClickUntil = 0;
-		private suppressTimer = 0;
+		private inViewport = false;
+		private preview: HTMLElement | null = null;
+		private previewImage: HTMLImageElement | null = null;
+		private activePreviewAnchor: HTMLAnchorElement | null = null;
 
 		connectedCallback() {
-			this.track = this.querySelector<HTMLElement>(".friend-avatar-marquee-track");
-			this.group = this.querySelector<HTMLElement>(".friend-avatar-marquee-group");
-			if (!this.track || !this.group) return;
-
-			this.motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-			this.hovered = this.matches(":hover");
-			this.addEventListener("pointerenter", this.handlePointerEnter);
-			this.addEventListener("pointerleave", this.handlePointerLeave);
-			this.addEventListener("pointerdown", this.handlePointerDown);
-			this.addEventListener("pointermove", this.handlePointerMove);
-			this.addEventListener("pointerup", this.handlePointerUp);
-			this.addEventListener("pointercancel", this.handlePointerCancel);
-			this.addEventListener("lostpointercapture", this.handleLostPointerCapture);
+			if (!this.preview) {
+				const preview = this.nextElementSibling;
+				if (preview instanceof HTMLElement && preview.hasAttribute("data-friend-avatar-preview")) {
+					this.preview = preview;
+				}
+			}
+			this.previewImage = this.preview?.querySelector<HTMLImageElement>("[data-friend-avatar-preview-image]") ?? null;
+			this.previewImage?.addEventListener("load", this.handlePreviewImageLoad);
+			this.previewImage?.addEventListener("error", this.handlePreviewImageError);
+			if (this.preview) document.body.append(this.preview);
+			this.addEventListener("pointerover", this.handlePointerOver);
+			this.addEventListener("pointerout", this.handlePointerOut);
+			this.addEventListener("pointerleave", this.hidePreview);
 			this.addEventListener("focusin", this.handleFocusIn);
 			this.addEventListener("focusout", this.handleFocusOut);
-			this.addEventListener("click", this.handleClick, true);
-			this.addEventListener("dragstart", this.handleDragStart);
-			this.motionQuery.addEventListener("change", this.syncMotionMode);
 			document.addEventListener("visibilitychange", this.updatePlayback);
-			this.resizeObserver = new ResizeObserver(this.measure);
-			this.resizeObserver.observe(this.group);
-			this.intersectionObserver = new IntersectionObserver(([entry]) => {
-				this.inViewport = entry.isIntersecting;
-				this.updatePlayback();
-			});
-			this.intersectionObserver.observe(this);
-			this.syncMotionMode();
+			window.addEventListener("resize", this.hidePreview);
+			window.addEventListener("scroll", this.hidePreview, true);
+			if ("IntersectionObserver" in window) {
+				this.intersectionObserver = new IntersectionObserver(([entry]) => {
+					this.inViewport = Boolean(entry?.isIntersecting);
+					this.updatePlayback();
+				});
+				this.intersectionObserver.observe(this);
+			} else {
+				this.inViewport = true;
+			}
+			this.updatePlayback();
 		}
 
 		disconnectedCallback() {
-			this.stopFrame();
-			window.clearTimeout(this.suppressTimer);
-			this.resizeObserver?.disconnect();
 			this.intersectionObserver?.disconnect();
-			this.pointerId = null;
-			this.dragging = false;
-			this.motionQuery?.removeEventListener("change", this.syncMotionMode);
+			this.intersectionObserver = null;
+			this.inViewport = false;
+			this.removeAttribute("data-running");
 			document.removeEventListener("visibilitychange", this.updatePlayback);
-			this.removeEventListener("pointerenter", this.handlePointerEnter);
-			this.removeEventListener("pointerleave", this.handlePointerLeave);
-			this.removeEventListener("pointerdown", this.handlePointerDown);
-			this.removeEventListener("pointermove", this.handlePointerMove);
-			this.removeEventListener("pointerup", this.handlePointerUp);
-			this.removeEventListener("pointercancel", this.handlePointerCancel);
-			this.removeEventListener("lostpointercapture", this.handleLostPointerCapture);
+			window.removeEventListener("resize", this.hidePreview);
+			window.removeEventListener("scroll", this.hidePreview, true);
+			this.removeEventListener("pointerover", this.handlePointerOver);
+			this.removeEventListener("pointerout", this.handlePointerOut);
+			this.removeEventListener("pointerleave", this.hidePreview);
 			this.removeEventListener("focusin", this.handleFocusIn);
 			this.removeEventListener("focusout", this.handleFocusOut);
-			this.removeEventListener("click", this.handleClick, true);
-			this.removeEventListener("dragstart", this.handleDragStart);
-		}
-
-		private measure = () => {
-			if (!this.group || this.motionQuery?.matches) return;
-			const width = this.group.getBoundingClientRect().width;
-			if (width <= 0) return;
-			this.position = this.groupWidth > 0 ? (this.position / this.groupWidth) * width : 0;
-			this.groupWidth = width;
-			this.baseSpeed = width / (Number(this.dataset.duration) || 60);
-			if (!this.settling) this.velocity = this.baseSpeed;
-			this.render();
-			this.updatePlayback();
-		};
-
-		private render() {
-			if (!this.track || this.groupWidth <= 0) return;
-			const x = this.position - this.groupWidth;
-			this.track.style.transform = `translate3d(${x}px, 0, 0)`;
-		}
-
-		private moveBy(delta: number) {
-			if (this.groupWidth <= 0) return;
-			this.position = ((this.position + delta) % this.groupWidth + this.groupWidth) % this.groupWidth;
-			this.render();
-		}
-
-		private shouldMove() {
-			return !this.motionQuery?.matches && !document.hidden && this.inViewport && this.groupWidth > 0 &&
-				this.pointerId === null && !this.keyboardFocus &&
-				(this.settling || this.ignoreHoverUntilLeave || !this.hovered);
-		}
-
-		private stopFrame() {
-			cancelAnimationFrame(this.frameId);
-			this.frameId = 0;
-			this.lastFrame = 0;
+			this.previewImage?.removeEventListener("load", this.handlePreviewImageLoad);
+			this.previewImage?.removeEventListener("error", this.handlePreviewImageError);
+			this.hidePreview();
+			this.preview?.remove();
 		}
 
 		private updatePlayback = () => {
-			if (!this.shouldMove()) {
-				this.stopFrame();
-				return;
-			}
-			if (!this.frameId) this.frameId = requestAnimationFrame(this.tick);
+			this.toggleAttribute("data-running", this.inViewport && !document.hidden);
+			if (!this.inViewport || document.hidden) this.hidePreview();
 		};
 
-		private tick = (now: number) => {
-			this.frameId = 0;
-			if (!this.shouldMove()) return;
-			const dt = this.lastFrame ? Math.min((now - this.lastFrame) / 1000, 0.05) : 0;
-			this.lastFrame = now;
-
-			if (this.settling) {
-				if (this.velocity < 0) {
-					this.velocity = Math.min(0, this.velocity + 900 * dt);
-				} else {
-					this.velocity = this.baseSpeed + (this.velocity - this.baseSpeed) * Math.exp(-dt / 0.85);
-					if (Math.abs(this.velocity - this.baseSpeed) < 1) {
-						this.velocity = this.baseSpeed;
-						this.settling = false;
-					}
-				}
-			} else {
-				this.velocity = this.baseSpeed;
-			}
-
-			this.moveBy(this.velocity * dt);
-			this.updatePlayback();
-		};
-
-		private syncMotionMode = () => {
-			if (!this.track) return;
-			this.stopFrame();
-			if (this.motionQuery?.matches) {
-				const pointerId = this.pointerId;
-				this.pointerId = null;
-				if (pointerId !== null && this.hasPointerCapture(pointerId)) {
-					this.releasePointerCapture(pointerId);
-				}
-				this.dragging = false;
-				this.settling = false;
-				this.ignoreHoverUntilLeave = false;
-				this.track.style.removeProperty("animation");
-				this.track.style.removeProperty("transform");
-				this.classList.remove("is-dragging", "is-suppressing-click");
-				return;
-			}
-			this.track.style.animation = "none";
-			this.measure();
-		};
-
-		private handlePointerEnter = (event: PointerEvent) => {
-			if (event.pointerType === "mouse" || event.pointerType === "pen") {
-				this.hovered = true;
-				this.updatePlayback();
-			}
-		};
-
-		private handlePointerLeave = () => {
-			if (this.pointerId !== null && !this.dragging) this.pointerId = null;
-			this.hovered = false;
-			this.ignoreHoverUntilLeave = false;
-			this.updatePlayback();
-		};
-
-		private handlePointerDown = (event: PointerEvent) => {
-			if (this.motionQuery?.matches || this.pointerId !== null) return;
-			if (event.pointerType === "mouse" && event.button !== 0) return;
-			this.pointerId = event.pointerId;
-			this.startX = event.clientX;
-			this.lastX = event.clientX;
-			this.lastMoveTime = event.timeStamp;
-			this.flickVelocity = 0;
-			this.dragging = false;
-			this.keyboardFocus = false;
-			this.stopFrame();
-		};
-
-		private handlePointerMove = (event: PointerEvent) => {
-			if (event.pointerId !== this.pointerId) return;
-			if (!this.dragging && Math.abs(event.clientX - this.startX) < 5) return;
-			if (!this.dragging) {
-				this.dragging = true;
-				this.classList.add("is-dragging");
-				this.setPointerCapture(event.pointerId);
-			}
-			event.preventDefault();
-			const delta = event.clientX - this.lastX;
-			const elapsed = Math.max(1, event.timeStamp - this.lastMoveTime);
-			const instantVelocity = (delta / elapsed) * 1000;
-			this.flickVelocity = this.flickVelocity === 0
-				? instantVelocity
-				: this.flickVelocity * 0.55 + instantVelocity * 0.45;
-			this.lastX = event.clientX;
-			this.lastMoveTime = event.timeStamp;
-			this.moveBy(delta);
-		};
-
-		private endPointer(event: PointerEvent, cancelled: boolean) {
-			if (event.pointerId !== this.pointerId) return;
-			const wasDragging = this.dragging;
-			this.pointerId = null;
-			this.dragging = false;
-			if (this.hasPointerCapture(event.pointerId)) this.releasePointerCapture(event.pointerId);
-			this.classList.remove("is-dragging");
-
-			if (wasDragging) {
-				this.suppressClickUntil = performance.now() + 350;
-				this.classList.add("is-suppressing-click");
-				window.clearTimeout(this.suppressTimer);
-				this.suppressTimer = window.setTimeout(() => this.classList.remove("is-suppressing-click"), 350);
-			}
-			if (wasDragging && !cancelled) {
-				const recent = event.timeStamp - this.lastMoveTime < 90;
-				this.velocity = recent ? Math.max(-1400, Math.min(1400, this.flickVelocity)) : 0;
-				this.settling = true;
-				this.ignoreHoverUntilLeave = this.matches(":hover");
-			} else {
-				this.velocity = this.baseSpeed;
-				this.settling = false;
-				this.ignoreHoverUntilLeave = false;
-			}
-			this.updatePlayback();
+		private getPreviewAnchor(target: EventTarget | null) {
+			if (!(target instanceof Element)) return null;
+			const anchor = target.closest<HTMLAnchorElement>("a[data-friend-screenshot]");
+			return anchor && this.contains(anchor) ? anchor : null;
 		}
 
-		private handlePointerUp = (event: PointerEvent) => this.endPointer(event, false);
-		private handlePointerCancel = (event: PointerEvent) => this.endPointer(event, true);
-		private handleLostPointerCapture = (event: PointerEvent) => this.endPointer(event, true);
+		private showPreview = (anchor: HTMLAnchorElement) => {
+			const screenshot = anchor.dataset.friendScreenshot;
+			if (!screenshot || !this.preview || !this.previewImage) {
+				this.hidePreview();
+				return;
+			}
+			if (this.activePreviewAnchor === anchor) return;
+			this.activePreviewAnchor = anchor;
+			const fallback = this.preview.dataset.fallbackSrc || "/friends/screenshots/no-photos.webp";
+			const source = this.failedPreviewSources.has(screenshot) ? fallback : screenshot;
+			if (this.previewImage.getAttribute("src") !== source) {
+				this.preview.dataset.source = source;
+				this.preview.setAttribute("data-loading", "");
+				this.previewImage.src = source;
+			} else if (this.previewImage.complete && this.previewImage.naturalWidth > 0) {
+				this.preview.dataset.source = source;
+				this.preview.removeAttribute("data-loading");
+			} else {
+				this.preview.dataset.source = source;
+				this.preview.setAttribute("data-loading", "");
+			}
+
+			const anchorBounds = anchor.getBoundingClientRect();
+			const previewBounds = this.preview.getBoundingClientRect();
+			if (!previewBounds.width || !previewBounds.height) {
+				this.hidePreview();
+				return;
+			}
+			const halfWidth = previewBounds.width / 2;
+			const minLeft = Math.min(halfWidth + 8, window.innerWidth / 2);
+			const maxLeft = Math.max(minLeft, window.innerWidth - halfWidth - 8);
+			const left = Math.max(minLeft, Math.min(maxLeft, anchorBounds.left + anchorBounds.width / 2));
+			const spaceAbove = anchorBounds.top - 12;
+			const spaceBelow = window.innerHeight - anchorBounds.bottom - 12;
+			const placement = spaceAbove >= previewBounds.height || spaceAbove >= spaceBelow ? "above" : "below";
+			const top = placement === "above" ? anchorBounds.top - 10 : anchorBounds.bottom + 10;
+
+			this.preview.dataset.placement = placement;
+			this.preview.style.left = `${left}px`;
+			this.preview.style.top = `${top}px`;
+			this.preview.setAttribute("data-visible", "");
+		};
+
+		private hidePreview = () => {
+			this.activePreviewAnchor = null;
+			this.preview?.removeAttribute("data-visible");
+		};
+
+		private failedPreviewSources = new Set<string>();
+
+		private handlePreviewImageLoad = () => {
+			if (
+				this.previewImage?.naturalWidth &&
+				this.previewImage.getAttribute("src") === this.preview?.dataset.source
+			) {
+				this.preview?.removeAttribute("data-loading");
+			}
+		};
+
+		private handlePreviewImageError = () => {
+			const source = this.preview?.dataset.source;
+			if (!this.preview || !this.previewImage || !source) return;
+			this.failedPreviewSources.add(source);
+			const fallback = this.preview.dataset.fallbackSrc || "/friends/screenshots/no-photos.webp";
+			this.preview.setAttribute("data-loading", "");
+			if (source !== fallback) {
+				this.preview.dataset.source = fallback;
+				this.previewImage.src = fallback;
+			}
+		};
+
+		private handlePointerOver = (event: PointerEvent) => {
+			if (event.pointerType === "touch") return;
+			const anchor = this.getPreviewAnchor(event.target);
+			if (anchor) this.showPreview(anchor);
+		};
+
+		private handlePointerOut = (event: PointerEvent) => {
+			const anchor = this.getPreviewAnchor(event.target);
+			if (!anchor || (event.relatedTarget instanceof Node && anchor.contains(event.relatedTarget))) return;
+			const nextAnchor = this.getPreviewAnchor(event.relatedTarget);
+			if (nextAnchor) {
+				this.showPreview(nextAnchor);
+			} else if (this.activePreviewAnchor === anchor) {
+				this.hidePreview();
+			}
+		};
 
 		private handleFocusIn = (event: FocusEvent) => {
-			if (!(event.target instanceof HTMLElement) || !event.target.matches(":focus-visible")) return;
-			this.keyboardFocus = true;
-			this.position = 0;
-			this.render();
-			this.updatePlayback();
+			const anchor = this.getPreviewAnchor(event.target);
+			if (anchor) this.showPreview(anchor);
 		};
 
 		private handleFocusOut = (event: FocusEvent) => {
-			if (this.contains(event.relatedTarget as Node | null)) return;
-			this.keyboardFocus = false;
-			this.updatePlayback();
+			const nextAnchor = this.getPreviewAnchor(event.relatedTarget);
+			if (nextAnchor) {
+				this.showPreview(nextAnchor);
+			} else {
+				this.hidePreview();
+			}
 		};
-
-		private handleClick = (event: MouseEvent) => {
-			if (performance.now() >= this.suppressClickUntil) return;
-			event.preventDefault();
-			event.stopImmediatePropagation();
-		};
-
-		private handleDragStart = (event: DragEvent) => event.preventDefault();
 	}
 
 	if (!customElements.get("friend-avatar-marquee")) {
@@ -336,19 +275,7 @@ const normalizeFriendUrl = (url: string) =>
 		margin: 0 0 0.8rem;
 		overflow: hidden;
 		mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
-		touch-action: pan-y;
 		user-select: none;
-		cursor: grab;
-	}
-
-	.friend-avatar-marquee.is-dragging,
-	.friend-avatar-marquee.is-dragging a {
-		cursor: grabbing;
-	}
-
-	.friend-avatar-marquee.is-dragging a,
-	.friend-avatar-marquee.is-suppressing-click a {
-		pointer-events: none;
 	}
 
 	.friend-avatar-marquee-track,
@@ -361,7 +288,12 @@ const normalizeFriendUrl = (url: string) =>
 	.friend-avatar-marquee-track {
 		flex: none;
 		animation: friend-avatars-flow var(--friend-avatar-duration) linear infinite;
+		animation-play-state: paused;
 		will-change: transform;
+	}
+
+	.friend-avatar-marquee[data-running] .friend-avatar-marquee-track {
+		animation-play-state: running;
 	}
 
 	.friend-avatar-marquee-group {
@@ -376,9 +308,12 @@ const normalizeFriendUrl = (url: string) =>
 		height: 2.5rem;
 		flex: none;
 		border-radius: 50%;
-		cursor: grab;
 		box-shadow: 0 2px 5px rgb(27 40 58 / 24%);
 		transition: box-shadow 180ms ease, transform 180ms ease;
+	}
+
+	.friend-avatar-marquee-group a[href] {
+		cursor: pointer;
 	}
 
 	@media (hover: hover) {
@@ -407,9 +342,142 @@ const normalizeFriendUrl = (url: string) =>
 		animation-play-state: paused;
 	}
 
-	.friend-avatar-marquee:has(a:focus-visible) .friend-avatar-marquee-track {
+	.friend-avatar-site-preview {
+		position: fixed;
+		z-index: 1200;
+		width: min(20rem, calc(100vw - 1rem));
+		aspect-ratio: 16 / 9;
+		margin: 0;
+		overflow: hidden;
+		border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--line-divider));
+		border-radius: 0.875rem;
+		background: var(--card-bg);
+		box-shadow: 0 0.875rem 2rem rgb(24 42 62 / 28%);
+		pointer-events: none;
+		opacity: 0;
+		visibility: hidden;
+		transform: translate(-50%, -100%) scale(0.97);
+		transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
+	}
+
+	.friend-avatar-site-preview[data-loading] img {
+		opacity: 0;
+	}
+
+	.friend-avatar-site-preview[data-visible][data-placement="above"] {
+		opacity: 1;
+		visibility: visible;
+		transform: translate(-50%, -100%) scale(1);
+	}
+
+	.friend-avatar-site-preview[data-visible][data-placement="below"] {
+		opacity: 1;
+		visibility: visible;
+		transform: translate(-50%, 0) scale(1);
+	}
+
+	.friend-avatar-site-preview img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: top center;
+		transition: opacity 160ms ease;
+	}
+
+	.friend-avatar-site-preview-skeleton {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.55rem;
+		padding: 0.7rem;
+		background: linear-gradient(110deg, #e6eaf0 8%, #f6f8fb 20%, #e6eaf0 34%);
+		background-size: 220% 100%;
+		animation: friend-avatar-preview-shimmer 1.35s ease-in-out infinite;
+		transition: opacity 160ms ease, visibility 160ms ease;
+	}
+
+	.friend-avatar-site-preview:not([data-loading]) .friend-avatar-site-preview-skeleton {
+		visibility: hidden;
+		opacity: 0;
 		animation: none;
-		transform: translateX(-50%);
+	}
+
+	.friend-avatar-site-preview-skeleton-topbar,
+	.friend-avatar-site-preview-skeleton-hero,
+	.friend-avatar-site-preview-skeleton-copy i {
+		display: block;
+		border-radius: 0.25rem;
+		background: rgb(125 139 159 / 20%);
+	}
+
+	.friend-avatar-site-preview-skeleton-topbar {
+		width: 42%;
+		height: 0.4rem;
+		flex: none;
+	}
+
+	.friend-avatar-site-preview-skeleton-content {
+		display: grid;
+		grid-template-columns: 1.15fr 0.85fr;
+		flex: 1;
+		gap: 0.55rem;
+	}
+
+	.friend-avatar-site-preview-skeleton-hero {
+		min-height: 0;
+	}
+
+	.friend-avatar-site-preview-skeleton-copy {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+		padding-top: 0.1rem;
+	}
+
+	.friend-avatar-site-preview-skeleton-copy i {
+		height: 0.35rem;
+	}
+
+	.friend-avatar-site-preview-skeleton-copy i:nth-child(2) {
+		width: 78%;
+	}
+
+	.friend-avatar-site-preview-skeleton-copy i:nth-child(3) {
+		width: 56%;
+	}
+
+	:global(.dark) .friend-avatar-site-preview-skeleton {
+		background-image: linear-gradient(110deg, #202733 8%, #303b4b 20%, #202733 34%);
+	}
+
+	:global(.dark) .friend-avatar-site-preview-skeleton-topbar,
+	:global(.dark) .friend-avatar-site-preview-skeleton-hero,
+	:global(.dark) .friend-avatar-site-preview-skeleton-copy i {
+		background: rgb(218 228 241 / 13%);
+	}
+
+	@keyframes friend-avatar-preview-shimmer {
+		from { background-position: 100% 0; }
+		to { background-position: -120% 0; }
+	}
+
+	@media (hover: none), (max-width: 767px) {
+		.friend-avatar-site-preview {
+			display: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.friend-avatar-site-preview {
+			transition: none;
+		}
+
+		.friend-avatar-site-preview-skeleton {
+			animation: none;
+		}
 	}
 
 	@keyframes friend-avatars-flow {
@@ -421,8 +489,6 @@ const normalizeFriendUrl = (url: string) =>
 		.friend-avatar-marquee {
 			overflow-x: auto;
 			mask-image: none;
-			touch-action: auto;
-			cursor: auto;
 		}
 
 		.friend-avatar-marquee-group a {

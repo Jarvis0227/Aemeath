@@ -8,6 +8,7 @@ interface Props {
 }
 
 const { items, routeMode = false } = Astro.props;
+const availableItems = items.filter((item) => !item.temporarilyUnavailable && (!item.visibilityStatus || item.visibilityStatus === "normal"));
 ---
 
 <div
@@ -62,8 +63,8 @@ const { items, routeMode = false } = Astro.props;
 				<strong>友链漫游暂时不可用</strong>
 				<span>你仍然可以从这里认识这些朋友：</span>
 				<div class="friends-portal-fallback-list">
-					{items.map((item) => (
-						<a href={item.siteurl} target="_blank" rel="noopener noreferrer">
+					{availableItems.map((item) => (
+						<a href={item.siteurl} data-friend-site-url={item.siteurl} data-friend-unavailable="false" data-friend-title={item.title} data-friend-original-tabindex="" target="_blank" rel="noopener noreferrer">
 							<img src={item.imgurl} alt="" width="32" height="32" loading="lazy" />
 							<span>{item.title}</span>
 						</a>
@@ -72,10 +73,11 @@ const { items, routeMode = false } = Astro.props;
 			</div>
 
 			<div class="friends-portal-sources" aria-hidden="true">
-				{items.map((item) => (
+				{availableItems.map((item) => (
 					<img
 						data-portal-source
 						data-portal-target={item.siteurl}
+						data-friend-site-url={item.siteurl}
 						src={item.screenshot || item.imgurl}
 						alt=""
 						width="480"
@@ -111,13 +113,14 @@ const { items, routeMode = false } = Astro.props;
 				<Icon is:inline name="material-symbols:touch-app-rounded" aria-hidden="true" />
 				移动鼠标看向不同方向，长按或按住空格键跳转
 			</span>
-			<span class="friends-portal-count">{items.length} 个友链已加入漫游</span>
+			<span class="friends-portal-count">{availableItems.length} 个友链已加入漫游</span>
 			<span class="friends-portal-mobile-note">手机端会保留普通友链卡片，桌面端体验更完整。</span>
 		</footer>
 	</div>
 </div>
 
 <script src="../../scripts/friends-magic-portal.ts"></script>
+<script src="../../scripts/friend-visibility.ts"></script>
 
 <style is:global>
 	.friends-heading-row {
