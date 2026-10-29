@@ -66,7 +66,12 @@ import {
 	let initQueued = false;
 
 	const loadWaline = () => {
-		walineModulePromise ??= import("@waline/client").then(({ init }) => init);
+		walineModulePromise ??= import("@waline/client")
+			.then(({ init }) => init)
+			.catch((error) => {
+				walineModulePromise = undefined;
+				throw error;
+			});
 		return walineModulePromise;
 	};
 
@@ -3833,38 +3838,63 @@ import {
 		"主页截图：",
 		"RSS地址：",
 	].join("\n");
-	document.addEventListener("click", (event) => {
-		if (!(event.target instanceof Element)) return;
-		if (!event.target.closest("[data-friends-application]")) return;
-		if (!document.querySelector("#post-comments [data-waline-root]")) return;
-
-		let attempts = 0;
+	let applicationCleanup: (() => void) | undefined;
+	const startFriendApplication = (root: HTMLElement) => {
+		applicationCleanup?.();
+		delete root.dataset.friendsApplicationPending;
+		root.previousElementSibling?.matches("[data-friends-application-error]") && root.previousElementSibling.remove();
+		const status = document.createElement("p");
+		status.setAttribute("role", "status");
+		status.style.cssText = "padding: .75rem 0; color: var(--content-meta); font-size: .875rem";
+		status.textContent = "正在加载评论区和申请模板…";
+		root.before(status);
+		let timeout: number | undefined;
+		const observer = new MutationObserver(() => fillEditor());
+		const cleanup = () => {
+			observer.disconnect();
+			document.removeEventListener("swup:contentReplaced", cleanup);
+			if (timeout !== undefined) window.clearTimeout(timeout);
+			status.remove();
+			if (applicationCleanup === cleanup) applicationCleanup = undefined;
+		};
 		const fillEditor = () => {
-			const editor = document.querySelector<HTMLTextAreaElement>(
-				"#post-comments [data-waline-root] .wl-editor",
-			);
-			if (editor) {
-				if (!editor.value.trim()) {
-					editor.value = friendApplicationTemplate;
-					editor.dispatchEvent(
-						new InputEvent("input", {
-							bubbles: true,
-							data: friendApplicationTemplate,
-							inputType: "insertText",
-						}),
-					);
-				}
+			if (!root.isConnected) {
+				cleanup();
 				return;
 			}
-
-			if (attempts < 100) {
-				attempts += 1;
-				window.setTimeout(fillEditor, 100);
+			const editor = root.querySelector<HTMLTextAreaElement>(
+				"[data-waline] > .wl-comment .wl-editor",
+			);
+			if (!editor) return;
+			if (!editor.value.trim()) {
+				editor.value = friendApplicationTemplate;
+				editor.dispatchEvent(new Event("input", { bubbles: true }));
+			}
+			cleanup();
+			if (window.location.hash === "#post-comments") {
+				root.closest<HTMLElement>("#post-comments")?.scrollIntoView({ behavior: "instant", block: "start" });
+				if (window.matchMedia("(max-width: 580px)").matches) {
+					document.querySelector<HTMLButtonElement>(".waline-mobile-comment-entry")?.click();
+				}
 			}
 		};
-
+		applicationCleanup = cleanup;
+		document.addEventListener("swup:contentReplaced", cleanup, { once: true });
+		observer.observe(root, { childList: true, subtree: true });
+		timeout = window.setTimeout(() => {
+			status.textContent = "评论区加载较慢，请检查网络后再次点击申请友链。";
+		}, 10000);
+		void initWaline(root);
 		window.setTimeout(fillEditor, 0);
+	};
+	document.addEventListener("waline:friend-application", () => {
+		const root = document.querySelector<HTMLElement>("#post-comments [data-waline-root]");
+		if (root) startFriendApplication(root);
 	});
+	const pendingApplicationRoot = document.querySelector<HTMLElement>(
+		'#post-comments [data-waline-root][data-friends-application-pending="true"]',
+	);
+	if (pendingApplicationRoot) startFriendApplication(pendingApplicationRoot);
 
 	scheduleWalineInit();
 	document.addEventListener("astro:page-load", scheduleWalineInit);

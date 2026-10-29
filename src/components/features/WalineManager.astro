@@ -5,8 +5,35 @@
 		runtimePromise = import("@/scripts/waline-manager").catch((error) => {
 			runtimePromise = undefined;
 			console.error("[Waline] Failed to load the comment manager.", error);
+			const root = document.querySelector<HTMLElement>('[data-waline-root][data-friends-application-pending="true"]');
+			if (root && !root.previousElementSibling?.matches("[data-friends-application-error]")) {
+				const status = document.createElement("p");
+				status.dataset.friendsApplicationError = "true";
+				status.setAttribute("role", "status");
+				status.textContent = "评论区加载失败，请检查网络并刷新页面后重试。";
+				root.before(status);
+			}
 		});
 	};
+
+	// Capture the request before Swup or the lazy manager can miss an early click.
+	document.addEventListener("click", (event) => {
+		if (!(event.target instanceof Element) || !event.target.closest("[data-friends-application]")) return;
+		const root = document.querySelector<HTMLElement>("#post-comments [data-waline-root]");
+		if (!root) return;
+		event.preventDefault();
+		event.stopPropagation();
+		if (window.location.hash !== "#post-comments") {
+			history.replaceState(history.state, "", "#post-comments");
+		}
+		root.closest<HTMLElement>("#post-comments")?.scrollIntoView({ behavior: "instant", block: "start" });
+		if ((window as typeof window & { __rainztWalineManagerStarted?: boolean }).__rainztWalineManagerStarted) {
+			document.dispatchEvent(new CustomEvent("waline:friend-application"));
+		} else {
+			root.dataset.friendsApplicationPending = "true";
+			loadWalineRuntime();
+		}
+	}, { capture: true });
 
 	loadWalineRuntime();
 	document.addEventListener("astro:page-load", loadWalineRuntime);
